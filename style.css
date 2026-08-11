@@ -1,0 +1,105 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.app-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.logo {
+    width: 100%;
+    max-width: 250px;
+    display: block;
+    margin: 0 auto 10px auto;
+}
+
+.input-campo {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+.btn-principal {
+    background-color: #1a4d2e;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    width: 100%;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.btn-principal:hover { background-color: #133a22; }
+
+.btn-secundario {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    font-size: 15px;
+    font-weight: bold;
+    width: 100%;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.btn-secundario:hover { background-color: #5a6268; }
+
+#mensagem-erro {
+    color: red;
+    text-align: center;
+    margin-bottom: 15px;
+    display: none;
+}
+
+.titulo-tela {
+    text-align: center;
+    color: #1a4d2e;
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+.grid-placas {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.img-placa {
+    width: 100%;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.1s;
+}
+.img-placa:active { transform: scale(0.95); }
+
+.alerta-veiculo {
+    background-color: #e0e0e0;
+    color: #1a4d2e;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 20px;
+    border: 2px dashed #1a4d2e;
+}
