@@ -1,82 +1,110 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logística - Lince</title>
-    <!-- Aqui conectamos o arquivo de Design (CSS) -->
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-    <!-- TELA 1: LOGIN -->
-    <div id="tela-login" class="app-container">
-        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logo Lince" class="logo">
-        <input type="text" id="campo-usuario" class="input-campo" placeholder="Usuário">
-        <input type="password" id="campo-senha" class="input-campo" placeholder="Senha">
-        <p id="mensagem-erro">Usuário ou senha incorretos!</p>
-        <button class="btn-principal" onclick="fazerLogin()">Entrar</button>
-    </div>
-
-    <!-- TELA 2: SELEÇÃO DE PLACAS -->
-    <div id="tela-placas" class="app-container" style="display: none;">
-        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
-        <button class="btn-secundario" onclick="sairDaConta()">⬅ Sair da Conta</button>
-        <h2 class="titulo-tela">Selecione o Veículo</h2>
-        
-        <div class="grid-placas">
-            <img src="https://i.postimg.cc/L6WXqWyR/2.png" class="img-placa" onclick="selecionarPlaca('AXZ1D53')">
-            <img src="https://i.postimg.cc/MKLTcL9g/3.png" class="img-placa" onclick="selecionarPlaca('FCT1J98')">
-            <img src="https://i.postimg.cc/m2nDcndG/4.png" class="img-placa" onclick="selecionarPlaca('FEE9E40')">
-            <img src="https://i.postimg.cc/jd15W1MG/5.png" class="img-placa" onclick="selecionarPlaca('FIF9A30')">
-            <img src="https://i.postimg.cc/g2603K59/6.png" class="img-placa" onclick="selecionarPlaca('FMQ8H77')">
-            <img src="https://i.postimg.cc/cL8JfcjG/7.png" class="img-placa" onclick="selecionarPlaca('FMR4I10')">
-            <img src="https://i.postimg.cc/6pGQChSX/8.png" class="img-placa" onclick="selecionarPlaca('FPJ1B16')">
-            <img src="https://i.postimg.cc/Z5yq6LgZ/9.png" class="img-placa" onclick="selecionarPlaca('FQY6B30')">
-            <img src="https://i.postimg.cc/RZn0wT8v/10.png" class="img-placa" onclick="selecionarPlaca('FUH9H91')">
-            <img src="https://i.postimg.cc/W1J407Kp/11.png" class="img-placa" onclick="selecionarPlaca('IVE8J03')">
-            <img src="https://i.postimg.cc/9QqfyBSM/12.png" class="img-placa" onclick="selecionarPlaca('NTP4G17')">
-            <img src="https://i.postimg.cc/52Ft8mGy/13.png" class="img-placa" onclick="selecionarPlaca('TKR8I49')">
-            <img src="https://i.postimg.cc/FHJK0xqY/14.png" class="img-placa" onclick="selecionarPlaca('TLL8H30')">
-            <img src="https://i.postimg.cc/HLDkzyDs/15.png" class="img-placa" onclick="selecionarPlaca('TLY0G57')">
-            <img src="https://i.postimg.cc/W4L18kLh/16.png" class="img-placa" onclick="selecionarPlaca('UDN0J81')">
-            <img src="https://i.postimg.cc/bvcwgtcZ/17.png" class="img-placa" onclick="selecionarPlaca('UPS1J80')">
-            <img src="https://i.postimg.cc/hGWtsdWV/18.png" class="img-placa" onclick="selecionarPlaca('UPX9D25')">
-            <img src="https://i.postimg.cc/bvcwgtc0/19.png" class="img-placa" onclick="selecionarPlaca('URT4E79')">
-            <img src="https://i.postimg.cc/8CQz46QB/20.png" class="img-placa" onclick="selecionarPlaca('URU3F36')">
-        </div>
-    </div>
-
-    <!-- TELA 3: MENU DE AÇÕES -->
-    <div id="tela-menu" class="app-container" style="display: none;">
-        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
-        <button class="btn-secundario" onclick="voltarParaPlacas()">⬅ Trocar Veículo</button>
-        <h2 class="titulo-tela">Menu Principal</h2>
-        <div class="alerta-veiculo">
-            Veículo Selecionado: <br>
-            <span id="texto-placa-escolhida" style="font-size: 24px;">NENHUM</span>
-        </div>
-        <button class="btn-principal" onclick="abrirPagina('Ficha Técnica')">📄 Ficha Técnica</button>
-        <button class="btn-principal" onclick="abrirPagina('Manutenções')">🔧 Manutenções</button>
-        <button class="btn-principal" onclick="abrirPagina('Checklist')">✅ Checklist</button>
-        <button class="btn-principal" onclick="abrirPagina('Estoque')">📦 Estoque</button>
-        <button class="btn-principal" onclick="abrirPagina('Abastecimento')">⛽ Abastecimento</button>
-    </div>
-
-    <!-- TELA 4: PÁGINAS INTERNAS (Checklist, Abastecimento, etc) -->
+<!-- TELA 4: PÁGINAS INTERNAS (Checklist, Abastecimento, etc) -->
     <div id="tela-interna" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
         <button class="btn-secundario" onclick="voltarParaMenu()">⬅ Voltar ao Menu</button>
         <h2 id="titulo-tela-interna" class="titulo-tela">Nome da Página</h2>
+        
         <div class="alerta-veiculo" style="font-size: 14px; padding: 5px;">
             Trabalhando no veículo: <span id="texto-placa-interna"></span>
         </div>
-        <div style="text-align: center; padding: 40px 0; color: #666;">
-            <p>O formulário será construído aqui!</p>
-        </div>
-    </div>
 
-    <!-- Aqui conectamos o arquivo de Lógica (JavaScript) -->
-    <script src="script.js"></script>
-</body>
-</html>
+        <!-- ========================================== -->
+        <!-- CONTEÚDO DA FICHA TÉCNICA (Só aparece quando clicado) -->
+        <!-- ========================================== -->
+        <div id="conteudo-Ficha Técnica" class="secao-conteudo">
+            
+            <!-- CARD 1: Cabeçalho do Veículo -->
+            <div class="card">
+                <div class="card-cabecalho">
+                    <img src="https://i.postimg.cc/L6WXqWyR/2.png" class="card-img-placa" id="img-placa-ficha">
+                    <div>
+                        <div class="linha-info"><span class="info-label">Motorista:</span> <span class="info-valor">João Silva</span></div>
+                        <div class="linha-info"><span class="info-label">KM Atual:</span> <span class="info-valor">145.200</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARD 2: Óleo -->
+            <div class="card">
+                <h3 class="card-titulo">💧 Óleo do Motor</h3>
+                <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor">135.000 km</span></div>
+                <div class="linha-info"><span class="info-label">Data Última Troca:</span> <span class="info-valor">10/05/2023</span></div>
+                <div class="linha-info"><span style="color:red; font-weight:bold;">Próxima Troca:</span> <span style="color:red; font-weight:bold;">155.000 km</span></div>
+            </div>
+
+            <!-- CARD 3: Tacógrafo -->
+            <div class="card">
+                <h3 class="card-titulo">⏱️ Tacógrafo</h3>
+                <div class="linha-info"><span class="info-label">Última Aferição:</span> <span class="info-valor">15/01/2023</span></div>
+                <div class="linha-info"><span class="info-label">Próxima Aferição:</span> <span class="info-valor">15/01/2025</span></div>
+            </div>
+
+            <!-- CARD 4: Pneus (Com Acordeão) -->
+            <div class="card">
+                <h3 class="card-titulo">🛞 Pneus</h3>
+                
+                <details>
+                    <summary>DD (Dianteiro Direito)</summary>
+                    <div class="pneu-detalhes">
+                        <div class="linha-info"><span class="info-label">Data Última Troca:</span> <span class="info-valor">01/08/2023</span></div>
+                        <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor">140.000 km</span></div>
+                        <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor">Novo</span></div>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>DE (Dianteiro Esquerdo)</summary>
+                    <div class="pneu-detalhes">
+                        <div class="linha-info"><span class="info-label">Data Última Troca:</span> <span class="info-valor">01/08/2023</span></div>
+                        <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor">140.000 km</span></div>
+                        <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor">1ª Resolagem</span></div>
+                    </div>
+                </details>
+                
+                <!-- NOTA: Você pode copiar o bloco <details> acima e colar para fazer os outros pneus (TDE, TDI, TEE, TEI, TKEE, TKEI, TKDE, TKDI) mudando apenas o título e os dados! -->
+                <p style="font-size: 12px; color: #666; text-align: center;">Demais pneus seguem o mesmo formato ao clicar.</p>
+            </div>
+
+            <!-- CARD 5: Equipamentos -->
+            <div class="card">
+                <h3 class="card-titulo">🚧 Equipamentos</h3>
+                <label class="linha-check">
+                    <input type="checkbox"> Confirmo que há 2 Carrinhos
+                </label>
+                <label class="linha-check">
+                    <input type="checkbox"> Confirmo que há 3 Cones
+                </label>
+            </div>
+
+            <!-- CARD 6: Fotos do Mês -->
+            <div class="card">
+                <h3 class="card-titulo">📸 Fotos do Mês</h3>
+                <button class="btn-secundario" style="margin-bottom: 10px;">📷 Tirar Foto Lateral</button>
+                <button class="btn-secundario">📷 Tirar Foto Traseira</button>
+            </div>
+
+            <!-- CARD 7: Abastecimento & Lubrificação -->
+            <div class="card">
+                <h3 class="card-titulo">⛽ Abastecimento e Graxa</h3>
+                <div class="linha-info"><span class="info-label">Último Abastecimento:</span> <span class="info-valor">144.500 km</span></div>
+                <div class="linha-info"><span class="info-label">Média do Veículo:</span> <span class="info-valor">2.8 km/L</span></div>
+                <hr style="border: 0.5px solid #eee; margin: 10px 0;">
+                <div class="linha-info"><span class="info-label">Última Engraxada:</span> <span class="info-valor">20/09/2023</span></div>
+                <div class="linha-info"><span style="color:red; font-weight:bold;">Próxima (+30 dias):</span> <span style="color:red; font-weight:bold;">20/10/2023</span></div>
+            </div>
+
+            <!-- CARD 8: Documento -->
+            <div class="card">
+                <h3 class="card-titulo">📄 Documentação</h3>
+                <button class="btn-principal btn-download">⬇️ Baixar PDF do Documento</button>
+            </div>
+
+        </div>
+        
+        <!-- Outras telas (Checklist, Abastecimento) serão criadas aqui depois -->
+        <div id="conteudo-Manutenções" class="secao-conteudo"><p style="text-align:center;">Tela de Manutenções em construção...</p></div>
+        <div id="conteudo-Checklist" class="secao-conteudo"><p style="text-align:center;">Tela de Checklist em construção...</p></div>
+        <div id="conteudo-Estoque" class="secao-conteudo"><p style="text-align:center;">Tela de Estoque em construção...</p></div>
+        <div id="conteudo-Abastecimento" class="secao-conteudo"><p style="text-align:center;">Tela de Abastecimento em construção...</p></div>
+
+    </div>
