@@ -2,31 +2,29 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <!-- Esta linha abaixo é o segredo para a tela se adaptar ao tamanho do celular -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>App Logística - Lince</title>
     
     <style>
-        /* Resetando margens padrão e definindo a fonte */
         body {
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
-            background-color: #f4f4f9; /* Cor de fundo cinza claro */
+            background-color: #f4f4f9;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        /* Container principal simulando a tela do celular */
         .app-container {
             width: 100%;
-            max-width: 400px; /* Limita a largura para parecer um app no computador */
+            max-width: 400px;
             padding: 20px;
             box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* Estilo do Logo */
         .logo {
             width: 100%;
             max-width: 250px;
@@ -34,9 +32,19 @@
             margin: 0 auto 30px auto;
         }
 
-        /* Estilo dos Botões do Menu */
-        .menu-btn {
-            background-color: #1a4d2e; /* Verde escuro (inspirado no seu logo) */
+        /* Estilos dos campos de Login */
+        .input-campo {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .btn-principal {
+            background-color: #1a4d2e;
             color: white;
             border: none;
             border-radius: 8px;
@@ -47,34 +55,67 @@
             width: 100%;
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: background-color 0.3s;
         }
 
-        /* Efeito ao passar o mouse ou tocar */
-        .menu-btn:hover {
+        .btn-principal:hover {
             background-color: #133a22;
+        }
+
+        /* Mensagem de erro */
+        #mensagem-erro {
+            color: red;
+            text-align: center;
+            margin-bottom: 15px;
+            display: none; /* Escondido por padrão */
         }
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <!-- Substituí pelo link da imagem que você usou no ToolJet -->
+    <!-- TELA DE LOGIN -->
+    <div id="tela-login" class="app-container">
+        <img src="https://i.postimg.cc/N0zYVvmj/capa-app-logistica.png" alt="Logo Lince Distribuidora" class="logo">
+        
+        <input type="text" id="campo-usuario" class="input-campo" placeholder="Usuário">
+        <input type="password" id="campo-senha" class="input-campo" placeholder="Senha">
+        
+        <p id="mensagem-erro">Usuário ou senha incorretos!</p>
+        
+        <button class="btn-principal" onclick="fazerLogin()">Entrar</button>
+    </div>
+
+    <!-- TELA DE MENU (Inicialmente escondida com style="display: none;") -->
+    <div id="tela-menu" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/N0zYVvmj/capa-app-logistica.png" alt="Logo Lince Distribuidora" class="logo">
 
-        <!-- Botões do Menu -->
-        <button class="menu-btn" onclick="abrirPagina('Ficha Técnica')">📄 Ficha Técnica</button>
-        <button class="menu-btn" onclick="abrirPagina('Manutenções')">🔧 Manutenções</button>
-        <button class="menu-btn" onclick="abrirPagina('Checklist')">✅ Checklist</button>
-        <button class="menu-btn" onclick="abrirPagina('Estoque')">📦 Estoque</button>
-        <button class="menu-btn" onclick="abrirPagina('Abastecimento')">⛽ Abastecimento</button>
+        <button class="btn-principal" onclick="abrirPagina('Ficha Técnica')">📄 Ficha Técnica</button>
+        <button class="btn-principal" onclick="abrirPagina('Manutenções')">🔧 Manutenções</button>
+        <button class="btn-principal" onclick="abrirPagina('Checklist')">✅ Checklist</button>
+        <button class="btn-principal" onclick="abrirPagina('Estoque')">📦 Estoque</button>
+        <button class="btn-principal" onclick="abrirPagina('Abastecimento')">⛽ Abastecimento</button>
     </div>
 
     <script>
-        // Lógica básica com JavaScript
+        function fazerLogin() {
+            // Pegando os valores digitados
+            let usuarioDigitado = document.getElementById('campo-usuario').value;
+            let senhaDigitada = document.getElementById('campo-senha').value;
+
+            // Simulando uma checagem (MUDE A SENHA AQUI SE QUISER TESTAR)
+            if (usuarioDigitado === "motorista" && senhaDigitada === "123") {
+                
+                // Se acertar, esconde o login e mostra o menu
+                document.getElementById('tela-login').style.display = 'none';
+                document.getElementById('tela-menu').style.display = 'flex';
+                document.getElementById('mensagem-erro').style.display = 'none';
+                
+            } else {
+                // Se errar, mostra a mensagem de erro
+                document.getElementById('mensagem-erro').style.display = 'block';
+            }
+        }
+
         function abrirPagina(nomeDaPagina) {
-            // No futuro, isso vai redirecionar para outras telas. 
-            // Por enquanto, apenas mostra um aviso.
             alert("Em breve: Abrindo a página de " + nomeDaPagina);
         }
     </script>
