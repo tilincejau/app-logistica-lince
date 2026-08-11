@@ -4,140 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logística - Lince</title>
-    
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 400px;
-            padding: 20px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .logo {
-            width: 100%;
-            max-width: 250px;
-            display: block;
-            margin: 0 auto 10px auto;
-        }
-
-        /* Campos de texto */
-        .input-campo {
-            width: 100%;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-
-        /* Botões Principais (Verdes) */
-        .btn-principal {
-            background-color: #1a4d2e;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            font-size: 16px;
-            font-weight: bold;
-            width: 100%;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .btn-principal:hover { background-color: #133a22; }
-
-        /* NOVO: Botões Secundários (Cinza - para Voltar) */
-        .btn-secundario {
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 12px 20px;
-            margin-bottom: 20px;
-            font-size: 15px;
-            font-weight: bold;
-            width: 100%;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .btn-secundario:hover { background-color: #5a6268; }
-
-        #mensagem-erro {
-            color: red;
-            text-align: center;
-            margin-bottom: 15px;
-            display: none;
-        }
-
-        .titulo-tela {
-            text-align: center;
-            color: #1a4d2e;
-            font-size: 20px;
-            margin-bottom: 15px;
-        }
-
-        /* Estilos das Placas */
-        .grid-placas {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-
-        .img-placa {
-            width: 100%;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.1s;
-        }
-        .img-placa:active { transform: scale(0.95); }
-
-        /* Caixinha de aviso do veículo */
-        .alerta-veiculo {
-            background-color: #e0e0e0;
-            color: #1a4d2e;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 20px;
-            border: 2px dashed #1a4d2e;
-        }
-    </style>
+    <!-- Aqui conectamos o arquivo de Design (CSS) -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <!-- TELA 1: LOGIN -->
     <div id="tela-login" class="app-container">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logo Lince" class="logo">
-        
         <input type="text" id="campo-usuario" class="input-campo" placeholder="Usuário">
         <input type="password" id="campo-senha" class="input-campo" placeholder="Senha">
         <p id="mensagem-erro">Usuário ou senha incorretos!</p>
-        
         <button class="btn-principal" onclick="fazerLogin()">Entrar</button>
     </div>
 
     <!-- TELA 2: SELEÇÃO DE PLACAS -->
     <div id="tela-placas" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
-        
-        <!-- Botão Voltar para o Login -->
         <button class="btn-secundario" onclick="sairDaConta()">⬅ Sair da Conta</button>
-        
         <h2 class="titulo-tela">Selecione o Veículo</h2>
         
         <div class="grid-placas">
@@ -166,17 +50,12 @@
     <!-- TELA 3: MENU DE AÇÕES -->
     <div id="tela-menu" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
-        
-        <!-- Botão Voltar para Placas -->
         <button class="btn-secundario" onclick="voltarParaPlacas()">⬅ Trocar Veículo</button>
-
         <h2 class="titulo-tela">Menu Principal</h2>
-
         <div class="alerta-veiculo">
             Veículo Selecionado: <br>
             <span id="texto-placa-escolhida" style="font-size: 24px;">NENHUM</span>
         </div>
-
         <button class="btn-principal" onclick="abrirPagina('Ficha Técnica')">📄 Ficha Técnica</button>
         <button class="btn-principal" onclick="abrirPagina('Manutenções')">🔧 Manutenções</button>
         <button class="btn-principal" onclick="abrirPagina('Checklist')">✅ Checklist</button>
@@ -187,77 +66,17 @@
     <!-- TELA 4: PÁGINAS INTERNAS (Checklist, Abastecimento, etc) -->
     <div id="tela-interna" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
-        
-        <!-- Botão Voltar para o Menu -->
         <button class="btn-secundario" onclick="voltarParaMenu()">⬅ Voltar ao Menu</button>
-        
         <h2 id="titulo-tela-interna" class="titulo-tela">Nome da Página</h2>
-        
         <div class="alerta-veiculo" style="font-size: 14px; padding: 5px;">
             Trabalhando no veículo: <span id="texto-placa-interna"></span>
         </div>
-
         <div style="text-align: center; padding: 40px 0; color: #666;">
             <p>O formulário será construído aqui!</p>
         </div>
     </div>
 
-    <script>
-        function esconderTodasTelas() {
-            document.getElementById('tela-login').style.display = 'none';
-            document.getElementById('tela-placas').style.display = 'none';
-            document.getElementById('tela-menu').style.display = 'none';
-            document.getElementById('tela-interna').style.display = 'none';
-        }
-
-        function fazerLogin() {
-            let usuario = document.getElementById('campo-usuario').value;
-            let senha = document.getElementById('campo-senha').value;
-
-            if (usuario === "motorista" && senha === "123") {
-                esconderTodasTelas();
-                document.getElementById('tela-placas').style.display = 'flex';
-                document.getElementById('mensagem-erro').style.display = 'none';
-            } else {
-                document.getElementById('mensagem-erro').style.display = 'block';
-            }
-        }
-
-        // Função para botão "Sair da Conta"
-        function sairDaConta() {
-            esconderTodasTelas();
-            document.getElementById('campo-senha').value = ''; // Limpa a senha
-            document.getElementById('tela-login').style.display = 'flex';
-        }
-
-        function selecionarPlaca(placa) {
-            document.getElementById('texto-placa-escolhida').innerText = placa;
-            // Também já preenche a placa na tela interna, para quando precisarmos
-            document.getElementById('texto-placa-interna').innerText = placa; 
-            
-            esconderTodasTelas();
-            document.getElementById('tela-menu').style.display = 'flex';
-        }
-
-        function voltarParaPlacas() {
-            esconderTodasTelas();
-            document.getElementById('tela-placas').style.display = 'flex';
-        }
-
-        // NOVO: Abre a página interna de fato!
-        function abrirPagina(nomeDaPagina) {
-            document.getElementById('titulo-tela-interna').innerText = nomeDaPagina;
-            
-            esconderTodasTelas();
-            document.getElementById('tela-interna').style.display = 'flex';
-        }
-
-        // NOVO: Botão voltar de dentro do serviço para o menu
-        function voltarParaMenu() {
-            esconderTodasTelas();
-            document.getElementById('tela-menu').style.display = 'flex';
-        }
-    </script>
-
+    <!-- Aqui conectamos o arquivo de Lógica (JavaScript) -->
+    <script src="script.js"></script>
 </body>
 </html>
