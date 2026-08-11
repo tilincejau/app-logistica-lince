@@ -29,7 +29,7 @@
             width: 100%;
             max-width: 250px;
             display: block;
-            margin: 0 auto 30px auto;
+            margin: 0 auto 10px auto;
         }
 
         /* Estilos dos campos de Login */
@@ -61,18 +61,44 @@
             background-color: #133a22;
         }
 
-        /* Mensagem de erro */
         #mensagem-erro {
             color: red;
             text-align: center;
             margin-bottom: 15px;
-            display: none; /* Escondido por padrão */
+            display: none;
+        }
+
+        /* --- NOVOS ESTILOS PARA AS PLACAS --- */
+        .titulo-tela {
+            text-align: center;
+            color: #1a4d2e;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .grid-placas {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* Coloca 2 placas por linha */
+            gap: 15px;
+        }
+
+        .img-placa {
+            width: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+        }
+
+        /* Efeito ao tocar na placa */
+        .img-placa:active {
+            transform: scale(0.95); 
         }
     </style>
 </head>
 <body>
 
-    <!-- TELA DE LOGIN -->
+    <!-- TELA 1: LOGIN -->
     <div id="tela-login" class="app-container">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logo Lince Distribuidora" class="logo">
         
@@ -84,9 +110,39 @@
         <button class="btn-principal" onclick="fazerLogin()">Entrar</button>
     </div>
 
-    <!-- TELA DE MENU (Inicialmente escondida com style="display: none;") -->
+    <!-- TELA 2: SELEÇÃO DE PLACAS (Inicialmente escondida) -->
+    <div id="tela-placas" class="app-container" style="display: none;">
+        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
+        <h2 class="titulo-tela">Selecione o Veículo</h2>
+        
+        <div class="grid-placas">
+            <!-- Cada imagem tem o onclick="selecionarPlaca()" para abrir o menu -->
+            <img src="https://i.postimg.cc/L6WXqWyR/2.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/MKLTcL9g/3.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/m2nDcndG/4.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/jd15W1MG/5.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/g2603K59/6.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/cL8JfcjG/7.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/6pGQChSX/8.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/Z5yq6LgZ/9.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/RZn0wT8v/10.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/W1J407Kp/11.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/9QqfyBSM/12.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/52Ft8mGy/13.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/FHJK0xqY/14.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/HLDkzyDs/15.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/W4L18kLh/16.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/bvcwgtcZ/17.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/hGWtsdWV/18.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/bvcwgtc0/19.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/8CQz46QB/20.png" class="img-placa" onclick="selecionarPlaca()">
+        </div>
+    </div>
+
+    <!-- TELA 3: MENU DE AÇÕES (Inicialmente escondida) -->
     <div id="tela-menu" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
+        <h2 class="titulo-tela">Menu Principal</h2>
 
         <button class="btn-principal" onclick="abrirPagina('Ficha Técnica')">📄 Ficha Técnica</button>
         <button class="btn-principal" onclick="abrirPagina('Manutenções')">🔧 Manutenções</button>
@@ -97,22 +153,24 @@
 
     <script>
         function fazerLogin() {
-            // Pegando os valores digitados
             let usuarioDigitado = document.getElementById('campo-usuario').value;
             let senhaDigitada = document.getElementById('campo-senha').value;
 
-            // Simulando uma checagem (MUDE A SENHA AQUI SE QUISER TESTAR)
             if (usuarioDigitado === "motorista" && senhaDigitada === "123") {
-                
-                // Se acertar, esconde o login e mostra o menu
+                // Agora o login leva para a tela de PLACAS
                 document.getElementById('tela-login').style.display = 'none';
-                document.getElementById('tela-menu').style.display = 'flex';
+                document.getElementById('tela-placas').style.display = 'flex';
                 document.getElementById('mensagem-erro').style.display = 'none';
-                
             } else {
-                // Se errar, mostra a mensagem de erro
                 document.getElementById('mensagem-erro').style.display = 'block';
             }
+        }
+
+        // Nova função para quando o usuário clicar na imagem da placa
+        function selecionarPlaca() {
+            // Esconde a tela de placas e mostra o Menu
+            document.getElementById('tela-placas').style.display = 'none';
+            document.getElementById('tela-menu').style.display = 'flex';
         }
 
         function abrirPagina(nomeDaPagina) {
