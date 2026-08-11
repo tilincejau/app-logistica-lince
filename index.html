@@ -1,1 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <!-- Esta linha abaixo é o segredo para a tela se adaptar ao tamanho do celular -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Logística - Lince</title>
+    
+    <style>
+        /* Resetando margens padrão e definindo a fonte */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9; /* Cor de fundo cinza claro */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
+        /* Container principal simulando a tela do celular */
+        .app-container {
+            width: 100%;
+            max-width: 400px; /* Limita a largura para parecer um app no computador */
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Estilo do Logo */
+        .logo {
+            width: 100%;
+            max-width: 250px;
+            display: block;
+            margin: 0 auto 30px auto;
+        }
+
+        /* Estilo dos Botões do Menu */
+        .menu-btn {
+            background-color: #1a4d2e; /* Verde escuro (inspirado no seu logo) */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+        }
+
+        /* Efeito ao passar o mouse ou tocar */
+        .menu-btn:hover {
+            background-color: #133a22;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Substituí pelo link da imagem que você usou no ToolJet -->
+        <img src="https://i.postimg.cc/N0zYVvmj/capa-app-logistica.png" alt="Logo Lince Distribuidora" class="logo">
+
+        <!-- Botões do Menu -->
+        <button class="menu-btn" onclick="abrirPagina('Ficha Técnica')">📄 Ficha Técnica</button>
+        <button class="menu-btn" onclick="abrirPagina('Manutenções')">🔧 Manutenções</button>
+        <button class="menu-btn" onclick="abrirPagina('Checklist')">✅ Checklist</button>
+        <button class="menu-btn" onclick="abrirPagina('Estoque')">📦 Estoque</button>
+        <button class="menu-btn" onclick="abrirPagina('Abastecimento')">⛽ Abastecimento</button>
+    </div>
+
+    <script>
+        // Lógica básica com JavaScript
+        function abrirPagina(nomeDaPagina) {
+            // No futuro, isso vai redirecionar para outras telas. 
+            // Por enquanto, apenas mostra um aviso.
+            alert("Em breve: Abrindo a página de " + nomeDaPagina);
+        }
+    </script>
+
+</body>
+</html>
