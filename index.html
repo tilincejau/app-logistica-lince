@@ -32,7 +32,7 @@
             margin: 0 auto 10px auto;
         }
 
-        /* Estilos dos campos de Login */
+        /* Campos de texto */
         .input-campo {
             width: 100%;
             padding: 15px;
@@ -43,6 +43,7 @@
             font-size: 16px;
         }
 
+        /* Botões Principais (Verdes) */
         .btn-principal {
             background-color: #1a4d2e;
             color: white;
@@ -56,10 +57,23 @@
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
+        .btn-principal:hover { background-color: #133a22; }
 
-        .btn-principal:hover {
-            background-color: #133a22;
+        /* NOVO: Botões Secundários (Cinza - para Voltar) */
+        .btn-secundario {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            font-size: 15px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
+        .btn-secundario:hover { background-color: #5a6268; }
 
         #mensagem-erro {
             color: red;
@@ -68,17 +82,17 @@
             display: none;
         }
 
-        /* --- NOVOS ESTILOS PARA AS PLACAS --- */
         .titulo-tela {
             text-align: center;
             color: #1a4d2e;
             font-size: 20px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
+        /* Estilos das Placas */
         .grid-placas {
             display: grid;
-            grid-template-columns: repeat(2, 1fr); /* Coloca 2 placas por linha */
+            grid-template-columns: repeat(2, 1fr);
             gap: 15px;
         }
 
@@ -89,10 +103,18 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             transition: transform 0.1s;
         }
+        .img-placa:active { transform: scale(0.95); }
 
-        /* Efeito ao tocar na placa */
-        .img-placa:active {
-            transform: scale(0.95); 
+        /* Caixinha de aviso do veículo */
+        .alerta-veiculo {
+            background-color: #e0e0e0;
+            color: #1a4d2e;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border: 2px dashed #1a4d2e;
         }
     </style>
 </head>
@@ -100,49 +122,60 @@
 
     <!-- TELA 1: LOGIN -->
     <div id="tela-login" class="app-container">
-        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logo Lince Distribuidora" class="logo">
+        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logo Lince" class="logo">
         
         <input type="text" id="campo-usuario" class="input-campo" placeholder="Usuário">
         <input type="password" id="campo-senha" class="input-campo" placeholder="Senha">
-        
         <p id="mensagem-erro">Usuário ou senha incorretos!</p>
         
         <button class="btn-principal" onclick="fazerLogin()">Entrar</button>
     </div>
 
-    <!-- TELA 2: SELEÇÃO DE PLACAS (Inicialmente escondida) -->
+    <!-- TELA 2: SELEÇÃO DE PLACAS -->
     <div id="tela-placas" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
+        
+        <!-- Botão Voltar para o Login -->
+        <button class="btn-secundario" onclick="sairDaConta()">⬅ Sair da Conta</button>
+        
         <h2 class="titulo-tela">Selecione o Veículo</h2>
         
         <div class="grid-placas">
-            <!-- Cada imagem tem o onclick="selecionarPlaca()" para abrir o menu -->
-            <img src="https://i.postimg.cc/L6WXqWyR/2.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/MKLTcL9g/3.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/m2nDcndG/4.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/jd15W1MG/5.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/g2603K59/6.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/cL8JfcjG/7.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/6pGQChSX/8.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/Z5yq6LgZ/9.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/RZn0wT8v/10.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/W1J407Kp/11.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/9QqfyBSM/12.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/52Ft8mGy/13.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/FHJK0xqY/14.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/HLDkzyDs/15.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/W4L18kLh/16.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/bvcwgtcZ/17.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/hGWtsdWV/18.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/bvcwgtc0/19.png" class="img-placa" onclick="selecionarPlaca()">
-            <img src="https://i.postimg.cc/8CQz46QB/20.png" class="img-placa" onclick="selecionarPlaca()">
+            <img src="https://i.postimg.cc/L6WXqWyR/2.png" class="img-placa" onclick="selecionarPlaca('PLACA-01')">
+            <img src="https://i.postimg.cc/MKLTcL9g/3.png" class="img-placa" onclick="selecionarPlaca('PLACA-02')">
+            <img src="https://i.postimg.cc/m2nDcndG/4.png" class="img-placa" onclick="selecionarPlaca('PLACA-03')">
+            <img src="https://i.postimg.cc/jd15W1MG/5.png" class="img-placa" onclick="selecionarPlaca('PLACA-04')">
+            <img src="https://i.postimg.cc/g2603K59/6.png" class="img-placa" onclick="selecionarPlaca('PLACA-05')">
+            <img src="https://i.postimg.cc/cL8JfcjG/7.png" class="img-placa" onclick="selecionarPlaca('PLACA-06')">
+            <img src="https://i.postimg.cc/6pGQChSX/8.png" class="img-placa" onclick="selecionarPlaca('PLACA-07')">
+            <img src="https://i.postimg.cc/Z5yq6LgZ/9.png" class="img-placa" onclick="selecionarPlaca('PLACA-08')">
+            <img src="https://i.postimg.cc/RZn0wT8v/10.png" class="img-placa" onclick="selecionarPlaca('PLACA-09')">
+            <img src="https://i.postimg.cc/W1J407Kp/11.png" class="img-placa" onclick="selecionarPlaca('PLACA-10')">
+            <img src="https://i.postimg.cc/9QqfyBSM/12.png" class="img-placa" onclick="selecionarPlaca('PLACA-11')">
+            <img src="https://i.postimg.cc/52Ft8mGy/13.png" class="img-placa" onclick="selecionarPlaca('PLACA-12')">
+            <img src="https://i.postimg.cc/FHJK0xqY/14.png" class="img-placa" onclick="selecionarPlaca('PLACA-13')">
+            <img src="https://i.postimg.cc/HLDkzyDs/15.png" class="img-placa" onclick="selecionarPlaca('PLACA-14')">
+            <img src="https://i.postimg.cc/W4L18kLh/16.png" class="img-placa" onclick="selecionarPlaca('PLACA-15')">
+            <img src="https://i.postimg.cc/bvcwgtcZ/17.png" class="img-placa" onclick="selecionarPlaca('PLACA-16')">
+            <img src="https://i.postimg.cc/hGWtsdWV/18.png" class="img-placa" onclick="selecionarPlaca('PLACA-17')">
+            <img src="https://i.postimg.cc/bvcwgtc0/19.png" class="img-placa" onclick="selecionarPlaca('PLACA-18')">
+            <img src="https://i.postimg.cc/8CQz46QB/20.png" class="img-placa" onclick="selecionarPlaca('PLACA-19')">
         </div>
     </div>
 
-    <!-- TELA 3: MENU DE AÇÕES (Inicialmente escondida) -->
+    <!-- TELA 3: MENU DE AÇÕES -->
     <div id="tela-menu" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
+        
+        <!-- Botão Voltar para Placas -->
+        <button class="btn-secundario" onclick="voltarParaPlacas()">⬅ Trocar Veículo</button>
+
         <h2 class="titulo-tela">Menu Principal</h2>
+
+        <div class="alerta-veiculo">
+            Veículo Selecionado: <br>
+            <span id="texto-placa-escolhida" style="font-size: 24px;">NENHUM</span>
+        </div>
 
         <button class="btn-principal" onclick="abrirPagina('Ficha Técnica')">📄 Ficha Técnica</button>
         <button class="btn-principal" onclick="abrirPagina('Manutenções')">🔧 Manutenções</button>
@@ -151,14 +184,38 @@
         <button class="btn-principal" onclick="abrirPagina('Abastecimento')">⛽ Abastecimento</button>
     </div>
 
-    <script>
-        function fazerLogin() {
-            let usuarioDigitado = document.getElementById('campo-usuario').value;
-            let senhaDigitada = document.getElementById('campo-senha').value;
+    <!-- TELA 4: PÁGINAS INTERNAS (Checklist, Abastecimento, etc) -->
+    <div id="tela-interna" class="app-container" style="display: none;">
+        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
+        
+        <!-- Botão Voltar para o Menu -->
+        <button class="btn-secundario" onclick="voltarParaMenu()">⬅ Voltar ao Menu</button>
+        
+        <h2 id="titulo-tela-interna" class="titulo-tela">Nome da Página</h2>
+        
+        <div class="alerta-veiculo" style="font-size: 14px; padding: 5px;">
+            Trabalhando no veículo: <span id="texto-placa-interna"></span>
+        </div>
 
-            if (usuarioDigitado === "motorista" && senhaDigitada === "123") {
-                // Agora o login leva para a tela de PLACAS
-                document.getElementById('tela-login').style.display = 'none';
+        <div style="text-align: center; padding: 40px 0; color: #666;">
+            <p>O formulário será construído aqui!</p>
+        </div>
+    </div>
+
+    <script>
+        function esconderTodasTelas() {
+            document.getElementById('tela-login').style.display = 'none';
+            document.getElementById('tela-placas').style.display = 'none';
+            document.getElementById('tela-menu').style.display = 'none';
+            document.getElementById('tela-interna').style.display = 'none';
+        }
+
+        function fazerLogin() {
+            let usuario = document.getElementById('campo-usuario').value;
+            let senha = document.getElementById('campo-senha').value;
+
+            if (usuario === "motorista" && senha === "123") {
+                esconderTodasTelas();
                 document.getElementById('tela-placas').style.display = 'flex';
                 document.getElementById('mensagem-erro').style.display = 'none';
             } else {
@@ -166,15 +223,39 @@
             }
         }
 
-        // Nova função para quando o usuário clicar na imagem da placa
-        function selecionarPlaca() {
-            // Esconde a tela de placas e mostra o Menu
-            document.getElementById('tela-placas').style.display = 'none';
+        // Função para botão "Sair da Conta"
+        function sairDaConta() {
+            esconderTodasTelas();
+            document.getElementById('campo-senha').value = ''; // Limpa a senha
+            document.getElementById('tela-login').style.display = 'flex';
+        }
+
+        function selecionarPlaca(placa) {
+            document.getElementById('texto-placa-escolhida').innerText = placa;
+            // Também já preenche a placa na tela interna, para quando precisarmos
+            document.getElementById('texto-placa-interna').innerText = placa; 
+            
+            esconderTodasTelas();
             document.getElementById('tela-menu').style.display = 'flex';
         }
 
+        function voltarParaPlacas() {
+            esconderTodasTelas();
+            document.getElementById('tela-placas').style.display = 'flex';
+        }
+
+        // NOVO: Abre a página interna de fato!
         function abrirPagina(nomeDaPagina) {
-            alert("Em breve: Abrindo a página de " + nomeDaPagina);
+            document.getElementById('titulo-tela-interna').innerText = nomeDaPagina;
+            
+            esconderTodasTelas();
+            document.getElementById('tela-interna').style.display = 'flex';
+        }
+
+        // NOVO: Botão voltar de dentro do serviço para o menu
+        function voltarParaMenu() {
+            esconderTodasTelas();
+            document.getElementById('tela-menu').style.display = 'flex';
         }
     </script>
 
