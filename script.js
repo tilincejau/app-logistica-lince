@@ -60,7 +60,6 @@ async function selecionarPlaca(placa) {
     esconderTodasTelas();
     document.getElementById('tela-menu').style.display = 'flex';
 
-    // TRAVA DE SEGURANÇA: Desativa os botões do menu enquanto carrega
     let botoesMenu = document.querySelectorAll('#tela-menu .btn-principal');
     botoesMenu.forEach(btn => {
         btn.disabled = true;
@@ -112,7 +111,6 @@ async function selecionarPlaca(placa) {
         atualizarKMGeral();
     }
     
-    // DESTRAVA OS BOTÕES: Os dados já chegaram, o usuário pode clicar!
     botoesMenu.forEach(btn => {
         btn.disabled = false;
         btn.style.opacity = '1';
