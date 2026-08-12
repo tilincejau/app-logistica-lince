@@ -87,18 +87,23 @@
 
             <!-- CARD 2: Óleo -->
             <div class="card">
-                <h3 class="card-titulo">💧 Óleo do Motor</h3>
+                <!-- Cabeçalho do cartão com o botão de editar -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a4d2e; margin-bottom: 10px; padding-bottom: 5px;">
+                    <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">💧 Óleo do Motor</h3>
+                    <button id="btn-editar-oleo" onclick="alternarEdicaoOleo()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar</button>
+                </div>
+                
                 <div class="linha-info">
                     <span class="info-label">KM Atual do Veículo:</span> 
-                    <!-- Este campo receberá o KM do checklist futuro, mas o ADM pode editar -->
-                    <input type="number" id="km-atual-veiculo" class="input-editavel" value="0" oninput="calcularOleo()">
+                    <!-- Campos começam com 'readonly' (bloqueados) e a classe 'travado' -->
+                    <input type="number" id="km-atual-veiculo" class="input-editavel travado" value="0" oninput="calcularOleo()" readonly>
                 </div>
                 <div class="linha-info">
                     <span class="info-label">Próxima Troca (KM):</span> 
-                    <input type="number" id="km-proxima-troca" class="input-editavel" value="0" oninput="calcularOleo()">
+                    <input type="number" id="km-proxima-troca" class="input-editavel travado" value="0" oninput="calcularOleo()" readonly>
                 </div>
                 
-                <!-- Nova linha para o cálculo automático -->
+                <!-- Linha para o cálculo automático -->
                 <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
                     <span class="info-label">Status da Troca:</span>
                     <span id="status-oleo" style="font-weight:bold; font-size: 15px;">---</span>
