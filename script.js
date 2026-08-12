@@ -56,11 +56,9 @@ function selecionarPlaca(placa) {
     }
     document.getElementById('km-proxima-troca').value = kmProximaTroca;
     
-    // Colocando um KM atual fictício para forçar a matemática funcionar ao abrir
-    document.getElementById('km-atual-veiculo').value = kmProximaTroca - 2000; 
-
-    // Roda o cálculo do status imediatamente
-    calcularOleo();
+    // Colocando o KM no campo Master lá do topo
+    document.getElementById('km-master').value = kmProximaTroca - 2000; 
+    atualizarKMGeral(); // Dispara o efeito cascata
     
     esconderTodasTelas();
     document.getElementById('tela-menu').style.display = 'flex';
@@ -93,9 +91,50 @@ function voltarParaMenu() {
     document.getElementById('tela-menu').style.display = 'flex';
 }
 
-// Matemática do Óleo
+// --- FUNÇÕES DE MATEMÁTICA E EDIÇÃO DA FICHA TÉCNICA ---
+
+// 1. Função que espalha o KM Master para o resto da página
+function atualizarKMGeral() {
+    let kmMaster = document.getElementById('km-master').value;
+    
+    // Atualiza o texto do KM lá dentro do cartão de Óleo
+    document.getElementById('km-atual-oleo').innerText = kmMaster;
+    
+    // Manda recalcular o status do óleo
+    calcularOleo();
+}
+
+// 2. Função de Trancar/Destrancar apenas a Próxima Troca do Óleo
+function alternarEdicaoOleo() {
+    let campoProxima = document.getElementById('km-proxima-troca');
+    let btn = document.getElementById('btn-editar-oleo');
+    
+    if (campoProxima.hasAttribute('readonly')) {
+        // DESTRANCAR
+        campoProxima.removeAttribute('readonly');
+        campoProxima.classList.remove('travado');
+        
+        btn.innerHTML = "💾 Salvar";
+        btn.style.backgroundColor = "#1a4d2e";
+        btn.style.color = "white";
+        campoProxima.focus();
+    } else {
+        // TRANCAR
+        campoProxima.setAttribute('readonly', 'true');
+        campoProxima.classList.add('travado');
+        
+        btn.innerHTML = "✏️ Editar";
+        btn.style.backgroundColor = "transparent";
+        btn.style.color = "#1a4d2e";
+        
+        calcularOleo();
+    }
+}
+
+// 3. Matemática das Cores do Óleo
 function calcularOleo() {
-    let kmAtual = parseInt(document.getElementById('km-atual-veiculo').value) || 0;
+    // Agora ele pega o KM direto do Master lá no topo
+    let kmAtual = parseInt(document.getElementById('km-master').value) || 0;
     let kmProxima = parseInt(document.getElementById('km-proxima-troca').value) || 0;
     
     let kmFaltantes = kmProxima - kmAtual;
@@ -112,42 +151,4 @@ function calcularOleo() {
         txtStatus.innerHTML = `Faltam ${kmFaltantes} KM ✅`;
         txtStatus.style.color = "green";
     }
-
-// Função para trancar e destrancar os campos de Óleo
- function alternarEdicaoOleo() {
-    let campoAtual = document.getElementById('km-atual-veiculo');
-    let campoProxima = document.getElementById('km-proxima-troca');
-    let btn = document.getElementById('btn-editar-oleo');
-    
-    // Verifica se os campos estão trancados (readonly)
-    if (campoAtual.hasAttribute('readonly')) {
-        // 1. DESTRANCAR (Modo Edição)
-        campoAtual.removeAttribute('readonly');
-        campoProxima.removeAttribute('readonly');
-        campoAtual.classList.remove('travado');
-        campoProxima.classList.remove('travado');
-        
-        // Muda o visual do botão para verde chamativo
-        btn.innerHTML = "💾 Salvar";
-        btn.style.backgroundColor = "#1a4d2e";
-        btn.style.color = "white";
-        
-        // Foca no primeiro campo automaticamente
-        campoAtual.focus();
-    } else {
-        // 2. TRANCAR (Modo Salvo)
-        campoAtual.setAttribute('readonly', 'true');
-        campoProxima.setAttribute('readonly', 'true');
-        campoAtual.classList.add('travado');
-        campoProxima.classList.add('travado');
-        
-        // Volta o botão para o visual normal
-        btn.innerHTML = "✏️ Editar";
-        btn.style.backgroundColor = "transparent";
-        btn.style.color = "#1a4d2e";
-        
-        // Roda o cálculo para garantir que o status atualizou
-        calcularOleo();
-    }
-}
 }
