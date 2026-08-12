@@ -147,6 +147,7 @@ body {
 .linha-info {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     margin-bottom: 8px;
     font-size: 14px;
 }
