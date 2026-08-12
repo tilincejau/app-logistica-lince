@@ -126,13 +126,23 @@
             <!-- CARD 4: Pneus -->
             <div class="card">
                 <h3 class="card-titulo">🛞 Pneus</h3>
-                <p style="font-size: 11px; color: #666; margin: -5px 0 10px 0;">Rodízio varia conforme veículo e estado do pneu.</p>
+                <p style="font-size: 11px; color: #666; margin: -5px 0 10px 0;">Rodízio varia conforme veículo e estado da carcaça.</p>
+
+                <!-- CAIXA DE AVISO TWI -->
+                <div style="font-size: 11px; color: #444; background-color: #f9f9f9; padding: 10px; border-radius: 6px; border-left: 3px solid #1a4d2e; margin-bottom: 15px;">
+                    <strong>Pneu Novo:</strong> Geralmente possui de 12 mm a 16 mm de sulco.<br>
+                    <strong>Pneu Usado (Meia-vida):</strong> Fica na faixa dos 6 mm aos 8 mm.<br>
+                    <strong>Pneu Velho / No Limite de Retirada:</strong> Fica entre 3 mm e 4 mm.<br>
+                    <span style="color: #b30000; margin-top: 5px; display: block;">
+                        <strong>Atenção:</strong> Embora o limite legal obrigatório por lei (TWI) no Brasil seja de 1,6 mm, especialistas em transporte e fabricantes recomendam retirar o pneu de caminhão com 3 mm a 4 mm.
+                    </span>
+                </div>
 
                 <details>
                     <summary>DD (Dianteiro Direito)</summary>
                     <div class="pneu-detalhes">
                         <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-dd">---</span></div>
-                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-dd">---</span></div>
+                        <div class="linha-info"><span class="info-label">TWI (Sulcos):</span> <span class="info-valor" id="twi-dd">---</span></div>
                         <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-dd">0</span></div>
                         <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-dd">---</span></div>
                         <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-dd" style="font-weight:bold;">---</span></div>
@@ -142,7 +152,7 @@
                     <summary>DE (Dianteiro Esquerdo)</summary>
                     <div class="pneu-detalhes">
                         <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-de">---</span></div>
-                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-de">---</span></div>
+                        <div class="linha-info"><span class="info-label">TWI (Sulcos):</span> <span class="info-valor" id="twi-de">---</span></div>
                         <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-de">0</span></div>
                         <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-de">---</span></div>
                         <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-de" style="font-weight:bold;">---</span></div>
@@ -152,7 +162,7 @@
                     <summary>TEE (Tração Ext. Esquerdo)</summary>
                     <div class="pneu-detalhes">
                         <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tee">---</span></div>
-                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tee">---</span></div>
+                        <div class="linha-info"><span class="info-label">TWI (Sulcos):</span> <span class="info-valor" id="twi-tee">---</span></div>
                         <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tee">0</span></div>
                         <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tee">---</span></div>
                         <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tee" style="font-weight:bold;">---</span></div>
@@ -162,7 +172,7 @@
                     <summary>TEI (Tração Int. Esquerdo)</summary>
                     <div class="pneu-detalhes">
                         <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tei">---</span></div>
-                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tei">---</span></div>
+                        <div class="linha-info"><span class="info-label">TWI (Sulcos):</span> <span class="info-valor" id="twi-tei">---</span></div>
                         <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tei">0</span></div>
                         <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tei">---</span></div>
                         <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tei" style="font-weight:bold;">---</span></div>
@@ -172,7 +182,7 @@
                     <summary>TDE (Tração Dir. Externo)</summary>
                     <div class="pneu-detalhes">
                         <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tde">---</span></div>
-                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tde">---</span></div>
+                        <div class="linha-info"><span class="info-label">TWI (Sulcos):</span> <span class="info-valor" id="twi-tde">---</span></div>
                         <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tde">0</span></div>
                         <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tde">---</span></div>
                         <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tde" style="font-weight:bold;">---</span></div>
@@ -182,7 +192,7 @@
                     <summary>TDI (Tração Dir. Interno)</summary>
                     <div class="pneu-detalhes">
                         <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tdi">---</span></div>
-                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tdi">---</span></div>
+                        <div class="linha-info"><span class="info-label">TWI (Sulcos):</span> <span class="info-valor" id="twi-tdi">---</span></div>
                         <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tdi">0</span></div>
                         <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tdi">---</span></div>
                         <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tdi" style="font-weight:bold;">---</span></div>
@@ -192,7 +202,7 @@
                     <summary>TKEE (Truck Ext. Esquerdo)</summary>
                     <div class="pneu-detalhes">
                         <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tkee">---</span></div>
-                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tkee">---</span></div>
+                        <div class="linha-info"><span class="info-label">TWI (Sulcos):</span> <span class="info-valor" id="twi-tkee">---</span></div>
                         <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tkee">0</span></div>
                         <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tkee">---</span></div>
                         <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tkee" style="font-weight:bold;">---</span></div>
@@ -202,7 +212,7 @@
                     <summary>TKEI (Truck Int. Esquerdo)</summary>
                     <div class="pneu-detalhes">
                         <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tkei">---</span></div>
-                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tkei">---</span></div>
+                        <div class="linha-info"><span class="info-label">TWI (Sulcos):</span> <span class="info-valor" id="twi-tkei">---</span></div>
                         <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tkei">0</span></div>
                         <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tkei">---</span></div>
                         <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tkei" style="font-weight:bold;">---</span></div>
@@ -212,7 +222,7 @@
                     <summary>TKDE (Truck Dir. Externo)</summary>
                     <div class="pneu-detalhes">
                         <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tkde">---</span></div>
-                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tkde">---</span></div>
+                        <div class="linha-info"><span class="info-label">TWI (Sulcos):</span> <span class="info-valor" id="twi-tkde">---</span></div>
                         <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tkde">0</span></div>
                         <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tkde">---</span></div>
                         <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tkde" style="font-weight:bold;">---</span></div>
@@ -222,7 +232,7 @@
                     <summary>TKDI (Truck Dir. Interno)</summary>
                     <div class="pneu-detalhes">
                         <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tkdi">---</span></div>
-                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tkdi">---</span></div>
+                        <div class="linha-info"><span class="info-label">TWI (Sulcos):</span> <span class="info-valor" id="twi-tkdi">---</span></div>
                         <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tkdi">0</span></div>
                         <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tkdi">---</span></div>
                         <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tkdi" style="font-weight:bold;">---</span></div>
@@ -232,7 +242,7 @@
                     <summary>1STEP (Estepe)</summary>
                     <div class="pneu-detalhes">
                         <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-1step">---</span></div>
-                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-1step">---</span></div>
+                        <div class="linha-info"><span class="info-label">TWI (Sulcos):</span> <span class="info-valor" id="twi-1step">---</span></div>
                         <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-1step">0</span></div>
                         <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-1step">---</span></div>
                         <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-1step" style="font-weight:bold;">---</span></div>
@@ -278,7 +288,7 @@
         <div id="conteudo-Abastecimento" class="secao-conteudo"><p style="text-align:center;">Tela de Abastecimento em construção...</p></div>
     </div>
 
-    <!-- O v=4 FORÇA A ATUALIZAÇÃO -->
-    <script src="script.js?v=4"></script>
+    <!-- O v=5 FORÇA A ATUALIZAÇÃO DO CACHE -->
+    <script src="script.js?v=5"></script>
 </body>
 </html>
