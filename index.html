@@ -82,8 +82,6 @@
                     <img src="https://i.postimg.cc/L6WXqWyR/2.png" class="card-img-placa" id="img-placa-ficha">
                     <div style="width: 100%;">
                         <div class="linha-info"><span class="info-label">Motorista:</span> <span class="info-valor">João Silva</span></div>
-                        
-                        <!-- ESTE É O KM MASTER QUE COMANDA A PÁGINA INTEIRA -->
                         <div class="linha-info" style="align-items: center; margin-top: 10px;">
                             <span class="info-label">KM Atual (Geral):</span> 
                             <input type="number" id="km-master" class="input-editavel" value="0" oninput="atualizarKMGeral()" style="border: 2px solid #1a4d2e; background-color: #e8f5e9; width: 120px;">
@@ -114,10 +112,26 @@
                 </div>
             </div>
 
+            <!-- CARD 3: Tacógrafo -->
             <div class="card">
-                <h3 class="card-titulo">⏱️ Tacógrafo</h3>
-                <div class="linha-info"><span class="info-label">Última Aferição:</span> <span class="info-valor">15/01/2023</span></div>
-                <div class="linha-info"><span class="info-label">Próxima Aferição:</span> <span class="info-valor">15/01/2025</span></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a4d2e; margin-bottom: 10px; padding-bottom: 5px;">
+                    <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">⏱️ Tacógrafo</h3>
+                    <button id="btn-editar-tacografo" onclick="alternarEdicaoTacografo()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar</button>
+                </div>
+
+                <div class="linha-info">
+                    <span class="info-label">Última Aferição:</span> 
+                    <span id="data-ultima-afericao" style="font-weight: bold; color: #555; font-size: 16px;">--/--/----</span>
+                </div>
+                <div class="linha-info">
+                    <span class="info-label">Próxima Aferição:</span> 
+                    <input type="date" id="data-proxima-afericao" class="input-editavel travado" oninput="calcularTacografo()" readonly>
+                </div>
+                
+                <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                    <span class="info-label">Status:</span>
+                    <span id="status-tacografo" style="font-weight:bold; font-size: 15px;">---</span>
+                </div>
             </div>
 
             <div class="card">
