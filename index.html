@@ -74,16 +74,20 @@
 
         <div id="conteudo-Ficha Técnica" class="secao-conteudo">
             
-            <!-- CARD 1: Cabeçalho -->
+            <!-- CARD 1: Cabeçalho com Motorista e KM Master Editáveis -->
             <div class="card">
-                <div class="card-cabecalho" style="padding-bottom: 0; border-bottom: none; margin-bottom: 0;">
-                    <div style="width: 100%;">
-                        <div class="linha-info"><span class="info-label">Motorista:</span> <span class="info-valor">João Silva</span></div>
-                        <div class="linha-info" style="align-items: center; margin-top: 10px;">
-                            <span class="info-label">KM Atual (Geral):</span> 
-                            <input type="number" id="km-master" class="input-editavel" value="0" oninput="atualizarKMGeral()" style="border: 2px solid #1a4d2e; background-color: #e8f5e9; width: 120px;">
-                        </div>
-                    </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a4d2e; margin-bottom: 10px; padding-bottom: 5px;">
+                    <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">📋 Dados do Veículo</h3>
+                    <button id="btn-editar-header" onclick="alternarEdicaoHeader()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar</button>
+                </div>
+                
+                <div class="linha-info">
+                    <span class="info-label">Motorista:</span> 
+                    <input type="text" id="nome-motorista" class="input-editavel travado" value="João Silva" readonly style="width: 150px;">
+                </div>
+                <div class="linha-info" style="align-items: center; margin-top: 10px;">
+                    <span class="info-label">KM Atual (Geral):</span> 
+                    <input type="number" id="km-master" class="input-editavel travado" value="0" oninput="atualizarKMGeral()" style="width: 120px;" readonly>
                 </div>
             </div>
 
