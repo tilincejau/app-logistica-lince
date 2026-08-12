@@ -88,7 +88,10 @@ async function selecionarPlaca(placa) {
         }
 
         document.getElementById('km-proxima-troca').value = kmProximaTroca;
+        
+        // Zera o KM Geral de forma limpa!
         document.getElementById('km-master').value = 0; 
+        
         document.getElementById('data-proxima-afericao').value = dataTacografo;
         
         atualizarKMGeral(); 
@@ -97,7 +100,6 @@ async function selecionarPlaca(placa) {
         document.getElementById('texto-placa-escolhida').innerText = dados.erro ? placa + " (Não Cadastrada)" : placa;
 
     } catch (erro) {
-        // Agora ele não dá mais aquele popup irritante!
         console.error("Falha de conexão:", erro);
         document.getElementById('texto-placa-escolhida').innerText = placa + " (Offline)";
         document.getElementById('km-proxima-troca').value = 15000;
@@ -228,7 +230,7 @@ function calcularRodizioPneus() {
     
     idsPneus.forEach(pos => {
         let spanEstado = document.getElementById(`estado-${pos}`);
-        if(!spanEstado) return; // Evita erro se a tela não carregou direito
+        if(!spanEstado) return; 
         
         let estadoStr = spanEstado.innerText.toLowerCase();
         let kmTroca = parseInt(document.getElementById(`km-troca-${pos}`).innerText) || 0;
