@@ -200,7 +200,7 @@ summary {
     border-radius: 4px;
     padding: 5px;
     font-size: 14px;
-    width: 100px;
+    width: 135px; /* Aumentado para caber a data do Tacógrafo */
     text-align: right;
     background-color: #fff;
     color: #000;
@@ -208,7 +208,6 @@ summary {
     transition: all 0.3s;
 }
 
-/* Novo estilo para quando o campo estiver bloqueado (cinza) */
 .input-editavel.travado {
     background-color: #f0f0f0;
     border: 1px solid #e0e0e0;
