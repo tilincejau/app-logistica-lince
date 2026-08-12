@@ -112,4 +112,42 @@ function calcularOleo() {
         txtStatus.innerHTML = `Faltam ${kmFaltantes} KM ✅`;
         txtStatus.style.color = "green";
     }
+
+// Função para trancar e destrancar os campos de Óleo
+ function alternarEdicaoOleo() {
+    let campoAtual = document.getElementById('km-atual-veiculo');
+    let campoProxima = document.getElementById('km-proxima-troca');
+    let btn = document.getElementById('btn-editar-oleo');
+    
+    // Verifica se os campos estão trancados (readonly)
+    if (campoAtual.hasAttribute('readonly')) {
+        // 1. DESTRANCAR (Modo Edição)
+        campoAtual.removeAttribute('readonly');
+        campoProxima.removeAttribute('readonly');
+        campoAtual.classList.remove('travado');
+        campoProxima.classList.remove('travado');
+        
+        // Muda o visual do botão para verde chamativo
+        btn.innerHTML = "💾 Salvar";
+        btn.style.backgroundColor = "#1a4d2e";
+        btn.style.color = "white";
+        
+        // Foca no primeiro campo automaticamente
+        campoAtual.focus();
+    } else {
+        // 2. TRANCAR (Modo Salvo)
+        campoAtual.setAttribute('readonly', 'true');
+        campoProxima.setAttribute('readonly', 'true');
+        campoAtual.classList.add('travado');
+        campoProxima.classList.add('travado');
+        
+        // Volta o botão para o visual normal
+        btn.innerHTML = "✏️ Editar";
+        btn.style.backgroundColor = "transparent";
+        btn.style.color = "#1a4d2e";
+        
+        // Roda o cálculo para garantir que o status atualizou
+        calcularOleo();
+    }
+}
 }
