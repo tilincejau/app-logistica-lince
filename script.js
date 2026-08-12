@@ -54,11 +54,19 @@ function sairDaConta() {
 }
 
 async function selecionarPlaca(placa) {
-    document.getElementById('texto-placa-escolhida').innerText = "Carregando...";
+    document.getElementById('texto-placa-escolhida').innerText = "Buscando dados na nuvem...";
     document.getElementById('texto-placa-interna').innerText = placa; 
     
     esconderTodasTelas();
     document.getElementById('tela-menu').style.display = 'flex';
+
+    // TRAVA DE SEGURANÇA: Desativa os botões do menu enquanto carrega
+    let botoesMenu = document.querySelectorAll('#tela-menu .btn-principal');
+    botoesMenu.forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+    });
 
     try {
         let resposta = await fetch(`${API_URL}?acao=buscar_veiculo&placa=${placa}`);
@@ -88,10 +96,7 @@ async function selecionarPlaca(placa) {
         }
 
         document.getElementById('km-proxima-troca').value = kmProximaTroca;
-        
-        // Zera o KM Geral de forma limpa!
         document.getElementById('km-master').value = 0; 
-        
         document.getElementById('data-proxima-afericao').value = dataTacografo;
         
         atualizarKMGeral(); 
@@ -106,6 +111,13 @@ async function selecionarPlaca(placa) {
         document.getElementById('km-master').value = 0;
         atualizarKMGeral();
     }
+    
+    // DESTRAVA OS BOTÕES: Os dados já chegaram, o usuário pode clicar!
+    botoesMenu.forEach(btn => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+    });
 }
 
 function voltarParaPlacas() {
