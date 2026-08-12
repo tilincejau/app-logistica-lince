@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logística - Lince</title>
+    <!-- Conectando o arquivo de Design (CSS) -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -62,7 +63,7 @@
         <button class="btn-principal" onclick="abrirPagina('Abastecimento')">⛽ Abastecimento</button>
     </div>
 
-    <!-- TELA 4: PÁGINAS INTERNAS -->
+    <!-- TELA 4: PÁGINAS INTERNAS (Ficha Técnica, Checklist, etc) -->
     <div id="tela-interna" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
         <button class="btn-secundario" onclick="voltarParaMenu()">⬅ Voltar ao Menu</button>
@@ -72,6 +73,7 @@
             Trabalhando no veículo: <span id="texto-placa-interna"></span>
         </div>
 
+        <!-- CONTEÚDO DA FICHA TÉCNICA -->
         <div id="conteudo-Ficha Técnica" class="secao-conteudo">
             
             <!-- CARD 1: Cabeçalho -->
@@ -126,41 +128,157 @@
                 <h3 class="card-titulo">🛞 Pneus</h3>
                 <p style="font-size: 11px; color: #666; margin: -5px 0 10px 0;">Rodízio varia conforme veículo e estado do pneu.</p>
 
-                <script>
-                    const listaPneusTags = [
-                        {id: 'dd', nome: 'DD (Dianteiro Direito)'}, {id: 'de', nome: 'DE (Dianteiro Esquerdo)'},
-                        {id: 'tee', nome: 'TEE (Tração Ext. Esquerdo)'}, {id: 'tei', nome: 'TEI (Tração Int. Esquerdo)'},
-                        {id: 'tde', nome: 'TDE (Tração Dir. Externo)'}, {id: 'tdi', nome: 'TDI (Tração Dir. Interno)'},
-                        {id: 'tkee', nome: 'TKEE (Truck Ext. Esquerdo)'}, {id: 'tkei', nome: 'TKEI (Truck Int. Esquerdo)'},
-                        {id: 'tkde', nome: 'TKDE (Truck Dir. Externo)'}, {id: 'tkdi', nome: 'TKDI (Truck Dir. Interno)'},
-                        {id: '1step', nome: '1STEP (Estepe)'}
-                    ];
-                    
-                    listaPneusTags.forEach(pneu => {
-                        document.write(`
-                            <details>
-                                <summary>${pneu.nome}</summary>
-                                <div class="pneu-detalhes">
-                                    <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-${pneu.id}">---</span></div>
-                                    <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-${pneu.id}">---</span></div>
-                                    <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-${pneu.id}">0</span></div>
-                                    <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-${pneu.id}">---</span></div>
-                                    <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-${pneu.id}" style="font-weight:bold;">---</span></div>
-                                </div>
-                            </details>
-                        `);
-                    });
-                </script>
+                <details>
+                    <summary>DD (Dianteiro Direito)</summary>
+                    <div class="pneu-detalhes">
+                        <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-dd">---</span></div>
+                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-dd">---</span></div>
+                        <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-dd">0</span></div>
+                        <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-dd">---</span></div>
+                        <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-dd" style="font-weight:bold;">---</span></div>
+                    </div>
+                </details>
+                <details>
+                    <summary>DE (Dianteiro Esquerdo)</summary>
+                    <div class="pneu-detalhes">
+                        <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-de">---</span></div>
+                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-de">---</span></div>
+                        <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-de">0</span></div>
+                        <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-de">---</span></div>
+                        <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-de" style="font-weight:bold;">---</span></div>
+                    </div>
+                </details>
+                <details>
+                    <summary>TEE (Tração Ext. Esquerdo)</summary>
+                    <div class="pneu-detalhes">
+                        <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tee">---</span></div>
+                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tee">---</span></div>
+                        <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tee">0</span></div>
+                        <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tee">---</span></div>
+                        <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tee" style="font-weight:bold;">---</span></div>
+                    </div>
+                </details>
+                <details>
+                    <summary>TEI (Tração Int. Esquerdo)</summary>
+                    <div class="pneu-detalhes">
+                        <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tei">---</span></div>
+                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tei">---</span></div>
+                        <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tei">0</span></div>
+                        <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tei">---</span></div>
+                        <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tei" style="font-weight:bold;">---</span></div>
+                    </div>
+                </details>
+                <details>
+                    <summary>TDE (Tração Dir. Externo)</summary>
+                    <div class="pneu-detalhes">
+                        <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tde">---</span></div>
+                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tde">---</span></div>
+                        <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tde">0</span></div>
+                        <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tde">---</span></div>
+                        <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tde" style="font-weight:bold;">---</span></div>
+                    </div>
+                </details>
+                <details>
+                    <summary>TDI (Tração Dir. Interno)</summary>
+                    <div class="pneu-detalhes">
+                        <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tdi">---</span></div>
+                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tdi">---</span></div>
+                        <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tdi">0</span></div>
+                        <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tdi">---</span></div>
+                        <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tdi" style="font-weight:bold;">---</span></div>
+                    </div>
+                </details>
+                <details>
+                    <summary>TKEE (Truck Ext. Esquerdo)</summary>
+                    <div class="pneu-detalhes">
+                        <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tkee">---</span></div>
+                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tkee">---</span></div>
+                        <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tkee">0</span></div>
+                        <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tkee">---</span></div>
+                        <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tkee" style="font-weight:bold;">---</span></div>
+                    </div>
+                </details>
+                <details>
+                    <summary>TKEI (Truck Int. Esquerdo)</summary>
+                    <div class="pneu-detalhes">
+                        <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tkei">---</span></div>
+                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tkei">---</span></div>
+                        <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tkei">0</span></div>
+                        <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tkei">---</span></div>
+                        <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tkei" style="font-weight:bold;">---</span></div>
+                    </div>
+                </details>
+                <details>
+                    <summary>TKDE (Truck Dir. Externo)</summary>
+                    <div class="pneu-detalhes">
+                        <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tkde">---</span></div>
+                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tkde">---</span></div>
+                        <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tkde">0</span></div>
+                        <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tkde">---</span></div>
+                        <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tkde" style="font-weight:bold;">---</span></div>
+                    </div>
+                </details>
+                <details>
+                    <summary>TKDI (Truck Dir. Interno)</summary>
+                    <div class="pneu-detalhes">
+                        <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-tkdi">---</span></div>
+                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-tkdi">---</span></div>
+                        <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-tkdi">0</span></div>
+                        <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-tkdi">---</span></div>
+                        <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-tkdi" style="font-weight:bold;">---</span></div>
+                    </div>
+                </details>
+                <details>
+                    <summary>1STEP (Estepe)</summary>
+                    <div class="pneu-detalhes">
+                        <div class="linha-info"><span class="info-label">Estado:</span> <span class="info-valor" id="estado-1step">---</span></div>
+                        <div class="linha-info"><span class="info-label">Milímetros:</span> <span class="info-valor" id="mm-1step">---</span></div>
+                        <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor" id="km-troca-1step">0</span></div>
+                        <div class="linha-info"><span class="info-label">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-1step">---</span></div>
+                        <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label">Status Rodízio:</span> <span id="status-rod-1step" style="font-weight:bold;">---</span></div>
+                    </div>
+                </details>
+            </div>
+
+            <!-- CARD 5: Equipamentos -->
+            <div class="card">
+                <h3 class="card-titulo">🚧 Equipamentos</h3>
+                <label class="linha-check"><input type="checkbox"> Confirmo que há 2 Carrinhos</label>
+                <label class="linha-check"><input type="checkbox"> Confirmo que há 3 Cones</label>
+            </div>
+
+            <!-- CARD 6: Fotos -->
+            <div class="card">
+                <h3 class="card-titulo">📸 Fotos do Mês</h3>
+                <button class="btn-secundario" style="margin-bottom: 10px;">📷 Tirar Foto Lateral</button>
+                <button class="btn-secundario" style="margin-bottom: 0;">📷 Tirar Foto Traseira</button>
+            </div>
+
+            <!-- CARD 7: Abastecimento -->
+            <div class="card">
+                <h3 class="card-titulo">⛽ Abastecimento e Graxa</h3>
+                <div class="linha-info"><span class="info-label">Último Abastecimento:</span> <span class="info-valor">144.500 km</span></div>
+                <div class="linha-info"><span class="info-label">Média do Veículo:</span> <span class="info-valor">2.8 km/L</span></div>
+                <hr style="border: 0.5px solid #eee; margin: 10px 0;">
+                <div class="linha-info"><span class="info-label">Última Engraxada:</span> <span class="info-valor">20/09/2023</span></div>
+                <div class="linha-info"><span style="color:red; font-weight:bold;">Próxima (+30 dias):</span> <span style="color:red; font-weight:bold;">20/10/2023</span></div>
+            </div>
+
+            <!-- CARD 8: Documentos -->
+            <div class="card">
+                <h3 class="card-titulo">📄 Documentação</h3>
+                <button class="btn-principal" style="background-color: #0056b3; margin-bottom: 0;">⬇️ Baixar PDF do Documento</button>
             </div>
         </div>
         
+        <!-- Outras telas aguardando construção -->
         <div id="conteudo-Manutenções" class="secao-conteudo"><p style="text-align:center;">Tela de Manutenções em construção...</p></div>
         <div id="conteudo-Checklist" class="secao-conteudo"><p style="text-align:center;">Tela de Checklist em construção...</p></div>
         <div id="conteudo-Estoque" class="secao-conteudo"><p style="text-align:center;">Tela de Estoque em construção...</p></div>
         <div id="conteudo-Abastecimento" class="secao-conteudo"><p style="text-align:center;">Tela de Abastecimento em construção...</p></div>
     </div>
 
-    <!-- O v=3 AQUI FORÇA O CELULAR A LIMPAR O CACHE -->
-    <script src="script.js?v=3"></script>
+    <!-- O v=4 FORÇA A ATUALIZAÇÃO -->
+    <script src="script.js?v=4"></script>
 </body>
 </html>
