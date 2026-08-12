@@ -1,25 +1,5 @@
-// Banco de dados dos Veículos (Óleo e Tacógrafo)
-const dadosFrota = {
-    'AXZ1D53': { kmOleo: 172317, dataTaco: '2027-10-14' },
-    'FCT1J98': { kmOleo: 272430, dataTaco: '2027-05-26' },
-    'FEE9E40': { kmOleo: 250567, dataTaco: '2027-03-14' },
-    'FIF9A30': { kmOleo: 320582, dataTaco: '2027-05-26' },
-    'FMQ8H77': { kmOleo: 239462, dataTaco: '2027-03-18' },
-    'FMR4I10': { kmOleo: 415568, dataTaco: '2026-08-27' },
-    'FPJ1B16': { kmOleo: 305937, dataTaco: '2028-05-04' },
-    'FQY6B30': { kmOleo: 423271, dataTaco: '2027-07-14' },
-    'FUH9H91': { kmOleo: 15000,  dataTaco: '2027-05-26' }, 
-    'IVE8J03': { kmOleo: 188380, dataTaco: '2027-10-14' },
-    'NTP4G17': { kmOleo: 249790, dataTaco: '2028-05-04' },
-    'TKR8I49': { kmOleo: 65611,  dataTaco: '2026-12-10' },
-    'TLL8H30': { kmOleo: 15000,  dataTaco: '2026-12-11' }, 
-    'TLY0G57': { kmOleo: 15000,  dataTaco: '2028-07-16' },
-    'UDN0J81': { kmOleo: 15000,  dataTaco: '2028-07-14' },
-    'UPS1J80': { kmOleo: 15000,  dataTaco: '2028-07-27' },
-    'UPX9D25': { kmOleo: 15000,  dataTaco: '2028-07-27' },
-    'URT4E79': { kmOleo: 15000,  dataTaco: '2028-08-28' },
-    'URU3F36': { kmOleo: 15000,  dataTaco: '2028-07-14' }
-};
+// Aqui está a ponte de conexão com a sua planilha do Google!
+const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
 
 function esconderTodasTelas() {
     document.getElementById('tela-login').style.display = 'none';
@@ -28,17 +8,41 @@ function esconderTodasTelas() {
     document.getElementById('tela-interna').style.display = 'none';
 }
 
-function fazerLogin() {
+// O Login agora conversa com a nuvem
+async function fazerLogin() {
     let usuario = document.getElementById('campo-usuario').value;
     let senha = document.getElementById('campo-senha').value;
+    let msgErro = document.getElementById('mensagem-erro');
+    let btnEntrar = document.querySelector('#tela-login .btn-principal');
 
-    if (usuario === "motorista" && senha === "123") {
-        esconderTodasTelas();
-        document.getElementById('tela-placas').style.display = 'flex';
-        document.getElementById('mensagem-erro').style.display = 'none';
-    } else {
-        document.getElementById('mensagem-erro').style.display = 'block';
+    if (!usuario || !senha) {
+        msgErro.innerText = "Preencha usuário e senha!";
+        msgErro.style.display = 'block';
+        return;
     }
+
+    // Muda o botão para mostrar que está carregando
+    btnEntrar.innerText = "Verificando na nuvem...";
+    msgErro.style.display = 'none';
+
+    try {
+        let resposta = await fetch(`${API_URL}?acao=login&usuario=${usuario}&senha=${senha}`);
+        let dados = await resposta.json();
+
+        if (dados.sucesso) {
+            esconderTodasTelas();
+            document.getElementById('tela-placas').style.display = 'flex';
+        } else {
+            msgErro.innerText = "Usuário ou senha incorretos!";
+            msgErro.style.display = 'block';
+        }
+    } catch (erro) {
+        msgErro.innerText = "Erro ao conectar. Verifique a internet.";
+        msgErro.style.display = 'block';
+    }
+    
+    // Volta o botão ao normal
+    btnEntrar.innerText = "Entrar";
 }
 
 function sairDaConta() {
@@ -47,29 +51,51 @@ function sairDaConta() {
     document.getElementById('tela-login').style.display = 'flex';
 }
 
-function selecionarPlaca(placa) {
-    document.getElementById('texto-placa-escolhida').innerText = placa;
+// A seleção de placa agora busca os dados na planilha
+async function selecionarPlaca(placa) {
+    document.getElementById('texto-placa-escolhida').innerText = "Buscando dados na nuvem...";
     document.getElementById('texto-placa-interna').innerText = placa; 
-    
-    // Puxa o KM da próxima troca de óleo
-    let kmProximaTroca = 15000;
-    if (dadosFrota[placa] && dadosFrota[placa].kmOleo) {
-        kmProximaTroca = dadosFrota[placa].kmOleo;
-    }
-    document.getElementById('km-proxima-troca').value = kmProximaTroca;
-    document.getElementById('km-master').value = kmProximaTroca - 2000; 
-    atualizarKMGeral(); 
-    
-    // Puxa a Data do Tacógrafo
-    let dataTacografo = '';
-    if (dadosFrota[placa] && dadosFrota[placa].dataTaco) {
-        dataTacografo = dadosFrota[placa].dataTaco;
-    }
-    document.getElementById('data-proxima-afericao').value = dataTacografo;
-    calcularTacografo(); 
     
     esconderTodasTelas();
     document.getElementById('tela-menu').style.display = 'flex';
+
+    try {
+        let resposta = await fetch(`${API_URL}?acao=buscar_veiculo&placa=${placa}`);
+        let dados = await resposta.json();
+
+        let kmProximaTroca = 15000; // Valor padrão caso não ache
+        let dataTacografo = '';
+
+        if (!dados.erro) {
+            kmProximaTroca = dados.km_oleo || 15000;
+            
+            // Tratamento da data vinda do Google para encaixar no calendário do HTML
+            if (dados.data_tacografo) {
+                let d = new Date(dados.data_tacografo);
+                if (!isNaN(d.getTime())) {
+                    let ano = d.getUTCFullYear();
+                    let mes = String(d.getUTCMonth() + 1).padStart(2, '0');
+                    let dia = String(d.getUTCDate()).padStart(2, '0');
+                    dataTacografo = `${ano}-${mes}-${dia}`;
+                }
+            }
+        }
+
+        // Preenche os campos com os dados da nuvem
+        document.getElementById('km-proxima-troca').value = kmProximaTroca;
+        document.getElementById('km-master').value = kmProximaTroca - 2000; 
+        atualizarKMGeral(); 
+        
+        document.getElementById('data-proxima-afericao').value = dataTacografo;
+        calcularTacografo(); 
+
+        // Restaura o nome da placa após o carregamento
+        document.getElementById('texto-placa-escolhida').innerText = placa;
+
+    } catch (erro) {
+        alert("Modo offline: Não foi possível buscar os dados da nuvem. Usando valores em branco.");
+        document.getElementById('texto-placa-escolhida').innerText = placa;
+    }
 }
 
 function voltarParaPlacas() {
