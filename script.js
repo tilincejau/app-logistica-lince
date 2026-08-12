@@ -19,22 +19,29 @@ async function fazerLogin() {
         return;
     }
 
-    btnEntrar.innerText = "Verificando na nuvem...";
+    btnEntrar.innerText = "Conectando...";
     msgErro.style.display = 'none';
 
     try {
         let resposta = await fetch(`${API_URL}?acao=login&usuario=${usuario}&senha=${senha}`);
-        let dados = await resposta.json();
-
-        if (dados.sucesso) {
-            esconderTodasTelas();
-            document.getElementById('tela-placas').style.display = 'flex';
-        } else {
-            msgErro.innerText = "Usuário ou senha incorretos!";
+        let texto = await resposta.text(); 
+        
+        try {
+            let dados = JSON.parse(texto);
+            if (dados.sucesso) {
+                esconderTodasTelas();
+                document.getElementById('tela-placas').style.display = 'flex';
+            } else {
+                msgErro.innerText = dados.erro ? dados.erro : "Usuário ou senha incorretos!";
+                msgErro.style.display = 'block';
+            }
+        } catch (e) {
+            console.error("Erro no Google:", texto);
+            msgErro.innerText = "Erro no servidor. Verifique o Google Planilhas.";
             msgErro.style.display = 'block';
         }
     } catch (erro) {
-        msgErro.innerText = "Erro ao conectar. Verifique a internet.";
+        msgErro.innerText = "Sem internet. Tente novamente.";
         msgErro.style.display = 'block';
     }
     btnEntrar.innerText = "Entrar";
@@ -47,7 +54,7 @@ function sairDaConta() {
 }
 
 async function selecionarPlaca(placa) {
-    document.getElementById('texto-placa-escolhida').innerText = "Buscando dados...";
+    document.getElementById('texto-placa-escolhida').innerText = "Carregando...";
     document.getElementById('texto-placa-interna').innerText = placa; 
     
     esconderTodasTelas();
@@ -55,7 +62,8 @@ async function selecionarPlaca(placa) {
 
     try {
         let resposta = await fetch(`${API_URL}?acao=buscar_veiculo&placa=${placa}`);
-        let dados = await resposta.json();
+        let texto = await resposta.text();
+        let dados = JSON.parse(texto);
 
         let kmProximaTroca = 15000; 
         let dataTacografo = '';
@@ -80,21 +88,21 @@ async function selecionarPlaca(placa) {
         }
 
         document.getElementById('km-proxima-troca').value = kmProximaTroca;
-        
-        // AQUI ESTÁ O ZERAMENTO DEFINITIVO DO KM MASTER
         document.getElementById('km-master').value = 0; 
-        
         document.getElementById('data-proxima-afericao').value = dataTacografo;
         
-        // Atualiza os cálculos (Óleo, Tacógrafo e Pneus)
         atualizarKMGeral(); 
         calcularTacografo(); 
 
-        document.getElementById('texto-placa-escolhida').innerText = placa;
+        document.getElementById('texto-placa-escolhida').innerText = dados.erro ? placa + " (Não Cadastrada)" : placa;
 
     } catch (erro) {
-        alert("Modo offline: Falha ao buscar na nuvem.");
-        document.getElementById('texto-placa-escolhida').innerText = placa;
+        // Agora ele não dá mais aquele popup irritante!
+        console.error("Falha de conexão:", erro);
+        document.getElementById('texto-placa-escolhida').innerText = placa + " (Offline)";
+        document.getElementById('km-proxima-troca').value = 15000;
+        document.getElementById('km-master').value = 0;
+        atualizarKMGeral();
     }
 }
 
@@ -121,8 +129,6 @@ function voltarParaMenu() {
 function atualizarKMGeral() {
     let kmMaster = document.getElementById('km-master').value;
     document.getElementById('km-atual-oleo').innerText = kmMaster;
-    
-    // Roda os cálculos em cascata
     calcularOleo();
     calcularRodizioPneus();
 }
@@ -210,31 +216,29 @@ function calcularTacografo() {
     }
 }
 
-// --- INTELIGÊNCIA DOS PNEUS ---
 function calcularRodizioPneus() {
     let placa = document.getElementById('texto-placa-interna').innerText;
     let kmMaster = parseInt(document.getElementById('km-master').value) || 0;
     
     const grupo10k = ['FMR4I10', 'FQY6B30', 'TKR8I49', 'TLL8H30', 'TLY0G57', 'UDN0J81', 'UPS1J80', 'UPX9D25', 'URT4E79', 'URU3F36'];
-    
-    // Define a base de cálculo baseada na placa
     let baseNovo = grupo10k.includes(placa) ? 10000 : 15000;
     let baseRessolado = grupo10k.includes(placa) ? 25000 : 30000;
 
     const idsPneus = ['dd', 'de', 'tee', 'tei', 'tde', 'tdi', 'tkee', 'tkei', 'tkde', 'tkdi', '1step'];
     
     idsPneus.forEach(pos => {
-        let estadoStr = document.getElementById(`estado-${pos}`).innerText.toLowerCase();
+        let spanEstado = document.getElementById(`estado-${pos}`);
+        if(!spanEstado) return; // Evita erro se a tela não carregou direito
+        
+        let estadoStr = spanEstado.innerText.toLowerCase();
         let kmTroca = parseInt(document.getElementById(`km-troca-${pos}`).innerText) || 0;
         
-        // Se ainda não tivermos os dados do checklist carregados, deixa em branco
         if (estadoStr === "---" || kmTroca === 0) {
             document.getElementById(`status-rod-${pos}`).innerText = "Aguardando dados...";
             document.getElementById(`status-rod-${pos}`).style.color = "gray";
             return;
         }
 
-        // Se for novo aplica a baseNovo, se tiver 'ressol' na palavra aplica baseRessolado
         let intervalo = estadoStr.includes('novo') ? baseNovo : baseRessolado;
         let kmProxRodizio = kmTroca + intervalo;
         
