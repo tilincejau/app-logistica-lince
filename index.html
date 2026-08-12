@@ -75,35 +75,39 @@
 
         <!-- CONTEÚDO DA FICHA TÉCNICA -->
         <div id="conteudo-Ficha Técnica" class="secao-conteudo">
+            
+            <!-- CARD 1: Cabeçalho do Veículo (COM O KM MASTER) -->
             <div class="card">
                 <div class="card-cabecalho">
                     <img src="https://i.postimg.cc/L6WXqWyR/2.png" class="card-img-placa" id="img-placa-ficha">
-                    <div>
+                    <div style="width: 100%;">
                         <div class="linha-info"><span class="info-label">Motorista:</span> <span class="info-valor">João Silva</span></div>
-                        <div class="linha-info"><span class="info-label">KM Atual:</span> <span class="info-valor">145.200</span></div>
+                        
+                        <!-- ESTE É O KM MASTER QUE COMANDA A PÁGINA INTEIRA -->
+                        <div class="linha-info" style="align-items: center; margin-top: 10px;">
+                            <span class="info-label">KM Atual (Geral):</span> 
+                            <input type="number" id="km-master" class="input-editavel" value="0" oninput="atualizarKMGeral()" style="border: 2px solid #1a4d2e; background-color: #e8f5e9; width: 120px;">
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- CARD 2: Óleo -->
             <div class="card">
-                <!-- Cabeçalho do cartão com o botão de editar -->
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a4d2e; margin-bottom: 10px; padding-bottom: 5px;">
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">💧 Óleo do Motor</h3>
                     <button id="btn-editar-oleo" onclick="alternarEdicaoOleo()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar</button>
                 </div>
                 
                 <div class="linha-info">
-                    <span class="info-label">KM Atual do Veículo:</span> 
-                    <!-- Campos começam com 'readonly' (bloqueados) e a classe 'travado' -->
-                    <input type="number" id="km-atual-veiculo" class="input-editavel travado" value="0" oninput="calcularOleo()" readonly>
+                    <span class="info-label">KM Atual:</span> 
+                    <span id="km-atual-oleo" style="font-weight: bold; color: #555; font-size: 16px;">0</span>
                 </div>
                 <div class="linha-info">
                     <span class="info-label">Próxima Troca (KM):</span> 
                     <input type="number" id="km-proxima-troca" class="input-editavel travado" value="0" oninput="calcularOleo()" readonly>
                 </div>
                 
-                <!-- Linha para o cálculo automático -->
                 <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
                     <span class="info-label">Status da Troca:</span>
                     <span id="status-oleo" style="font-weight:bold; font-size: 15px;">---</span>
