@@ -51,9 +51,9 @@ function sairDaConta() {
     document.getElementById('tela-login').style.display = 'flex';
 }
 
-// A seleção de placa agora busca os dados na planilha
+// A seleção de placa busca os dados e inicia o KM Atual zerado
 async function selecionarPlaca(placa) {
-    document.getElementById('texto-placa-escolhida').innerText = "Buscando dados na nuvem...";
+    document.getElementById('texto-placa-escolhida').innerText = "Buscando dados...";
     document.getElementById('texto-placa-interna').innerText = placa; 
     
     esconderTodasTelas();
@@ -63,37 +63,49 @@ async function selecionarPlaca(placa) {
         let resposta = await fetch(`${API_URL}?acao=buscar_veiculo&placa=${placa}`);
         let dados = await resposta.json();
 
-        let kmProximaTroca = 15000; // Valor padrão caso não ache
+        let kmProximaTroca = 15000; 
         let dataTacografo = '';
 
         if (!dados.erro) {
-            kmProximaTroca = dados.km_oleo || 15000;
             
-            // Tratamento da data vinda do Google para encaixar no calendário do HTML
+            // Trata o KM do Óleo
+            if (dados.km_oleo !== undefined && dados.km_oleo !== null && dados.km_oleo !== "") {
+                let kmLimp = String(dados.km_oleo).replace(/\./g, '').replace(/,/g, '');
+                kmProximaTroca = parseInt(kmLimp);
+                if (isNaN(kmProximaTroca)) kmProximaTroca = 15000;
+            }
+            
+            // Trata a Data do Tacógrafo
             if (dados.data_tacografo) {
-                let d = new Date(dados.data_tacografo);
-                if (!isNaN(d.getTime())) {
-                    let ano = d.getUTCFullYear();
-                    let mes = String(d.getUTCMonth() + 1).padStart(2, '0');
-                    let dia = String(d.getUTCDate()).padStart(2, '0');
-                    dataTacografo = `${ano}-${mes}-${dia}`;
+                let dtStr = String(dados.data_tacografo);
+                if (dtStr.includes('T')) {
+                    dataTacografo = dtStr.split('T')[0];
+                } else if (dtStr.includes('/')) {
+                    let partes = dtStr.split('/');
+                    if (partes.length === 3) {
+                        dataTacografo = `${partes[2]}-${partes[1]}-${partes[0]}`;
+                    }
+                } else {
+                    dataTacografo = dtStr;
                 }
             }
         }
 
-        // Preenche os campos com os dados da nuvem
+        // 1. Preenche a Próxima Troca com o dado real da planilha
         document.getElementById('km-proxima-troca').value = kmProximaTroca;
-        document.getElementById('km-master').value = kmProximaTroca - 2000; 
+        
+        // 2. O KM Atual (Master) inicia ZERADO! Removemos a simulação.
+        document.getElementById('km-master').value = 0; 
         atualizarKMGeral(); 
         
+        // 3. Preenche o Tacógrafo
         document.getElementById('data-proxima-afericao').value = dataTacografo;
         calcularTacografo(); 
 
-        // Restaura o nome da placa após o carregamento
         document.getElementById('texto-placa-escolhida').innerText = placa;
 
     } catch (erro) {
-        alert("Modo offline: Não foi possível buscar os dados da nuvem. Usando valores em branco.");
+        alert("Modo offline: Falha ao buscar na nuvem.");
         document.getElementById('texto-placa-escolhida').innerText = placa;
     }
 }
