@@ -204,8 +204,17 @@ summary {
     background-color: #fff;
     color: #000;
     font-weight: bold;
+    transition: all 0.3s;
 }
-.input-editavel:focus {
+
+/* Novo estilo para quando o campo estiver bloqueado (cinza) */
+.input-editavel.travado {
+    background-color: #f0f0f0;
+    border: 1px solid #e0e0e0;
+    color: #888;
+}
+
+.input-editavel:not(.travado):focus {
     outline: none;
     border-color: #1a4d2e;
     background-color: #e8f5e9;
