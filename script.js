@@ -1,4 +1,3 @@
-// Aqui está a ponte de conexão com a sua planilha do Google!
 const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
 
 function esconderTodasTelas() {
@@ -8,7 +7,6 @@ function esconderTodasTelas() {
     document.getElementById('tela-interna').style.display = 'none';
 }
 
-// O Login agora conversa com a nuvem
 async function fazerLogin() {
     let usuario = document.getElementById('campo-usuario').value;
     let senha = document.getElementById('campo-senha').value;
@@ -21,7 +19,6 @@ async function fazerLogin() {
         return;
     }
 
-    // Muda o botão para mostrar que está carregando
     btnEntrar.innerText = "Verificando na nuvem...";
     msgErro.style.display = 'none';
 
@@ -40,8 +37,6 @@ async function fazerLogin() {
         msgErro.innerText = "Erro ao conectar. Verifique a internet.";
         msgErro.style.display = 'block';
     }
-    
-    // Volta o botão ao normal
     btnEntrar.innerText = "Entrar";
 }
 
@@ -51,7 +46,6 @@ function sairDaConta() {
     document.getElementById('tela-login').style.display = 'flex';
 }
 
-// A seleção de placa busca os dados e inicia o KM Atual zerado
 async function selecionarPlaca(placa) {
     document.getElementById('texto-placa-escolhida').innerText = "Buscando dados...";
     document.getElementById('texto-placa-interna').innerText = placa; 
@@ -67,39 +61,33 @@ async function selecionarPlaca(placa) {
         let dataTacografo = '';
 
         if (!dados.erro) {
-            
-            // Trata o KM do Óleo
             if (dados.km_oleo !== undefined && dados.km_oleo !== null && dados.km_oleo !== "") {
                 let kmLimp = String(dados.km_oleo).replace(/\./g, '').replace(/,/g, '');
                 kmProximaTroca = parseInt(kmLimp);
                 if (isNaN(kmProximaTroca)) kmProximaTroca = 15000;
             }
-            
-            // Trata a Data do Tacógrafo
             if (dados.data_tacografo) {
                 let dtStr = String(dados.data_tacografo);
                 if (dtStr.includes('T')) {
                     dataTacografo = dtStr.split('T')[0];
                 } else if (dtStr.includes('/')) {
                     let partes = dtStr.split('/');
-                    if (partes.length === 3) {
-                        dataTacografo = `${partes[2]}-${partes[1]}-${partes[0]}`;
-                    }
+                    if (partes.length === 3) dataTacografo = `${partes[2]}-${partes[1]}-${partes[0]}`;
                 } else {
                     dataTacografo = dtStr;
                 }
             }
         }
 
-        // 1. Preenche a Próxima Troca com o dado real da planilha
         document.getElementById('km-proxima-troca').value = kmProximaTroca;
         
-        // 2. O KM Atual (Master) inicia ZERADO! Removemos a simulação.
+        // AQUI ESTÁ O ZERAMENTO DEFINITIVO DO KM MASTER
         document.getElementById('km-master').value = 0; 
-        atualizarKMGeral(); 
         
-        // 3. Preenche o Tacógrafo
         document.getElementById('data-proxima-afericao').value = dataTacografo;
+        
+        // Atualiza os cálculos (Óleo, Tacógrafo e Pneus)
+        atualizarKMGeral(); 
         calcularTacografo(); 
 
         document.getElementById('texto-placa-escolhida').innerText = placa;
@@ -117,17 +105,10 @@ function voltarParaPlacas() {
 
 function abrirPagina(nomeDaPagina) {
     document.getElementById('titulo-tela-interna').innerText = nomeDaPagina;
-    
     let secoes = document.getElementsByClassName('secao-conteudo');
-    for (let i = 0; i < secoes.length; i++) {
-        secoes[i].style.display = 'none';
-    }
-    
+    for (let i = 0; i < secoes.length; i++) secoes[i].style.display = 'none';
     let secaoAtiva = document.getElementById('conteudo-' + nomeDaPagina);
-    if (secaoAtiva) {
-        secaoAtiva.style.display = 'flex';
-    }
-    
+    if (secaoAtiva) secaoAtiva.style.display = 'flex';
     esconderTodasTelas();
     document.getElementById('tela-interna').style.display = 'flex';
 }
@@ -137,25 +118,24 @@ function voltarParaMenu() {
     document.getElementById('tela-menu').style.display = 'flex';
 }
 
-// --- FUNÇÕES DE MATEMÁTICA E EDIÇÃO DA FICHA TÉCNICA ---
-
 function atualizarKMGeral() {
     let kmMaster = document.getElementById('km-master').value;
     document.getElementById('km-atual-oleo').innerText = kmMaster;
+    
+    // Roda os cálculos em cascata
     calcularOleo();
+    calcularRodizioPneus();
 }
 
 function alternarEdicaoOleo() {
     let campoProxima = document.getElementById('km-proxima-troca');
     let btn = document.getElementById('btn-editar-oleo');
-    
     if (campoProxima.hasAttribute('readonly')) {
         campoProxima.removeAttribute('readonly');
         campoProxima.classList.remove('travado');
         btn.innerHTML = "💾 Salvar";
         btn.style.backgroundColor = "#1a4d2e";
         btn.style.color = "white";
-        campoProxima.focus();
     } else {
         campoProxima.setAttribute('readonly', 'true');
         campoProxima.classList.add('travado');
@@ -169,13 +149,11 @@ function alternarEdicaoOleo() {
 function calcularOleo() {
     let kmAtual = parseInt(document.getElementById('km-master').value) || 0;
     let kmProxima = parseInt(document.getElementById('km-proxima-troca').value) || 0;
-    
     let kmFaltantes = kmProxima - kmAtual;
     let txtStatus = document.getElementById('status-oleo');
     
     if (kmFaltantes <= 0) {
-        let kmAtraso = Math.abs(kmFaltantes); 
-        txtStatus.innerHTML = `VENCIDO (${kmAtraso} KM) ❌`;
+        txtStatus.innerHTML = `VENCIDO (${Math.abs(kmFaltantes)} KM) ❌`;
         txtStatus.style.color = "red";
     } else if (kmFaltantes <= 1500) {
         txtStatus.innerHTML = `Atenção: Faltam ${kmFaltantes} KM ⚠️`;
@@ -189,7 +167,6 @@ function calcularOleo() {
 function alternarEdicaoTacografo() {
     let campoProxima = document.getElementById('data-proxima-afericao');
     let btn = document.getElementById('btn-editar-tacografo');
-    
     if (campoProxima.hasAttribute('readonly')) {
         campoProxima.removeAttribute('readonly');
         campoProxima.classList.remove('travado');
@@ -209,29 +186,20 @@ function alternarEdicaoTacografo() {
 function calcularTacografo() {
     let proximaDataStr = document.getElementById('data-proxima-afericao').value;
     if (!proximaDataStr) return; 
-    
     let partes = proximaDataStr.split('-');
     let proximaData = new Date(partes[0], partes[1] - 1, partes[2]);
-    
     let ultimaData = new Date(proximaData);
     ultimaData.setFullYear(ultimaData.getFullYear() - 2);
     
-    let dia = String(ultimaData.getDate()).padStart(2, '0');
-    let mes = String(ultimaData.getMonth() + 1).padStart(2, '0');
-    let ano = ultimaData.getFullYear();
-    document.getElementById('data-ultima-afericao').innerText = `${dia}/${mes}/${ano}`;
+    document.getElementById('data-ultima-afericao').innerText = `${String(ultimaData.getDate()).padStart(2, '0')}/${String(ultimaData.getMonth() + 1).padStart(2, '0')}/${ultimaData.getFullYear()}`;
     
     let hoje = new Date();
     hoje.setHours(0,0,0,0);
-    
-    let diffTempo = proximaData.getTime() - hoje.getTime();
-    let diasFaltantes = Math.ceil(diffTempo / (1000 * 3600 * 24));
-    
+    let diasFaltantes = Math.ceil((proximaData.getTime() - hoje.getTime()) / (1000 * 3600 * 24));
     let txtStatus = document.getElementById('status-tacografo');
     
     if (diasFaltantes < 0) {
-        let diasAtraso = Math.abs(diasFaltantes);
-        txtStatus.innerHTML = `VENCIDO há ${diasAtraso} dias ❌`;
+        txtStatus.innerHTML = `VENCIDO há ${Math.abs(diasFaltantes)} dias ❌`;
         txtStatus.style.color = "red";
     } else if (diasFaltantes <= 30) {
         txtStatus.innerHTML = `Atenção: Faltam ${diasFaltantes} dias ⚠️`;
@@ -240,4 +208,50 @@ function calcularTacografo() {
         txtStatus.innerHTML = `Faltam ${diasFaltantes} dias ✅`;
         txtStatus.style.color = "green";
     }
+}
+
+// --- INTELIGÊNCIA DOS PNEUS ---
+function calcularRodizioPneus() {
+    let placa = document.getElementById('texto-placa-interna').innerText;
+    let kmMaster = parseInt(document.getElementById('km-master').value) || 0;
+    
+    const grupo10k = ['FMR4I10', 'FQY6B30', 'TKR8I49', 'TLL8H30', 'TLY0G57', 'UDN0J81', 'UPS1J80', 'UPX9D25', 'URT4E79', 'URU3F36'];
+    
+    // Define a base de cálculo baseada na placa
+    let baseNovo = grupo10k.includes(placa) ? 10000 : 15000;
+    let baseRessolado = grupo10k.includes(placa) ? 25000 : 30000;
+
+    const idsPneus = ['dd', 'de', 'tee', 'tei', 'tde', 'tdi', 'tkee', 'tkei', 'tkde', 'tkdi', '1step'];
+    
+    idsPneus.forEach(pos => {
+        let estadoStr = document.getElementById(`estado-${pos}`).innerText.toLowerCase();
+        let kmTroca = parseInt(document.getElementById(`km-troca-${pos}`).innerText) || 0;
+        
+        // Se ainda não tivermos os dados do checklist carregados, deixa em branco
+        if (estadoStr === "---" || kmTroca === 0) {
+            document.getElementById(`status-rod-${pos}`).innerText = "Aguardando dados...";
+            document.getElementById(`status-rod-${pos}`).style.color = "gray";
+            return;
+        }
+
+        // Se for novo aplica a baseNovo, se tiver 'ressol' na palavra aplica baseRessolado
+        let intervalo = estadoStr.includes('novo') ? baseNovo : baseRessolado;
+        let kmProxRodizio = kmTroca + intervalo;
+        
+        document.getElementById(`prox-rod-${pos}`).innerText = kmProxRodizio + " KM";
+        
+        let kmFaltantes = kmProxRodizio - kmMaster;
+        let txtStatus = document.getElementById(`status-rod-${pos}`);
+        
+        if (kmFaltantes <= 0) {
+            txtStatus.innerHTML = `VENCIDO (${Math.abs(kmFaltantes)} KM) ❌`;
+            txtStatus.style.color = "red";
+        } else if (kmFaltantes <= 1500) {
+            txtStatus.innerHTML = `Atenção: Faltam ${kmFaltantes} KM ⚠️`;
+            txtStatus.style.color = "#d4a017";
+        } else {
+            txtStatus.innerHTML = `Faltam ${kmFaltantes} KM ✅`;
+            txtStatus.style.color = "green";
+        }
+    });
 }
