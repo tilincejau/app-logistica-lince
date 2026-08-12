@@ -76,7 +76,7 @@ async function selecionarPlaca(placa) {
         let kmProximaTroca = 15000; 
         let dataTacografo = '';
         let dataGraxa = ''; 
-        urlDocAtual = ""; // Zera o documento ao trocar de caminhão
+        urlDocAtual = ""; 
 
         if (!dados.erro) {
             if (dados.km_oleo !== undefined && dados.km_oleo !== null && dados.km_oleo !== "") {
@@ -84,7 +84,6 @@ async function selecionarPlaca(placa) {
                 kmProximaTroca = parseInt(kmLimp);
                 if (isNaN(kmProximaTroca)) kmProximaTroca = 15000;
             }
-            
             if (dados.data_tacografo) {
                 let dtStr = String(dados.data_tacografo);
                 if (dtStr.includes('T')) dataTacografo = dtStr.split('T')[0];
@@ -93,7 +92,6 @@ async function selecionarPlaca(placa) {
                     if (partes.length === 3) dataTacografo = `${partes[2]}-${partes[1]}-${partes[0]}`;
                 } else dataTacografo = dtStr;
             }
-            
             if (dados.data_graxa) {
                 let dtStr = String(dados.data_graxa);
                 if (dtStr.includes('T')) dataGraxa = dtStr.split('T')[0];
@@ -102,8 +100,6 @@ async function selecionarPlaca(placa) {
                     if (partes.length === 3) dataGraxa = `${partes[2]}-${partes[1]}-${partes[0]}`;
                 } else dataGraxa = dtStr;
             }
-
-            // GUARDA O LINK DO DOCUMENTO DO GOOGLE DRIVE NA MEMÓRIA
             if (dados.link_documento) {
                 urlDocAtual = dados.link_documento;
             }
@@ -162,6 +158,20 @@ function atualizarKMGeral() {
     document.getElementById('km-atual-oleo').innerText = kmMaster;
     calcularOleo();
     calcularRodizioPneus();
+}
+
+function alternarEdicaoHeader() {
+    let campos = [document.getElementById('nome-motorista'), document.getElementById('km-master')];
+    let btn = document.getElementById('btn-editar-header');
+    if (campos[0].hasAttribute('readonly')) {
+        campos.forEach(c => { c.removeAttribute('readonly'); c.classList.remove('travado'); });
+        btn.innerHTML = "💾 Salvar"; btn.style.backgroundColor = "#1a4d2e"; btn.style.color = "white";
+        campos[0].focus();
+    } else {
+        campos.forEach(c => { c.setAttribute('readonly', 'true'); c.classList.add('travado'); });
+        btn.innerHTML = "✏️ Editar"; btn.style.backgroundColor = "transparent"; btn.style.color = "#1a4d2e";
+        atualizarKMGeral();
+    }
 }
 
 function alternarEdicaoOleo() {
@@ -330,13 +340,10 @@ function calcularGraxa() {
     }
 }
 
-// NOVA FUNÇÃO: Abre o PDF que está salvo na Planilha
 function abrirDocPDF() {
     if (urlDocAtual && urlDocAtual.trim() !== "") {
-        // Abre o link em uma nova aba/janela do celular
         window.open(urlDocAtual, '_blank');
     } else {
-        // Mostra o aviso se a célula da planilha estiver vazia
         alert("Ainda não há nenhum documento cadastrado para este veículo.");
     }
 }
