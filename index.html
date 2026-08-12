@@ -85,11 +85,24 @@
                 </div>
             </div>
 
+            <!-- CARD 2: Óleo -->
             <div class="card">
                 <h3 class="card-titulo">💧 Óleo do Motor</h3>
-                <div class="linha-info"><span class="info-label">KM Última Troca:</span> <span class="info-valor">135.000 km</span></div>
-                <div class="linha-info"><span class="info-label">Data Última Troca:</span> <span class="info-valor">10/05/2023</span></div>
-                <div class="linha-info"><span style="color:red; font-weight:bold;">Próxima Troca:</span> <span style="color:red; font-weight:bold;">155.000 km</span></div>
+                <div class="linha-info">
+                    <span class="info-label">KM Atual do Veículo:</span> 
+                    <!-- Este campo receberá o KM do checklist futuro, mas o ADM pode editar -->
+                    <input type="number" id="km-atual-veiculo" class="input-editavel" value="0" oninput="calcularOleo()">
+                </div>
+                <div class="linha-info">
+                    <span class="info-label">Próxima Troca (KM):</span> 
+                    <input type="number" id="km-proxima-troca" class="input-editavel" value="0" oninput="calcularOleo()">
+                </div>
+                
+                <!-- Nova linha para o cálculo automático -->
+                <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                    <span class="info-label">Status da Troca:</span>
+                    <span id="status-oleo" style="font-weight:bold; font-size: 15px;">---</span>
+                </div>
             </div>
 
             <div class="card">
