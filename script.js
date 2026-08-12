@@ -1,5 +1,8 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
 
+// Variável Global para guardar o link do PDF do veículo atual
+let urlDocAtual = "";
+
 function esconderTodasTelas() {
     document.getElementById('tela-login').style.display = 'none';
     document.getElementById('tela-placas').style.display = 'none';
@@ -73,39 +76,36 @@ async function selecionarPlaca(placa) {
         let kmProximaTroca = 15000; 
         let dataTacografo = '';
         let dataGraxa = ''; 
+        urlDocAtual = ""; // Zera o documento ao trocar de caminhão
 
         if (!dados.erro) {
-            // ÓLEO
             if (dados.km_oleo !== undefined && dados.km_oleo !== null && dados.km_oleo !== "") {
                 let kmLimp = String(dados.km_oleo).replace(/\./g, '').replace(/,/g, '');
                 kmProximaTroca = parseInt(kmLimp);
                 if (isNaN(kmProximaTroca)) kmProximaTroca = 15000;
             }
             
-            // TACÓGRAFO
             if (dados.data_tacografo) {
                 let dtStr = String(dados.data_tacografo);
-                if (dtStr.includes('T')) {
-                    dataTacografo = dtStr.split('T')[0];
-                } else if (dtStr.includes('/')) {
+                if (dtStr.includes('T')) dataTacografo = dtStr.split('T')[0];
+                else if (dtStr.includes('/')) {
                     let partes = dtStr.split('/');
                     if (partes.length === 3) dataTacografo = `${partes[2]}-${partes[1]}-${partes[0]}`;
-                } else {
-                    dataTacografo = dtStr;
-                }
+                } else dataTacografo = dtStr;
             }
             
-            // GRAXA (NOVA COLUNA DA PLANILHA)
             if (dados.data_graxa) {
                 let dtStr = String(dados.data_graxa);
-                if (dtStr.includes('T')) {
-                    dataGraxa = dtStr.split('T')[0];
-                } else if (dtStr.includes('/')) {
+                if (dtStr.includes('T')) dataGraxa = dtStr.split('T')[0];
+                else if (dtStr.includes('/')) {
                     let partes = dtStr.split('/');
                     if (partes.length === 3) dataGraxa = `${partes[2]}-${partes[1]}-${partes[0]}`;
-                } else {
-                    dataGraxa = dtStr;
-                }
+                } else dataGraxa = dtStr;
+            }
+
+            // GUARDA O LINK DO DOCUMENTO DO GOOGLE DRIVE NA MEMÓRIA
+            if (dados.link_documento) {
+                urlDocAtual = dados.link_documento;
             }
         }
 
@@ -124,6 +124,7 @@ async function selecionarPlaca(placa) {
         document.getElementById('texto-placa-escolhida').innerText = placa + " (Offline)";
         document.getElementById('km-proxima-troca').value = 15000;
         document.getElementById('km-master').value = 0;
+        urlDocAtual = "";
         atualizarKMGeral();
     }
     
@@ -311,9 +312,8 @@ function calcularGraxa() {
     
     let p = str.split('-'); 
     let ultima = new Date(p[0], p[1] - 1, p[2]);
-    
     let proxima = new Date(ultima);
-    proxima.setDate(proxima.getDate() + 30); // Soma 30 dias
+    proxima.setDate(proxima.getDate() + 30); 
     
     document.getElementById('data-prox-engraxada').innerText = `${String(proxima.getDate()).padStart(2,'0')}/${String(proxima.getMonth()+1).padStart(2,'0')}/${proxima.getFullYear()}`;
     
@@ -327,5 +327,16 @@ function calcularGraxa() {
         txtStatus.innerHTML = `Atenção: Faltam ${dias} dias ⚠️`; txtStatus.style.color = "#d4a017";
     } else {
         txtStatus.innerHTML = `Faltam ${dias} dias ✅`; txtStatus.style.color = "green";
+    }
+}
+
+// NOVA FUNÇÃO: Abre o PDF que está salvo na Planilha
+function abrirDocPDF() {
+    if (urlDocAtual && urlDocAtual.trim() !== "") {
+        // Abre o link em uma nova aba/janela do celular
+        window.open(urlDocAtual, '_blank');
+    } else {
+        // Mostra o aviso se a célula da planilha estiver vazia
+        alert("Ainda não há nenhum documento cadastrado para este veículo.");
     }
 }
