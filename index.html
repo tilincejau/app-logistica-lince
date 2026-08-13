@@ -6,13 +6,6 @@
     <title>Logística - Lince</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .grupo-checkbox { background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 15px; }
-        .linha-check { display: flex; align-items: flex-start; margin-bottom: 8px; font-size: 13px; color: #333; cursor: pointer; }
-        .linha-check input { margin-right: 8px; margin-top: 2px; width: 16px; height: 16px; }
-        .titulo-grupo-chk { font-weight: bold; color: #1a4d2e; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-        .twi-estado-badge { font-weight: bold; font-size: 11px; padding: 4px 8px; border-radius: 12px; background-color: #eee; color: #666; text-align: center; }
-        .foto-preview { max-width: 100%; border-radius: 8px; border: 2px solid #1a4d2e; margin-top: 5px; display: none; }
-        .foto-placeholder { background-color: #f0f0f0; height: 120px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px; border: 1px dashed #ccc; margin-top: 5px; }
         .is-carreta { display: none; } 
     </style>
 </head>
@@ -20,6 +13,9 @@
 
     <div id="tela-login" class="app-container">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logo Lince" class="logo">
+        <!-- SUA ASSINATURA DE DESENVOLVEDOR AQUI -->
+        <div class="desenvolvedor">Desenvolvido por Seu Nome Aqui</div>
+        
         <input type="text" id="campo-usuario" class="input-campo" placeholder="Usuário">
         <input type="password" id="campo-senha" class="input-campo" placeholder="Senha">
         <p id="mensagem-erro">Usuário ou senha incorretos!</p>
@@ -87,10 +83,8 @@
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">📋 Dados do Veículo</h3>
                     <button id="btn-editar-header" onclick="alternarEdicaoHeader()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar</button>
                 </div>
-                <!-- NOVAS COLUNAS B E C ADICIONADAS AQUI -->
                 <div class="linha-info"><span class="info-label" style="margin:0;">Tipo/Modelo:</span> <input type="text" id="tipo-veiculo" class="input-editavel travado" value="" readonly style="width: 150px;"></div>
                 <div class="linha-info" style="margin-top: 10px;"><span class="info-label" style="margin:0;">Motorista:</span> <input type="text" id="nome-motorista" class="input-editavel travado" value="" readonly style="width: 150px;"></div>
-                
                 <div class="linha-info" style="align-items: center; margin-top: 10px;"><span class="info-label" style="margin:0;">KM Atual (Geral):</span> <input type="number" id="km-master" class="input-editavel travado" value="0" oninput="atualizarKMGeral()" style="width: 120px;" readonly></div>
             </div>
 
@@ -119,10 +113,8 @@
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">🛞 Pneus</h3>
                     <button id="btn-editar-pneus" onclick="alternarEdicaoPneus()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar Pneus</button>
                 </div>
-                
                 <img src="https://i.postimg.cc/tT7bBkgb/24.png" style="width:100%; border-radius:8px; margin-bottom:10px;">
                 <div id="ficha-pneus-cavalo-container"></div>
-                
                 <div class="is-carreta" style="margin-top:15px; padding-top:15px; border-top: 2px dashed #0056b3;">
                     <h3 class="card-titulo" style="border-bottom: 2px solid #0056b3; color: #0056b3;">🛞 Pneus da Carreta</h3>
                     <img src="https://i.postimg.cc/RF8Byt3x/25.png" style="width:100%; border-radius:8px; margin-bottom:10px;">
@@ -214,7 +206,6 @@
                     <button class="btn-secundario" onclick="cancelarChecklist()" style="margin-bottom:0;">Cancelar</button>
                 </div>
 
-                <!-- PASSO 2 -->
                 <div id="passo-chk-2" style="display:none; padding: 0 10px;">
                     <div class="grupo-checkbox"><div class="titulo-grupo-chk">1. MOTOR APRESENTA PROBLEMA? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-motor" value="MOTOR NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-motor')"> MOTOR NÃO APRESENTA NENHUM PROBLEMA</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="AQUECIMENTO NO MOTOR"> AQUECIMENTO NO MOTOR</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="CORTE DE IGNIÇÃO"> CORTE DE IGNIÇÃO</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="CORREIA DO MOTOR"> CORREIA DO MOTOR</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="FREIO MOTOR"> FREIO MOTOR</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="MOTOR FRACO"> MOTOR FRACO</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="RUÍDOS"> RUÍDOS</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="SEM PARTIDA"> SEM PARTIDA</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="VAZAMENTO DE ÓLEO"> VAZAMENTO DE ÓLEO</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="VAZAMENTO DE DIESEL"> VAZAMENTO DE DIESEL</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="VAZAMENTO DE ÁGUA"> VAZAMENTO DE ÁGUA</label><input type="text" id="chk-motor-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-motor-outro')" name="chk-motor"> Outro...</label></div>
                     <div class="grupo-checkbox"><div class="titulo-grupo-chk">2. CAMBIO APRESENTA PROBLEMA? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-cambio" value="CAMBIO NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-cambio')"> CAMBIO NÃO APRESENTA NENHUM PROBLEMA</label><label class="linha-check"><input type="checkbox" name="chk-cambio" value="ENGATA MAL"> ENGATA MAL</label><label class="linha-check"><input type="checkbox" name="chk-cambio" value="ESCAPA MARCHA"> ESCAPA MARCHA</label><label class="linha-check"><input type="checkbox" name="chk-cambio" value="RUÍDOS"> RUÍDOS</label><input type="text" id="chk-cambio-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-cambio-outro')" name="chk-cambio"> Outro...</label></div>
@@ -237,7 +228,6 @@
                     <button class="btn-secundario" onclick="mudarAbaChecklist(1)" style="margin-bottom:0;">⬅️ Voltar</button>
                 </div>
 
-                <!-- PASSO 3 -->
                 <div id="passo-chk-3" style="display:none; padding: 0 10px;">
                     <div class="grupo-checkbox"><div class="titulo-grupo-chk">7. PROBLEMAS GERAIS NOS PNEUS? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-pneus_geral" value="PNEUS NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-pneus_geral')"> PNEUS NÃO APRESENTA NENHUM PROBLEMA</label><label class="linha-check"><input type="checkbox" name="chk-pneus_geral" value="FALTA DE ESTABILIDADE"> FALTA DE ESTABILIDADE</label><label class="linha-check"><input type="checkbox" name="chk-pneus_geral" value="PNEUS RESSECADOS"> PNEUS RESSECADOS</label><label class="linha-check"><input type="checkbox" name="chk-pneus_geral" value="PERDA DE CALIBRAÇÃO"> PERDA DE CALIBRAÇÃO</label><label class="linha-check"><input type="checkbox" name="chk-pneus_geral" value="VIBRAÇÕES NO VOLANTE"> VIBRAÇÕES NO VOLANTE</label><input type="text" id="chk-pneu-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-pneu-outro')" name="chk-pneus_geral"> Outro...</label></div>
                     <div class="grupo-checkbox"><div class="titulo-grupo-chk">8. SISTEMA ELÉTRICO APRESENTA PROBLEMA? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="SISTEMA ELÉTRICO NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-eletrica')"> SISTEMA ELÉTRICO NÃO APRESENTA NENHUM PROBLEMA</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA MOTOR DE ARRANQUE"> FALHA MOTOR DE ARRANQUE</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NO ALTERNADOR"> FALHA NO ALTERNADOR</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NO LIMPADOR DO PARABRISA"> FALHA NO LIMPADOR DO PARABRISA</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NO RÁDIO / LEITOR"> FALHA NO RÁDIO / LEITOR</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NOS FAROIS"> FALHA NOS FAROIS</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NO FAROL DE NEBLINA"> FALHA NO FAROL DE NEBLINA</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NAS SETAS"> FALHA NAS SETAS</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NA LUZ DE FREIO / PLACA"> FALHA NA LUZ DE FREIO / PLACA</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA LUZ PRESENÇA/GIROFLEX"> FALHA LUZ DE PRESENÇA/GIROFLEX</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="SEM CONDUÇÃO DE ENERGIA"> SEM CONDUÇÃO DE ENERGIA (BATERIA)</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NA BUZINA"> FALHA NA BUZINA</label><input type="text" id="chk-elet-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-elet-outro')" name="chk-eletrica"> Outro...</label></div>
@@ -247,7 +237,6 @@
                     <button class="btn-secundario" onclick="mudarAbaChecklist(2)" style="margin-bottom:0;">⬅️ Voltar</button>
                 </div>
 
-                <!-- PASSO 4 -->
                 <div id="passo-chk-4" style="display:none; padding: 0 10px;">
                     <div class="grupo-checkbox"><div class="titulo-grupo-chk">11. ITENS FALTANTES NO CAMINHÃO? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="TODOS OS ITENS ESTÃO NO CAMINHÃO" onchange="verificarTudoOk(this, 'chk-faltantes')"> TODOS OS ITENS ESTÃO NO CAMINHÃO</label><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="AVISOS SONOROS DE RÉ"> AVISOS SONOROS DE RÉ</label><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="ADESIVO VELOCIDADE / DOCUMENTAÇÃO"> ADESIVO DE VELOCIDADE / DOC.</label><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="CATRACA / CINTA / CANTONEIRA"> CATRACA / CINTA / CANTONEIRA</label><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="CHAVE FENDA / RODA / MACACO"> CHAVE DE FENDA / RODA / MACACO</label><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="CONES SINALIZAÇÃO / TRIÂNGULO"> CONES SINALIZAÇÃO / TRIÂNGULO</label><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="EXTINTOR 2 KG (Ausência/Vencido/Vazio)"> EXTINTOR 2 KG (Falta/Vencido/Vazio)</label><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="STEP / PEGA MÃO / CINTOS"> STEP / PEGA MÃO / CINTOS</label><input type="text" id="chk-falta-outro" class="input-campo" placeholder="Descreva o que falta..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-falta-outro')" name="chk-faltantes"> Outro...</label></div>
                     
@@ -320,7 +309,6 @@
         <div id="conteudo-Estoque" class="secao-conteudo"><p style="text-align:center;">Tela de Peças em construção...</p></div>
     </div>
 
-    <!-- v=34 GARANTE A RENOVAÇÃO DO APLICATIVO -->
-    <script src="script.js?v=34"></script>
+    <script src="script.js?v=40"></script>
 </body>
 </html>
