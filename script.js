@@ -1,7 +1,14 @@
+/* =========================================================
+   ARQUIVO JAVASCRIPT - O "CÉREBRO" DO SEU APLICATIVO
+   Se for adicionar uma regra nova, um botão novo ou um cálculo, é aqui!
+   ========================================================= */
+
+// O endereço do seu Google Apps Script (A Ponte)
 const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
 
-let urlDocAtual = "";
+let urlDocAtual = ""; // Guarda o link do PDF do Drive na memória
 
+// Esconde todas as telas principais para fazer a transição
 function esconderTodasTelas() {
     document.getElementById('tela-login').style.display = 'none';
     document.getElementById('tela-placas').style.display = 'none';
@@ -9,6 +16,9 @@ function esconderTodasTelas() {
     document.getElementById('tela-interna').style.display = 'none';
 }
 
+// ----------------------------------------------------
+// TELA 1: LOGIN (Conecta com a aba "Usuarios" na planilha)
+// ----------------------------------------------------
 async function fazerLogin() {
     let usuario = document.getElementById('campo-usuario').value;
     let senha = document.getElementById('campo-senha').value;
@@ -32,7 +42,7 @@ async function fazerLogin() {
             if (dados.sucesso) {
                 esconderTodasTelas();
                 document.getElementById('tela-placas').style.display = 'flex';
-                carregarHistoricoVisual(); 
+                carregarHistoricoVisual(); // Já dispara o carregamento do histórico lá no fundo
             } else {
                 msgErro.innerText = dados.erro ? dados.erro : "Usuário ou senha incorretos!";
                 msgErro.style.display = 'block';
@@ -54,6 +64,9 @@ function sairDaConta() {
     document.getElementById('tela-login').style.display = 'flex';
 }
 
+// ----------------------------------------------------
+// TELA 2: BUSCAR VEÍCULO (Acessa a aba Veiculos e Pneus)
+// ----------------------------------------------------
 async function selecionarPlaca(placa) {
     document.getElementById('texto-placa-escolhida').innerText = "Buscando dados na nuvem...";
     document.getElementById('texto-placa-interna').innerText = placa; 
@@ -61,6 +74,7 @@ async function selecionarPlaca(placa) {
     esconderTodasTelas();
     document.getElementById('tela-menu').style.display = 'flex';
 
+    // Desativa os botões para o motorista não clicar antes da hora
     let botoesMenu = document.querySelectorAll('#tela-menu .btn-principal');
     botoesMenu.forEach(btn => {
         btn.disabled = true;
@@ -119,7 +133,6 @@ async function selecionarPlaca(placa) {
                     if(elKmTroca) elKmTroca.innerText = pneu.km_ultima_troca || "0";
                 }
             }
-            
             document.getElementById('texto-placa-escolhida').innerText = placa;
         } else {
             document.getElementById('texto-placa-escolhida').innerText = placa + " (Não Cadastrada)";
@@ -135,13 +148,12 @@ async function selecionarPlaca(placa) {
         calcularGraxa();
 
     } catch (erro) {
-        console.log("Erro ao carregar dados:", erro);
         document.getElementById('texto-placa-escolhida').innerText = placa + " (Offline / Erro)";
         document.getElementById('km-proxima-troca').value = 15000;
         document.getElementById('km-master').value = 0;
         urlDocAtual = "";
     } finally {
-        // A MÁGICA DE DESTRAVAR FICA AQUI! Funciona mesmo se der erro antes.
+        // Libera os botões assim que termina
         botoesMenu.forEach(btn => {
             btn.disabled = false;
             btn.style.opacity = '1';
@@ -170,7 +182,9 @@ function voltarParaMenu() {
     document.getElementById('tela-menu').style.display = 'flex';
 }
 
-// --- FUNÇÕES DA FICHA TÉCNICA ---
+// ----------------------------------------------------
+// MATEMÁTICA E EDIÇÃO DA FICHA TÉCNICA
+// ----------------------------------------------------
 function atualizarKMGeral() {
     let kmMaster = document.getElementById('km-master').value;
     document.getElementById('km-atual-oleo').innerText = kmMaster;
@@ -261,10 +275,8 @@ function calcularRodizioPneus() {
     
     idsPneus.forEach(pos => {
         let spanEstado = document.getElementById(`estado-${pos}`);
-        let txtStatus = document.getElementById(`status-rod-${pos}`); // Pegamos o status
-        
-        // Blindagem: Se não achar o campo, ele pula pro próximo sem quebrar o app
-        if(!spanEstado || !txtStatus) return; 
+        let txtStatus = document.getElementById(`status-rod-${pos}`);
+        if(!spanEstado || !txtStatus) return; // Se a tela não carregou, ignora para não dar erro
         
         let estadoStr = spanEstado.innerText.toLowerCase();
         let kmTroca = parseInt(document.getElementById(`km-troca-${pos}`).innerText) || 0;
@@ -371,10 +383,11 @@ function abrirDocPDF() {
     }
 }
 
-// ==========================================
-// SISTEMA DE CHECKLIST E HISTÓRICO REAL
-// ==========================================
+// ----------------------------------------------------
+// TELA DO CHECKLIST E SISTEMA DE VALIDAÇÃO
+// ----------------------------------------------------
 
+// Essa função carrega os últimos 24 registros e desenha a tela
 async function carregarHistoricoVisual() {
     let container = document.getElementById('container-historico');
     container.innerHTML = "<p style='text-align:center; color:#666;'>Buscando histórico na nuvem... ⏳</p>";
@@ -408,15 +421,14 @@ async function carregarHistoricoVisual() {
     }
 }
 
+// Zera os formulários e limpa a tela para preencher um novo checklist
 function iniciarNovoChecklist() {
     document.getElementById('lista-historico-checklist').style.display = 'none';
     document.getElementById('form-novo-checklist').style.display = 'block';
     
-    // Zera todos os checkboxes antigos de outras sessões
     document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
     document.querySelectorAll('input[id$="-outro"]').forEach(c => { c.value = ""; });
     
-    // Zera os TWI e badges
     document.querySelectorAll('input[id^="chk-twi-"]').forEach(i => i.value = "");
     document.querySelectorAll('.twi-estado-badge').forEach(b => {
         b.innerText = "Aguardando..."; b.style.backgroundColor = "#eee"; b.style.color = "#666";
@@ -446,7 +458,55 @@ function mudarAbaChecklist(passo) {
     document.getElementById('tab-chk-' + passo).classList.add('ativo');
 }
 
-// MÁGICA 1: Se clicar em "NÃO APRESENTA PROBLEMA", ele limpa todos os outros daquela categoria
+// **NOVIDADE: O MOTOR DE VALIDAÇÃO OBRIGATÓRIA!**
+// Ele checa se os grupos de checkboxes têm pelo menos um clicado antes de pular a aba.
+function avancarPasso(proximo) {
+    let passoAtual = proximo - 1; // Se quero ir pro Passo 2, significa que eu estava no Passo 1
+    
+    if (passoAtual === 1) {
+        if(!document.getElementById('chk-modelo').value) return alert("❌ Selecione o Modelo do Caminhão!");
+        if(!document.getElementById('chk-motorista').value) return alert("❌ Digite o nome do Motorista!");
+        if(!document.getElementById('chk-km').value) return alert("❌ Digite o KM Atual!");
+    }
+    
+    if (passoAtual === 2) {
+        // As "names" dos checkboxes do passo 2
+        let gruposMecanica = ['chk-motor', 'chk-cambio', 'chk-embreagem', 'chk-direcao', 'chk-freios', 'chk-suspensao'];
+        for (let grupo of gruposMecanica) {
+            let marcados = document.querySelectorAll(`input[name="${grupo}"]:checked`);
+            if (marcados.length === 0) {
+                return alert(`❌ Você esqueceu de preencher uma das sessões de Mecânica!\n\nPor favor, marque se "Não apresenta nenhum problema" ou indique qual o defeito em todas as opções.`);
+            }
+        }
+    }
+    
+    if (passoAtual === 3) {
+        let gruposEletrica = ['chk-pneus_geral', 'chk-eletrica', 'chk-indicadores', 'chk-cabine'];
+        for (let grupo of gruposEletrica) {
+            let marcados = document.querySelectorAll(`input[name="${grupo}"]:checked`);
+            if (marcados.length === 0) {
+                return alert(`❌ Você esqueceu de preencher uma das sessões de Cabine/Elétrica!\n\nPor favor, marque se "Não apresenta nenhum problema" ou indique qual o defeito.`);
+            }
+        }
+    }
+
+    // Se chegou até aqui sem retornar erro, ele deixa mudar de aba!
+    mudarAbaChecklist(proximo);
+}
+
+// Essa função faz a caixa de texto do "OUTRO" aparecer se você marcar nele
+function verificarOutro(elementoSelect, idCampoTexto) {
+    let campoTexto = document.getElementById(idCampoTexto);
+    if (elementoSelect.value === "OUTRO") {
+        campoTexto.style.display = 'block';
+        campoTexto.focus();
+    } else {
+        campoTexto.style.display = 'none';
+        campoTexto.value = ''; 
+    }
+}
+
+// Mágica do "NÃO APRESENTA NENHUM PROBLEMA" - Se clicar nele, desmarca todos os defeitos.
 function verificarTudoOk(checkboxClicado, nomeGrupo) {
     if (checkboxClicado.checked && checkboxClicado.value.includes("NÃO APRESENTA")) {
         let todosDoGrupo = document.querySelectorAll(`input[name="${nomeGrupo}"]`);
@@ -454,7 +514,6 @@ function verificarTudoOk(checkboxClicado, nomeGrupo) {
             if (c !== checkboxClicado) c.checked = false;
         });
     } else if (checkboxClicado.checked) {
-        // Se ele clicou em um problema, garante que o "TUDO OK" fique desmarcado
         let todosDoGrupo = document.querySelectorAll(`input[name="${nomeGrupo}"]`);
         todosDoGrupo.forEach(c => {
             if (c.value.includes("NÃO APRESENTA")) c.checked = false;
@@ -462,7 +521,7 @@ function verificarTudoOk(checkboxClicado, nomeGrupo) {
     }
 }
 
-// MÁGICA 2: TWI Automático (Novo, Meia-Vida, Limite)
+// Calcula automaticamente a cor do TWI
 function calcularStatusTwi(inputEl, badgeId) {
     let badge = document.getElementById(badgeId);
     let val = parseFloat(inputEl.value);
@@ -489,7 +548,7 @@ function calcularStatusTwi(inputEl, badgeId) {
     }
 }
 
-// VARREDURA DE DADOS: Pega tudo o que foi selecionado e junta com vírgulas
+// Pega os quadradinhos que foram marcados e junta numa frase só
 function pegarMarcados(nomeGrupo, idOutro) {
     let selecionados = [];
     document.querySelectorAll(`input[name="${nomeGrupo}"]:checked`).forEach(c => selecionados.push(c.value));
@@ -502,15 +561,34 @@ function pegarMarcados(nomeGrupo, idOutro) {
     return selecionados.length > 0 ? selecionados.join(" | ") : "Não avaliado";
 }
 
+// ----------------------------------------------------
+// BOTÃO FINAL: ENVIAR O CHECKLIST COMPLETO PRA NUVEM
+// ----------------------------------------------------
 async function enviarChecklist() {
+    
+    // VALIDAÇÃO FINAL ANTES DE ENVIAR (Para o Passo 4)
+    let marcadosFaltantes = document.querySelectorAll(`input[name="chk-faltantes"]:checked`);
+    if (marcadosFaltantes.length === 0) return alert("❌ Você esqueceu de informar os Itens Faltantes no Caminhão!");
+
+    if (!document.getElementById('chk-extintor-data').value) return alert("❌ Informe a Data de Validade do Extintor!");
+
+    // Trava do TWI Obrigatório para TODOS os pneus!
+    const idsPneus = ['dd', 'de', 'tde', 'tdi', 'tee', 'tei', 'tkde', 'tkdi', 'tkee', 'tkei', '1step'];
+    for (let id of idsPneus) {
+        if (!document.getElementById('chk-twi-' + id).value) {
+            return alert(`❌ Você esqueceu de preencher o TWI do Pneu ${id.toUpperCase()}! É obrigatório preencher todos os 11.`);
+        }
+    }
+
+    // Se chegou até aqui, é porque está TUDO validado. Vamos enviar!
     let btn = document.getElementById('btn-enviar-chk');
     btn.innerText = "Salvando na Nuvem... ⏳";
     btn.disabled = true;
 
-    // Constrói a string do extintor "10/2026 - Pressão OK"
+    // Constrói a frase do extintor
     let dataExt = document.getElementById('chk-extintor-data').value;
     let pressExt = document.getElementById('chk-extintor-pressao').value;
-    let textoExtintor = (dataExt ? `Val: ${dataExt}` : "Sem Data") + ` - ${pressExt}`;
+    let textoExtintor = `Val: ${dataExt} - ${pressExt}`;
 
     let payload = {
         acao: "salvar_checklist",
@@ -522,7 +600,6 @@ async function enviarChecklist() {
         data_tacografo: document.getElementById('chk-data-taco').value,
         data_graxa: document.getElementById('chk-data-graxa').value,
         
-        // Pega as caixinhas marcadas com a mágica do varredor
         chk_motor: pegarMarcados('chk-motor', 'chk-motor-outro'),
         chk_cambio: pegarMarcados('chk-cambio', 'chk-cambio-outro'),
         chk_embreagem: pegarMarcados('chk-embreagem', 'chk-emb-outro'),
@@ -542,16 +619,14 @@ async function enviarChecklist() {
         pneus: {}
     };
 
-    // Coleta TWI e o Estado (que agora é a badge!)
-    const idsPneus = ['dd', 'de', 'tde', 'tdi', 'tee', 'tei', 'tkde', 'tkdi', 'tkee', 'tkei', '1step'];
+    // Coleta TWI e Estado de todos
     idsPneus.forEach(id => {
         let twi = document.getElementById('chk-twi-' + id).value;
         let badge = document.getElementById('badge-estado-' + id).innerText;
-        
         if (twi) {
             payload.pneus[id] = {
                 milimetros: twi,
-                estado: badge // Envia "Novo", "Meia-Vida", etc direto pro Google
+                estado: badge
             };
         }
     });
