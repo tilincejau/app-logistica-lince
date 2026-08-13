@@ -1,6 +1,5 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
 
-// Variável Global para guardar o link do PDF do veículo atual
 let urlDocAtual = "";
 
 function esconderTodasTelas() {
@@ -33,6 +32,7 @@ async function fazerLogin() {
             if (dados.sucesso) {
                 esconderTodasTelas();
                 document.getElementById('tela-placas').style.display = 'flex';
+                carregarHistoricoVisual(); // Já carrega o histórico no fundo
             } else {
                 msgErro.innerText = dados.erro ? dados.erro : "Usuário ou senha incorretos!";
                 msgErro.style.display = 'block';
@@ -79,17 +79,14 @@ async function selecionarPlaca(placa) {
         urlDocAtual = ""; 
 
         if (!dados.erro) {
-            // KM Atual
             if (dados.km_atual) document.getElementById('km-master').value = dados.km_atual;
 
-            // Óleo
             if (dados.km_oleo !== undefined && dados.km_oleo !== null && dados.km_oleo !== "") {
                 let kmLimp = String(dados.km_oleo).replace(/\./g, '').replace(/,/g, '');
                 kmProximaTroca = parseInt(kmLimp);
                 if (isNaN(kmProximaTroca)) kmProximaTroca = 15000;
             }
             
-            // Tacógrafo
             if (dados.data_tacografo) {
                 let dtStr = String(dados.data_tacografo);
                 if (dtStr.includes('T')) dataTacografo = dtStr.split('T')[0];
@@ -99,7 +96,6 @@ async function selecionarPlaca(placa) {
                 } else dataTacografo = dtStr;
             }
             
-            // Graxa
             if (dados.data_graxa) {
                 let dtStr = String(dados.data_graxa);
                 if (dtStr.includes('T')) dataGraxa = dtStr.split('T')[0];
@@ -109,10 +105,8 @@ async function selecionarPlaca(placa) {
                 } else dataGraxa = dtStr;
             }
 
-            // PDF do Documento
             if (dados.link_documento) urlDocAtual = dados.link_documento;
 
-            // Preenche os Pneus se já existirem no banco
             if (dados.pneus) {
                 for (let pos in dados.pneus) {
                     let pneu = dados.pneus[pos];
@@ -173,7 +167,7 @@ function voltarParaMenu() {
     document.getElementById('tela-menu').style.display = 'flex';
 }
 
-// --- FUNÇÕES DE EDIÇÃO E CÁLCULOS (Ficha Técnica) --- //
+// --- FUNÇÕES DA FICHA TÉCNICA ---
 function atualizarKMGeral() {
     let kmMaster = document.getElementById('km-master').value;
     document.getElementById('km-atual-oleo').innerText = kmMaster;
@@ -370,8 +364,40 @@ function abrirDocPDF() {
 }
 
 // ==========================================
-// SISTEMA DE CHECKLIST
+// SISTEMA DE CHECKLIST E HISTÓRICO REAL
 // ==========================================
+
+async function carregarHistoricoVisual() {
+    let container = document.getElementById('container-historico');
+    container.innerHTML = "<p style='text-align:center; color:#666;'>Buscando histórico na nuvem... ⏳</p>";
+    
+    try {
+        let resposta = await fetch(`${API_URL}?acao=buscar_historico`);
+        let dados = await resposta.json();
+        
+        container.innerHTML = "";
+        if (dados.erro || dados.length === 0) {
+            container.innerHTML = "<p style='text-align:center; color:#666;'>Nenhum checklist registrado ainda.</p>";
+            return;
+        }
+
+        // Monta a tela com os dados que vieram do Google
+        dados.forEach(item => {
+            let div = document.createElement('div');
+            div.className = "historico-item";
+            
+            // Formatando a data que vem do Google (se vier com "T", cortamos só a data e hora)
+            let dataFormatada = String(item.data).split('T')[0]; 
+
+            div.innerHTML = `<span style="font-weight: bold; color: #1a4d2e;">${item.placa}</span>
+                             <span style="color: #555; font-size: 12px;">${dataFormatada} ✅</span>`;
+            container.appendChild(div);
+        });
+
+    } catch (e) {
+        container.innerHTML = "<p style='text-align:center; color:red;'>Erro ao carregar histórico (Offline).</p>";
+    }
+}
 
 function iniciarNovoChecklist() {
     document.getElementById('lista-historico-checklist').style.display = 'none';
@@ -412,30 +438,6 @@ function verificarOutro(elementoSelect, idCampoTexto) {
     }
 }
 
-function carregarHistoricoVisual() {
-    // Nota: Iremos conectar isso à Planilha no próximo passo!
-    let container = document.getElementById('container-historico');
-    let historicoFake = [
-        {placa: 'AXZ1D53', data: '12/08/2026'},
-        {placa: 'FEE9E40', data: '11/08/2026'},
-        {placa: 'FCT1J98', data: '09/08/2026'},
-        {placa: 'FIF9A30', data: '05/08/2026'},
-        {placa: 'FUH9H91', data: '01/08/2026'}
-    ];
-    container.innerHTML = ""; 
-    historicoFake.forEach(item => {
-        let div = document.createElement('div');
-        div.className = "historico-item";
-        div.innerHTML = `<span style="font-weight: bold; color: #1a4d2e;">${item.placa}</span>
-                         <span style="color: #555;">${item.data} ✅</span>`;
-        container.appendChild(div);
-    });
-}
-window.onload = function() {
-    carregarHistoricoVisual();
-};
-
-// --- MOTOR DE ENVIO DO CHECKLIST ---
 function getSelectOuOutro(idInputOutro) {
     let input = document.getElementById(idInputOutro);
     if (!input) return "";
@@ -449,7 +451,6 @@ async function enviarChecklist() {
     btn.innerText = "Salvando na Nuvem... ⏳";
     btn.disabled = true;
 
-    // Constrói a carga de dados para enviar ao Google
     let payload = {
         acao: "salvar_checklist",
         placa: document.getElementById('chk-placa').value,
@@ -479,7 +480,6 @@ async function enviarChecklist() {
         pneus: {}
     };
 
-    // Coleta o TWI e Estado dos 11 pneus
     const idsPneus = ['dd', 'de', 'tde', 'tdi', 'tee', 'tei', 'tkde', 'tkdi', 'tkee', 'tkei', '1step'];
     idsPneus.forEach(id => {
         let twi = document.getElementById('chk-twi-' + id).value;
@@ -501,10 +501,11 @@ async function enviarChecklist() {
         let dados = await resposta.json();
 
         if (dados.sucesso) {
-            alert("✅ Sucesso! Checklist salvo e Ficha Técnica do caminhão foi atualizada.");
-            cancelarChecklist(); // Fecha o formulário
+            alert("✅ Sucesso! Checklist salvo e Ficha Técnica atualizada.");
+            cancelarChecklist(); 
             
-            // Recarrega a placa pra mostrar os novos dados (KM, Pneus, Graxa) na tela!
+            // Recarrega o Histórico e a Ficha na hora!
+            carregarHistoricoVisual();
             selecionarPlaca(payload.placa); 
         } else {
             alert("❌ Erro ao salvar: " + dados.erro);
