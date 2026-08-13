@@ -261,22 +261,27 @@ function calcularRodizioPneus() {
     
     idsPneus.forEach(pos => {
         let spanEstado = document.getElementById(`estado-${pos}`);
-        if(!spanEstado) return; 
+        let txtStatus = document.getElementById(`status-rod-${pos}`); // Pegamos o status
+        
+        // Blindagem: Se não achar o campo, ele pula pro próximo sem quebrar o app
+        if(!spanEstado || !txtStatus) return; 
+        
         let estadoStr = spanEstado.innerText.toLowerCase();
         let kmTroca = parseInt(document.getElementById(`km-troca-${pos}`).innerText) || 0;
         
         if (estadoStr === "---" || kmTroca === 0) {
-            document.getElementById(`status-rod-${pos}`).innerText = "Aguardando...";
-            document.getElementById(`status-rod-${pos}`).style.color = "gray";
+            txtStatus.innerText = "Aguardando...";
+            txtStatus.style.color = "gray";
             return;
         }
 
         let intervalo = estadoStr.includes('novo') ? baseNovo : baseRessolado;
         let kmProxRodizio = kmTroca + intervalo;
-        document.getElementById(`prox-rod-${pos}`).innerText = kmProxRodizio + " KM";
+        
+        let elProxRod = document.getElementById(`prox-rod-${pos}`);
+        if(elProxRod) elProxRod.innerText = kmProxRodizio + " KM";
         
         let kmFaltantes = kmProxRodizio - kmMaster;
-        let txtStatus = document.getElementById(`status-rod-${pos}`);
         
         if (kmFaltantes <= 0) {
             txtStatus.innerHTML = `VENCIDO (${Math.abs(kmFaltantes)} KM) ❌`; txtStatus.style.color = "red";
