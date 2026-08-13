@@ -1,276 +1,89 @@
 /* =========================================================
-   ARQUIVO DE ESTILOS (CSS) - CUIDA DA BELEZA DO APLICATIVO
-   Se quiser mudar uma cor ou tamanho de letra, é aqui!
+   ESTILOS (CSS) - O VISUAL DO APLICATIVO
    ========================================================= */
-
 body {
-    margin: 0;
-    padding: 0;
+    margin: 0; padding: 0;
     font-family: Arial, sans-serif;
-    background-color: #f4f4f9; /* Cor de fundo de todo o aplicativo */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    background-color: #f4f4f9; 
+    display: flex; flex-direction: column; align-items: center;
 }
 
-/* O contêiner principal que segura a tela para ficar do tamanho de um celular */
 .app-container {
-    width: 100%;
-    max-width: 400px;
-    padding: 20px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
+    width: 100%; max-width: 400px; padding: 20px;
+    box-sizing: border-box; display: flex; flex-direction: column;
 }
 
-.logo {
-    width: 100%;
-    max-width: 250px;
-    display: block;
-    margin: 0 auto 10px auto;
-}
+.logo { width: 100%; max-width: 250px; display: block; margin: 0 auto 10px auto; }
 
-/* Estilo padrão de campos de digitar texto/número */
 .input-campo {
-    width: 100%;
-    padding: 15px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    box-sizing: border-box;
-    font-size: 16px;
-    background-color: #fff;
+    width: 100%; padding: 15px; margin-bottom: 15px;
+    border: 1px solid #ccc; border-radius: 8px;
+    box-sizing: border-box; font-size: 16px; background-color: #fff;
 }
 
-/* Botões Verdes Principais */
 .btn-principal {
-    background-color: #1a4d2e; /* Verde Lince */
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 15px 20px;
-    margin-bottom: 15px;
-    font-size: 16px;
-    font-weight: bold;
-    width: 100%;
-    cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    background-color: #1a4d2e; color: white; border: none;
+    border-radius: 8px; padding: 15px 20px; margin-bottom: 15px;
+    font-size: 16px; font-weight: bold; width: 100%;
+    cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 .btn-principal:hover { background-color: #133a22; }
 
-/* Botões Cinzas Secundários (Voltar, Cancelar) */
 .btn-secundario {
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 20px;
-    margin-bottom: 20px;
-    font-size: 15px;
-    font-weight: bold;
-    width: 100%;
-    cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-.btn-secundario:hover { background-color: #5a6268; }
-
-#mensagem-erro {
-    color: red;
-    text-align: center;
-    margin-bottom: 15px;
-    display: none;
+    background-color: #6c757d; color: white; border: none;
+    border-radius: 8px; padding: 12px 20px; margin-bottom: 20px;
+    font-size: 15px; font-weight: bold; width: 100%;
+    cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-.titulo-tela {
-    text-align: center;
-    color: #1a4d2e;
-    font-size: 20px;
-    margin-bottom: 15px;
-}
+#mensagem-erro { color: red; text-align: center; margin-bottom: 15px; display: none; }
+.titulo-tela { text-align: center; color: #1a4d2e; font-size: 20px; margin-bottom: 15px; }
 
-/* Grade onde ficam os botões dos caminhões */
-.grid-placas {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
-}
-
-.img-placa {
-    width: 100%;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: transform 0.1s;
-}
-.img-placa:active { transform: scale(0.95); } /* Efeito de amassar ao clicar */
+/* Grade de Caminhões */
+.grid-placas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+.img-placa { width: 100%; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.1s; }
+.img-placa:active { transform: scale(0.95); }
 
 .alerta-veiculo {
-    background-color: #e0e0e0;
-    color: #1a4d2e;
-    padding: 10px;
-    border-radius: 8px;
-    text-align: center;
-    font-weight: bold;
-    margin-bottom: 20px;
-    border: 2px dashed #1a4d2e;
+    background-color: #e0e0e0; color: #1a4d2e; padding: 10px;
+    border-radius: 8px; text-align: center; font-weight: bold;
+    margin-bottom: 20px; border: 2px dashed #1a4d2e;
 }
 
-.secao-conteudo {
-    width: 100%;
-    display: none;
-    flex-direction: column;
-}
+.secao-conteudo { width: 100%; display: none; flex-direction: column; }
 
-/* O fundo branco das sessões da Ficha Técnica e Checklist */
+/* Estilo dos Cards Brancos */
 .card {
-    background-color: white;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    border: 1px solid #e0e0e0;
+    background-color: white; border-radius: 8px; padding: 15px;
+    margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e0e0e0;
 }
+.card-titulo { font-size: 16px; color: #1a4d2e; margin: 0 0 10px 0; border-bottom: 2px solid #1a4d2e; padding-bottom: 5px; display: inline-block; }
+.linha-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; }
+.info-label { font-weight: bold; color: #555; margin-bottom: 5px; display: block; }
+.info-valor { color: #000; text-align: right; }
 
-.card-titulo {
-    font-size: 16px;
-    color: #1a4d2e;
-    margin: 0 0 10px 0;
-    border-bottom: 2px solid #1a4d2e;
-    padding-bottom: 5px;
-    display: inline-block;
-}
+/* Acordeão dos Pneus */
+details { background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 8px; padding: 10px; }
+summary { font-weight: bold; cursor: pointer; color: #1a4d2e; outline: none; }
+.pneu-detalhes { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc; }
 
-.linha-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    font-size: 14px;
-}
+/* Edição de campos */
+.input-editavel { border: 1px solid #ccc; border-radius: 4px; padding: 5px; font-size: 14px; width: 135px; text-align: right; background-color: #fff; color: #000; font-weight: bold; transition: all 0.3s; }
+.input-editavel.travado { background-color: #f0f0f0; border: 1px solid #e0e0e0; color: #888; pointer-events: none; }
+.input-editavel:not(.travado):focus { outline: none; border-color: #1a4d2e; background-color: #e8f5e9; }
 
-.info-label {
-    font-weight: bold;
-    color: #555;
-    margin-bottom: 5px;
-    display: block;
-}
+/* Abas e Checkboxes do Checklist */
+.abas-checklist { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+.btn-tab-chk { background-color: #e0e0e0; color: #555; border: none; border-radius: 4px; padding: 8px 12px; font-size: 13px; font-weight: bold; white-space: nowrap; }
+.btn-tab-chk.ativo { background-color: #1a4d2e; color: white; }
+.grupo-checkbox { background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 15px; }
+.linha-check { display: flex; align-items: flex-start; margin-bottom: 8px; font-size: 13px; color: #333; cursor: pointer; }
+.linha-check input { margin-right: 8px; margin-top: 2px; width: 16px; height: 16px; }
+.titulo-grupo-chk { font-weight: bold; color: #1a4d2e; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+.twi-estado-badge { font-weight: bold; font-size: 11px; padding: 4px 8px; border-radius: 12px; background-color: #eee; color: #666; text-align: center; }
 
-.info-valor {
-    color: #000;
-    text-align: right;
-}
-
-details {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    margin-bottom: 8px;
-    padding: 10px;
-}
-summary {
-    font-weight: bold;
-    cursor: pointer;
-    color: #1a4d2e;
-    outline: none;
-}
-.pneu-detalhes {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px dashed #ccc;
-}
-
-/* Campos de TWI e KM que ficam travados/destravados */
-.input-editavel {
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 5px;
-    font-size: 14px;
-    width: 135px;
-    text-align: right;
-    background-color: #fff;
-    color: #000;
-    font-weight: bold;
-    transition: all 0.3s;
-}
-.input-editavel.travado {
-    background-color: #f0f0f0;
-    border: 1px solid #e0e0e0;
-    color: #888;
-}
-.input-editavel:not(.travado):focus {
-    outline: none;
-    border-color: #1a4d2e;
-    background-color: #e8f5e9;
-}
-
-/* Botõezinhos das Abas do Checklist (1, 2, 3, 4) */
-.abas-checklist {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 15px;
-    overflow-x: auto;
-    padding-bottom: 5px;
-}
-.btn-tab-chk {
-    background-color: #e0e0e0;
-    color: #555;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 12px;
-    font-size: 13px;
-    font-weight: bold;
-    white-space: nowrap;
-}
-.btn-tab-chk.ativo {
-    background-color: #1a4d2e;
-    color: white;
-}
-
-/* Nova formatação para os botões de 체크 do checklist */
-.grupo-checkbox {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 15px;
-}
-.linha-check {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 8px;
-    font-size: 13px;
-    color: #333;
-    cursor: pointer;
-}
-.linha-check input {
-    margin-right: 8px;
-    margin-top: 2px;
-    width: 16px;
-    height: 16px;
-}
-.titulo-grupo-chk {
-    font-weight: bold;
-    color: #1a4d2e;
-    margin-bottom: 10px;
-    font-size: 14px;
-    border-bottom: 1px solid #ccc;
-    padding-bottom: 5px;
-}
-.twi-estado-badge {
-    font-weight: bold;
-    font-size: 11px;
-    padding: 4px 8px;
-    border-radius: 12px;
-    background-color: #eee;
-    color: #666;
-    text-align: center;
-}
-
-.historico-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px 10px;
-    border-bottom: 1px solid #eee;
-    font-size: 14px;
-}
+/* Fotos */
+.foto-preview { max-width: 100%; border-radius: 8px; border: 2px solid #1a4d2e; margin-top: 5px; display: none; }
+.foto-placeholder { background-color: #f0f0f0; height: 120px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px; border: 1px dashed #ccc; margin-top: 5px; }
+.historico-item { display: flex; justify-content: space-between; padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 14px; }
 .historico-item:last-child { border-bottom: none; }
