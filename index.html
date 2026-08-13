@@ -26,7 +26,7 @@
         <button class="btn-principal" onclick="fazerLogin()" id="btn-login">Entrar</button>
     </div>
 
-    <!-- TELA 2: SELEÇÃO DE PLACAS -->
+    <!-- TELA 2: PLACAS -->
     <div id="tela-placas" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
         <button class="btn-secundario" onclick="sairDaConta()">⬅ Sair da Conta</button>
@@ -80,8 +80,9 @@
             Trabalhando no veículo: <span id="texto-placa-interna"></span>
         </div>
 
-        <!-- CONTEÚDO: FICHA TÉCNICA -->
+        <!-- ---------------- FICHA TÉCNICA ---------------- -->
         <div id="conteudo-Ficha Técnica" class="secao-conteudo">
+            
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a4d2e; margin-bottom: 10px; padding-bottom: 5px;">
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">📋 Dados do Veículo</h3>
@@ -146,6 +147,15 @@
 
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a4d2e; margin-bottom: 10px; padding-bottom: 5px;">
+                    <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">🚧 Equipamentos</h3>
+                    <button id="btn-editar-equip" onclick="alternarEdicaoEquip()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar</button>
+                </div>
+                <div class="linha-info"><span class="info-label" style="margin:0;">Qtd. Carrinhos:</span> <input type="number" id="qtd-carrinhos" class="input-editavel travado" value="0" readonly></div>
+                <div class="linha-info"><span class="info-label" style="margin:0;">Qtd. Cones:</span> <input type="number" id="qtd-cones" class="input-editavel travado" value="0" readonly></div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a4d2e; margin-bottom: 10px; padding-bottom: 5px;">
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">⛽ Abastecimento e Graxa</h3>
                     <button id="btn-editar-abast" onclick="alternarEdicaoAbast()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar</button>
                 </div>
@@ -183,14 +193,13 @@
             </div>
         </div>
 
-        <!-- CONTEÚDO: CHECKLIST -->
+        <!-- ---------------- CHECKLIST ---------------- -->
         <div id="conteudo-Checklist" class="secao-conteudo">
-            
             <div class="card" id="lista-historico-checklist">
                 <h3 class="card-titulo">✅ Últimos Checklists</h3>
                 <p style="font-size: 12px; color: #666; margin: -5px 0 15px 0;">Mostrando os 24 registros mais recentes da frota.</p>
                 <div id="container-historico" style="margin-bottom: 15px;">
-                    <p style="text-align:center; color:#666;">Buscando histórico na nuvem... ⏳</p>
+                    <p style="text-align:center; color:#666;">Os dados aparecerão aqui após a sincronização.</p>
                 </div>
                 <button class="btn-principal" onclick="iniciarNovoChecklist()" style="margin-bottom: 0;">➕ Iniciar Novo Checklist</button>
             </div>
@@ -210,11 +219,7 @@
                     <label class="info-label">Placa do Veículo:</label>
                     <input type="text" id="chk-placa" class="input-campo" style="background-color:#eee; font-weight:bold; color:#1a4d2e;" readonly>
                     <label class="info-label">Modelo do Caminhão: <span style="color:red">*</span></label>
-                    <select id="chk-modelo" class="input-campo">
-                        <option value="">Selecione...</option>
-                        <option value="Carroceria Fechada">Carroceria Fechada</option>
-                        <option value="Carroceria Aberta">Carroceria Aberta</option>
-                    </select>
+                    <select id="chk-modelo" class="input-campo"><option value="">Selecione...</option><option value="Carroceria Fechada">Carroceria Fechada</option><option value="Carroceria Aberta">Carroceria Aberta</option></select>
                     <label class="info-label">Motorista: <span style="color:red">*</span></label>
                     <input type="text" id="chk-motorista" class="input-campo" placeholder="Nome do motorista">
                     <label class="info-label">KM Atual (Painel): <span style="color:red">*</span></label>
@@ -225,7 +230,6 @@
                     <input type="date" id="chk-data-taco" class="input-campo">
                     <label class="info-label">Última Engraxada:</label>
                     <input type="date" id="chk-data-graxa" class="input-campo">
-                    
                     <button class="btn-principal" onclick="avancarPasso(2)">Próximo Passo ➡️</button>
                     <button class="btn-secundario" onclick="cancelarChecklist()" style="margin-bottom:0;">Cancelar</button>
                 </div>
@@ -236,12 +240,12 @@
                         <div class="titulo-grupo-chk">1. MOTOR APRESENTA PROBLEMA? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-motor" value="MOTOR NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-motor')"> MOTOR NÃO APRESENTA NENHUM PROBLEMA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-motor" value="AQUECIMENTO NO MOTOR"> AQUECIMENTO NO MOTOR</label>
-                        <label class="linha-check"><input type="checkbox" name="chk-motor" value="CORTE DE IGNIÇÃO (MORRE INESPERADAMENTE)"> CORTE DE IGNIÇÃO</label>
+                        <label class="linha-check"><input type="checkbox" name="chk-motor" value="CORTE DE IGNIÇÃO"> CORTE DE IGNIÇÃO</label>
                         <label class="linha-check"><input type="checkbox" name="chk-motor" value="CORREIA DO MOTOR"> CORREIA DO MOTOR</label>
                         <label class="linha-check"><input type="checkbox" name="chk-motor" value="FREIO MOTOR"> FREIO MOTOR</label>
                         <label class="linha-check"><input type="checkbox" name="chk-motor" value="MOTOR FRACO"> MOTOR FRACO</label>
                         <label class="linha-check"><input type="checkbox" name="chk-motor" value="RUÍDOS"> RUÍDOS</label>
-                        <label class="linha-check"><input type="checkbox" name="chk-motor" value="SEM PARTIDA (CAMINHÃO SEM IGNIÇÃO)"> SEM PARTIDA</label>
+                        <label class="linha-check"><input type="checkbox" name="chk-motor" value="SEM PARTIDA"> SEM PARTIDA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-motor" value="VAZAMENTO DE ÓLEO"> VAZAMENTO DE ÓLEO</label>
                         <label class="linha-check"><input type="checkbox" name="chk-motor" value="VAZAMENTO DE DIESEL"> VAZAMENTO DE DIESEL</label>
                         <label class="linha-check"><input type="checkbox" name="chk-motor" value="VAZAMENTO DE ÁGUA"> VAZAMENTO DE ÁGUA</label>
@@ -333,8 +337,8 @@
                         <label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NO FAROL DE NEBLINA"> FALHA NO FAROL DE NEBLINA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NAS SETAS"> FALHA NAS SETAS</label>
                         <label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NA LUZ DE FREIO / PLACA"> FALHA NA LUZ DE FREIO / PLACA</label>
-                        <label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA LUZ DE PRESENÇA/GIROFLEX/INTERNA"> FALHA LUZ PRESENÇA/GIROFLEX</label>
-                        <label class="linha-check"><input type="checkbox" name="chk-eletrica" value="SEM CONDUÇÃO DE ENERGIA (BATERIA)"> SEM CONDUÇÃO DE ENERGIA (BATERIA)</label>
+                        <label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA LUZ PRESENÇA/GIROFLEX"> FALHA LUZ DE PRESENÇA/GIROFLEX</label>
+                        <label class="linha-check"><input type="checkbox" name="chk-eletrica" value="SEM CONDUÇÃO DE ENERGIA"> SEM CONDUÇÃO DE ENERGIA (BATERIA)</label>
                         <label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NA BUZINA"> FALHA NA BUZINA</label>
                         <input type="text" id="chk-elet-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;">
                         <label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-elet-outro')" name="chk-eletrica"> Outro...</label>
@@ -361,7 +365,7 @@
                         <label class="linha-check"><input type="checkbox" name="chk-cabine" value="FALHA NO AR COND. / CLIMATIZADOR"> FALHA NO AR COND. / CLIMATIZADOR</label>
                         <label class="linha-check"><input type="checkbox" name="chk-cabine" value="PAINEL QUEBRADO / TRINCADO"> PAINEL QUEBRADO / TRINCADO</label>
                         <label class="linha-check"><input type="checkbox" name="chk-cabine" value="RUÍDOS NAS PORTAS"> RUÍDOS NAS PORTAS</label>
-                        <label class="linha-check"><input type="checkbox" name="chk-cabine" value="SUPORTE PUMP/EXTINTORES DANIFICADOS"> SUPORTE PUMP/EXTINTORES DANIFICADOS</label>
+                        <label class="linha-check"><input type="checkbox" name="chk-cabine" value="SUPORTE EXTINTORES DANIFICADOS"> SUPORTE EXTINTORES DANIFICADOS</label>
                         <input type="text" id="chk-cab-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;">
                         <label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-cab-outro')" name="chk-cabine"> Outro...</label>
                     </div>
@@ -376,11 +380,11 @@
                         <div class="titulo-grupo-chk">11. ITENS FALTANTES NO CAMINHÃO? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="TODOS OS ITENS ESTÃO NO CAMINHÃO" onchange="verificarTudoOk(this, 'chk-faltantes')"> TODOS OS ITENS ESTÃO NO CAMINHÃO</label>
                         <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="AVISOS SONOROS DE RÉ"> AVISOS SONOROS DE RÉ</label>
-                        <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="ADESIVO DE VELOCIDADE / DOCUMENTAÇÃO"> ADESIVO DE VELOCIDADE / DOCUMENTAÇÃO</label>
+                        <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="ADESIVO VELOCIDADE / DOCUMENTAÇÃO"> ADESIVO DE VELOCIDADE / DOC.</label>
                         <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="CATRACA / CINTA / CANTONEIRA"> CATRACA / CINTA / CANTONEIRA</label>
-                        <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="CHAVE DE FENDA / RODA / MACACO"> CHAVE DE FENDA / RODA / MACACO</label>
+                        <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="CHAVE FENDA / RODA / MACACO"> CHAVE DE FENDA / RODA / MACACO</label>
                         <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="CONES SINALIZAÇÃO / TRIÂNGULO"> CONES SINALIZAÇÃO / TRIÂNGULO</label>
-                        <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="EXTINTOR 2 KG (Ausência/Vencido/Vazio)"> EXTINTOR 2 KG (Ausência/Vencido/Vazio)</label>
+                        <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="EXTINTOR 2 KG (Ausência/Vencido/Vazio)"> EXTINTOR 2 KG (Falta/Vencido/Vazio)</label>
                         <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="STEP / PEGA MÃO / CINTOS"> STEP / PEGA MÃO / CINTOS</label>
                         <input type="text" id="chk-falta-outro" class="input-campo" placeholder="Descreva o que falta..." style="display:none; margin-top:5px;">
                         <label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-falta-outro')" name="chk-faltantes"> Outro...</label>
@@ -420,11 +424,9 @@
                         </div>
                     </div>
 
-                    <!-- FOTOS MENSAIS DO CAMINHÃO -->
                     <div class="grupo-checkbox" id="sessao-fotos-checklist">
                         <div class="titulo-grupo-chk">14. FOTOS DO MÊS <span style="color:red">*</span></div>
                         <p style="font-size: 11px; color: #666; margin-top: -10px;">Obrigatório enviar fotos do caminhão apenas 1x por mês.</p>
-                        
                         <p id="aviso-fotos-ok" style="display:none; color:green; font-weight:bold; text-align:center;">✅ Fotos deste mês já foram enviadas!</p>
                         
                         <div id="container-inputs-fotos">
@@ -458,7 +460,7 @@
         <div id="conteudo-Abastecimento" class="secao-conteudo"><p style="text-align:center;">Tela de Abastecimento em construção...</p></div>
     </div>
 
-    <!-- v=19 força limpeza total e baixa o código novo com fotos -->
-    <script src="script.js?v=20"></script>
+    <!-- v=21 FORÇA O CACHE PARA NÃO TRAVAR A TELA -->
+    <script src="script.js?v=21"></script>
 </body>
 </html>
