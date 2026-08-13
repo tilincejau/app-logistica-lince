@@ -5,50 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logística - Lince</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        .grupo-checkbox {
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 15px;
-        }
-        .linha-check {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 8px;
-            font-size: 13px;
-            color: #333;
-            cursor: pointer;
-        }
-        .linha-check input {
-            margin-right: 8px;
-            margin-top: 2px;
-            width: 16px;
-            height: 16px;
-        }
-        .titulo-grupo-chk {
-            font-weight: bold;
-            color: #1a4d2e;
-            margin-bottom: 10px;
-            font-size: 14px;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 5px;
-        }
-        .twi-estado-badge {
-            font-weight: bold;
-            font-size: 11px;
-            padding: 4px 8px;
-            border-radius: 12px;
-            background-color: #eee;
-            color: #666;
-            text-align: center;
-        }
-    </style>
 </head>
 <body>
 
-    <!-- TELA 1: LOGIN -->
+    <!-- ==========================================
+         TELA 1: LOGIN
+         ========================================== -->
     <div id="tela-login" class="app-container">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logo Lince" class="logo">
         <input type="text" id="campo-usuario" class="input-campo" placeholder="Usuário">
@@ -57,7 +19,11 @@
         <button class="btn-principal" onclick="fazerLogin()">Entrar</button>
     </div>
 
-    <!-- TELA 2: SELEÇÃO DE PLACAS -->
+    <!-- ==========================================
+         TELA 2: SELEÇÃO DE PLACAS
+         Se a empresa comprar caminhão novo, adicione a imagem abaixo
+         copiando a linha <img src="..."> e trocando a placa!
+         ========================================== -->
     <div id="tela-placas" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
         <button class="btn-secundario" onclick="sairDaConta()">⬅ Sair da Conta</button>
@@ -86,7 +52,9 @@
         </div>
     </div>
 
-    <!-- TELA 3: MENU DE AÇÕES -->
+    <!-- ==========================================
+         TELA 3: MENU DE AÇÕES 
+         ========================================== -->
     <div id="tela-menu" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
         <button class="btn-secundario" onclick="voltarParaPlacas()">⬅ Trocar Veículo</button>
@@ -102,7 +70,9 @@
         <button class="btn-principal" onclick="abrirPagina('Abastecimento')">⛽ Abastecimento</button>
     </div>
 
-    <!-- TELA 4: PÁGINAS INTERNAS -->
+    <!-- ==========================================
+         TELA 4: PÁGINAS INTERNAS (FICHA TÉCNICA E CHECKLIST)
+         ========================================== -->
     <div id="tela-interna" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
         <button class="btn-secundario" onclick="voltarParaMenu()">⬅ Voltar ao Menu</button>
@@ -112,8 +82,8 @@
             Trabalhando no veículo: <span id="texto-placa-interna"></span>
         </div>
 
+        <!-- CONTEÚDO: FICHA TÉCNICA -->
         <div id="conteudo-Ficha Técnica" class="secao-conteudo">
-            <!-- (SEÇÃO DA FICHA TÉCNICA - IGUAL A ANTERIOR) -->
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a4d2e; margin-bottom: 10px; padding-bottom: 5px;">
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">📋 Dados do Veículo</h3>
@@ -134,6 +104,7 @@
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">💧 Óleo do Motor</h3>
                     <button id="btn-editar-oleo" onclick="alternarEdicaoOleo()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar</button>
                 </div>
+                <p style="font-size: 11px; color: #666; margin: -5px 0 10px 0;">* Troca recomendada a cada 15.000 KMs rodados.</p>
                 <div class="linha-info"><span class="info-label">KM Atual:</span> <span id="km-atual-oleo" style="font-weight: bold; color: #555; font-size: 16px;">0</span></div>
                 <div class="linha-info"><span class="info-label">Próxima Troca (KM):</span> <input type="number" id="km-proxima-troca" class="input-editavel travado" value="0" oninput="calcularOleo()" readonly></div>
                 <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
@@ -147,6 +118,7 @@
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">⏱️ Tacógrafo</h3>
                     <button id="btn-editar-tacografo" onclick="alternarEdicaoTacografo()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar</button>
                 </div>
+                <p style="font-size: 11px; color: #666; margin: -5px 0 10px 0;">* Aferição obrigatória a cada 2 anos.</p>
                 <div class="linha-info"><span class="info-label">Última Aferição:</span> <span id="data-ultima-afericao" style="font-weight: bold; color: #555; font-size: 16px;">--/--/----</span></div>
                 <div class="linha-info"><span class="info-label">Próxima Aferição:</span> <input type="date" id="data-proxima-afericao" class="input-editavel travado" oninput="calcularTacografo()" readonly></div>
                 <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
@@ -155,7 +127,6 @@
                 </div>
             </div>
 
-            <!-- CARD 4: Pneus -->
             <div class="card">
                 <h3 class="card-titulo">🛞 Pneus</h3>
                 <script>
@@ -227,9 +198,9 @@
             </div>
         </div>
 
-        <!-- ============================================== -->
-        <!-- ABA DO CHECKLIST (NOVA VERSÃO COM CHECKBOXES!) -->
-        <!-- ============================================== -->
+        <!-- ==============================================
+             CONTEÚDO: CHECKLIST (AGORA COM VALIDAÇÃO OBRIGATÓRIA)
+             ============================================== -->
         <div id="conteudo-Checklist" class="secao-conteudo">
             
             <div class="card" id="lista-historico-checklist">
@@ -251,22 +222,22 @@
                     <button id="tab-chk-4" class="btn-tab-chk" onclick="mudarAbaChecklist(4)">4. Pneus/Fim</button>
                 </div>
 
-                <!-- PASSO 1 -->
+                <!-- PASSO 1 (Básicos) -->
                 <div id="passo-chk-1" style="padding: 0 10px;">
                     <label class="info-label">Placa do Veículo:</label>
                     <input type="text" id="chk-placa" class="input-campo" style="background-color:#eee; font-weight:bold; color:#1a4d2e;" readonly>
 
-                    <label class="info-label">Modelo do Caminhão:</label>
+                    <label class="info-label">Modelo do Caminhão: <span style="color:red">*</span></label>
                     <select id="chk-modelo" class="input-campo">
                         <option value="">Selecione...</option>
                         <option value="Carroceria Fechada">Carroceria Fechada</option>
                         <option value="Carroceria Aberta">Carroceria Aberta</option>
                     </select>
 
-                    <label class="info-label">Motorista:</label>
+                    <label class="info-label">Motorista: <span style="color:red">*</span></label>
                     <input type="text" id="chk-motorista" class="input-campo" placeholder="Nome do motorista">
 
-                    <label class="info-label">KM Atual (Painel):</label>
+                    <label class="info-label">KM Atual (Painel): <span style="color:red">*</span></label>
                     <input type="number" id="chk-km" class="input-campo">
 
                     <label class="info-label">Próxima Troca Óleo (KM):</label>
@@ -278,15 +249,16 @@
                     <label class="info-label">Última Engraxada:</label>
                     <input type="date" id="chk-data-graxa" class="input-campo">
                     
-                    <button class="btn-principal" onclick="mudarAbaChecklist(2)">Próximo Passo ➡️</button>
+                    <button class="btn-principal" onclick="avancarPasso(2)">Próximo Passo ➡️</button>
                     <button class="btn-secundario" onclick="cancelarChecklist()" style="margin-bottom:0;">Cancelar</button>
                 </div>
 
-                <!-- PASSO 2 (COM CHECKBOXES) -->
+                <!-- PASSO 2 (Mecânica) -->
                 <div id="passo-chk-2" style="display:none; padding: 0 10px;">
                     
+                    <!-- Para adicionar mais problemas aqui, é só criar uma <label> nova e colocar o nome correto do grupo na opção 'name' -->
                     <div class="grupo-checkbox">
-                        <div class="titulo-grupo-chk">1. MOTOR APRESENTA PROBLEMA?</div>
+                        <div class="titulo-grupo-chk">1. MOTOR APRESENTA PROBLEMA? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-motor" value="MOTOR NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-motor')"> MOTOR NÃO APRESENTA NENHUM PROBLEMA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-motor" value="AQUECIMENTO NO MOTOR"> AQUECIMENTO NO MOTOR</label>
                         <label class="linha-check"><input type="checkbox" name="chk-motor" value="CORTE DE IGNIÇÃO (MORRE INESPERADAMENTE)"> CORTE DE IGNIÇÃO (MORRE INESPERADAMENTE)</label>
@@ -302,7 +274,7 @@
                     </div>
 
                     <div class="grupo-checkbox">
-                        <div class="titulo-grupo-chk">2. CAMBIO APRESENTA PROBLEMA?</div>
+                        <div class="titulo-grupo-chk">2. CAMBIO APRESENTA PROBLEMA? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-cambio" value="CAMBIO NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-cambio')"> CAMBIO NÃO APRESENTA NENHUM PROBLEMA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-cambio" value="ENGATA MAL"> ENGATA MAL</label>
                         <label class="linha-check"><input type="checkbox" name="chk-cambio" value="ESCAPA MARCHA"> ESCAPA MARCHA</label>
@@ -311,7 +283,7 @@
                     </div>
 
                     <div class="grupo-checkbox">
-                        <div class="titulo-grupo-chk">3. EMBREAGEM APRESENTA PROBLEMA?</div>
+                        <div class="titulo-grupo-chk">3. EMBREAGEM APRESENTA PROBLEMA? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-embreagem" value="EMBREAGEM NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-embreagem')"> EMBREAGEM NÃO APRESENTA NENHUM PROBLEMA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-embreagem" value="EMBREAGEM DURA"> EMBREAGEM DURA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-embreagem" value="PATINA"> PATINA</label>
@@ -322,7 +294,7 @@
                     </div>
 
                     <div class="grupo-checkbox">
-                        <div class="titulo-grupo-chk">4. DIREÇÃO APRESENTA PROBLEMA?</div>
+                        <div class="titulo-grupo-chk">4. DIREÇÃO APRESENTA PROBLEMA? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-direcao" value="DIREÇÃO NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-direcao')"> DIREÇÃO NÃO APRESENTA NENHUM PROBLEMA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-direcao" value="FOLGA"> FOLGA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-direcao" value="NÃO ALINHADO"> NÃO ALINHADO</label>
@@ -334,7 +306,7 @@
                     </div>
 
                     <div class="grupo-checkbox">
-                        <div class="titulo-grupo-chk">5. FREIOS APRESENTA PROBLEMA?</div>
+                        <div class="titulo-grupo-chk">5. FREIOS APRESENTA PROBLEMA? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-freios" value="FREIOS NÃO APRESENTAM NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-freios')"> FREIOS NÃO APRESENTAM NENHUM PROBLEMA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-freios" value="LUZ DE FREIO ACESA A TODO MOMENTO"> LUZ DE FREIO ACESA A TODO MOMENTO</label>
                         <label class="linha-check"><input type="checkbox" name="chk-freios" value="PEDAL BAIXO"> PEDAL BAIXO</label>
@@ -344,7 +316,7 @@
                     </div>
 
                     <div class="grupo-checkbox">
-                        <div class="titulo-grupo-chk">6. SUSPENSÃO APRESENTA PROBLEMA?</div>
+                        <div class="titulo-grupo-chk">6. SUSPENSÃO APRESENTA PROBLEMA? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-suspensao" value="SUSPENSÃO NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-suspensao')"> SUSPENSÃO NÃO APRESENTA NENHUM PROBLEMA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-suspensao" value="BARULHOS FORTES"> BARULHOS FORTES</label>
                         <label class="linha-check"><input type="checkbox" name="chk-suspensao" value="INSTABILIDADE NA DIREÇÃO"> INSTABILIDADE NA DIREÇÃO</label>
@@ -352,15 +324,15 @@
                         <input type="text" id="chk-susp-outro" class="input-campo" placeholder="Outro problema..." style="margin-top:5px;">
                     </div>
 
-                    <button class="btn-principal" onclick="mudarAbaChecklist(3)">Próximo Passo ➡️</button>
+                    <button class="btn-principal" onclick="avancarPasso(3)">Próximo Passo ➡️</button>
                     <button class="btn-secundario" onclick="mudarAbaChecklist(1)" style="margin-bottom:0;">⬅️ Voltar</button>
                 </div>
 
-                <!-- PASSO 3 -->
+                <!-- PASSO 3 (Elétrica e Cabine) -->
                 <div id="passo-chk-3" style="display:none; padding: 0 10px;">
                     
                     <div class="grupo-checkbox">
-                        <div class="titulo-grupo-chk">7. PROBLEMAS GERAIS NOS PNEUS?</div>
+                        <div class="titulo-grupo-chk">7. PROBLEMAS GERAIS NOS PNEUS? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-pneus_geral" value="PNEUS NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-pneus_geral')"> PNEUS NÃO APRESENTA NENHUM PROBLEMA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-pneus_geral" value="FALTA DE ESTABILIDADE"> FALTA DE ESTABILIDADE</label>
                         <label class="linha-check"><input type="checkbox" name="chk-pneus_geral" value="PNEUS RESSECADOS"> PNEUS RESSECADOS</label>
@@ -370,7 +342,7 @@
                     </div>
 
                     <div class="grupo-checkbox">
-                        <div class="titulo-grupo-chk">8. SISTEMA ELÉTRICO APRESENTA PROBLEMA?</div>
+                        <div class="titulo-grupo-chk">8. SISTEMA ELÉTRICO APRESENTA PROBLEMA? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-eletrica" value="SISTEMA ELÉTRICO NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-eletrica')"> SISTEMA ELÉTRICO NÃO APRESENTA NENHUM PROBLEMA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA MOTOR DE ARRANQUE"> FALHA MOTOR DE ARRANQUE</label>
                         <label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NO ALTERNADOR"> FALHA NO ALTERNADOR</label>
@@ -387,7 +359,7 @@
                     </div>
 
                     <div class="grupo-checkbox">
-                        <div class="titulo-grupo-chk">9. INDICADORES APRESENTAM PROBLEMA?</div>
+                        <div class="titulo-grupo-chk">9. INDICADORES APRESENTAM PROBLEMA? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-indicadores" value="INDICADORES NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-indicadores')"> INDICADORES NÃO APRESENTA NENHUM PROBLEMA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-indicadores" value="FALHA NO VELOCÍMETRO / CONTA-GIROS"> FALHA NO VELOCÍMETRO / CONTA-GIROS</label>
                         <label class="linha-check"><input type="checkbox" name="chk-indicadores" value="FALHA PRESSÃO DO ÓLEO / AR"> FALHA PRESSÃO DO ÓLEO / AR</label>
@@ -397,7 +369,7 @@
                     </div>
 
                     <div class="grupo-checkbox">
-                        <div class="titulo-grupo-chk">10. A CABINE APRESENTA PROBLEMA?</div>
+                        <div class="titulo-grupo-chk">10. A CABINE APRESENTA PROBLEMA? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-cabine" value="CABINE NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-cabine')"> CABINE NÃO APRESENTA NENHUM PROBLEMA</label>
                         <label class="linha-check"><input type="checkbox" name="chk-cabine" value="BANCOS DANIFICADOS"> BANCOS DANIFICADOS</label>
                         <label class="linha-check"><input type="checkbox" name="chk-cabine" value="CHAVES E FECHADURAS QUEBRADAS"> CHAVES E FECHADURAS QUEBRADAS</label>
@@ -410,15 +382,15 @@
                         <input type="text" id="chk-cab-outro" class="input-campo" placeholder="Outro problema..." style="margin-top:5px;">
                     </div>
 
-                    <button class="btn-principal" onclick="mudarAbaChecklist(4)">Próximo Passo ➡️</button>
+                    <button class="btn-principal" onclick="avancarPasso(4)">Próximo Passo ➡️</button>
                     <button class="btn-secundario" onclick="mudarAbaChecklist(2)" style="margin-bottom:0;">⬅️ Voltar</button>
                 </div>
 
-                <!-- PASSO 4 (EXTINTORES E TWI MÁGICO) -->
+                <!-- PASSO 4 (Faltantes, Extintor, TWI e Fim) -->
                 <div id="passo-chk-4" style="display:none; padding: 0 10px;">
                     
                     <div class="grupo-checkbox">
-                        <div class="titulo-grupo-chk">11. ITENS FALTANTES NO CAMINHÃO?</div>
+                        <div class="titulo-grupo-chk">11. ITENS FALTANTES NO CAMINHÃO? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="TODOS OS ITENS ESTÃO NO CAMINHÃO" onchange="verificarTudoOk(this, 'chk-faltantes')"> TODOS OS ITENS ESTÃO NO CAMINHÃO</label>
                         <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="AVISOS SONOROS DE RÉ"> AVISOS SONOROS DE RÉ</label>
                         <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="ADESIVO DE VELOCIDADE / DOCUMENTAÇÃO"> ADESIVO DE VELOCIDADE / DOCUMENTAÇÃO</label>
@@ -431,7 +403,7 @@
                     </div>
 
                     <div class="grupo-checkbox">
-                        <div class="titulo-grupo-chk">12. EXTINTORES DO VEÍCULO</div>
+                        <div class="titulo-grupo-chk">12. EXTINTORES DO VEÍCULO <span style="color:red">*</span></div>
                         <label class="info-label" style="font-size:12px;">Data de Validade:</label>
                         <input type="date" id="chk-extintor-data" class="input-campo">
                         <label class="info-label" style="font-size:12px; margin-top:5px;">Status da Pressão:</label>
@@ -442,10 +414,11 @@
                     </div>
 
                     <div class="grupo-checkbox">
-                        <div class="titulo-grupo-chk">13. MEDIDAS TWI DOS PNEUS (OBRIGATÓRIO)</div>
-                        <p style="font-size: 11px; color: #666; margin-top: -10px;">Digite a profundidade (em mm). O sistema calcula a saúde do pneu sozinho.</p>
+                        <div class="titulo-grupo-chk">13. MEDIDAS TWI DOS PNEUS <span style="color:red">*</span></div>
+                        <p style="font-size: 11px; color: #666; margin-top: -10px;">É obrigatório digitar a profundidade (em mm) de TODOS os 11 pneus abaixo.</p>
                         
                         <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+                            <!-- Esta mágica cria os 11 campos de pneu e calcula a cor verde/amarelo/vermelho sozinha -->
                             <script>
                                 const pneusForm = [
                                     {id: 'dd', n: 'DD'}, {id: 'de', n: 'DE'}, {id: 'tde', n: 'TDE'}, {id: 'tdi', n: 'TDI'}, 
@@ -474,18 +447,20 @@
                     <label class="info-label">Considerações Finais:</label>
                     <textarea id="chk-obs" class="input-campo" rows="3" placeholder="Digite aqui alguma observação extra..."></textarea>
 
+                    <!-- O botão ENVIAR agora também passa por uma validação antes de ir pra nuvem -->
                     <button class="btn-principal" id="btn-enviar-chk" style="background-color: #0056b3;" onclick="enviarChecklist()">💾 Enviar Checklist</button>
                     <button class="btn-secundario" onclick="mudarAbaChecklist(3)" style="margin-bottom:0;">⬅️ Voltar</button>
                 </div>
             </div>
         </div>
 
+        <!-- Telas Futuras -->
         <div id="conteudo-Manutenções" class="secao-conteudo"><p style="text-align:center;">Tela de Manutenções em construção...</p></div>
         <div id="conteudo-Estoque" class="secao-conteudo"><p style="text-align:center;">Tela de Estoque em construção...</p></div>
         <div id="conteudo-Abastecimento" class="secao-conteudo"><p style="text-align:center;">Tela de Abastecimento em construção...</p></div>
     </div>
 
-    <!-- O v=15 FORÇA O CELULAR A CARREGAR OS CHECKBOXES NOVOS -->
-    <script src="script.js?v=15"></script>
+    <!-- O v=17 GARANTE QUE A VALIDAÇÃO FUNCIONE NO CELULAR -->
+    <script src="script.js?v=17"></script>
 </body>
 </html>
