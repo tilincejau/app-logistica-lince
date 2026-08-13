@@ -122,7 +122,7 @@ function selecionarPlaca(placa) {
         document.getElementById('texto-placa-escolhida').innerText = placa; 
         document.getElementById('texto-placa-interna').innerText = placa; 
         
-        // Verifica se é Cavalo
+        // Verifica se é Cavalo para exibir as coisas de carreta
         window.isCavalo = CAVALOS.includes(placa);
         document.querySelectorAll('.is-carreta').forEach(el => {
             el.style.display = window.isCavalo ? 'block' : 'none';
@@ -133,9 +133,9 @@ function selecionarPlaca(placa) {
         let kTroca = 15000; 
         if (dados.km_oleo) kTroca = parseInt(String(dados.km_oleo).replace(/\./g, '')) || 15000;
         
-        let elO = document.getElementById('km-proxima-troca'); if(elO) elO.value = kTroca;
-        let elT = document.getElementById('data-proxima-afericao'); if(elT) elT.value = dados.data_tacografo || "";
-        let elG = document.getElementById('data-engraxada'); if(elG) elG.value = dados.data_graxa || "";
+        let elOleo = document.getElementById('km-proxima-troca'); if(elOleo) elOleo.value = kTroca;
+        let elTaco = document.getElementById('data-proxima-afericao'); if(elTaco) elTaco.value = dados.data_tacografo || "";
+        let elGrax = document.getElementById('data-engraxada'); if(elGrax) elGrax.value = dados.data_graxa || "";
         let elCar = document.getElementById('qtd-carrinhos'); if(elCar) elCar.value = dados.qtd_carrinhos || 0;
         let elCon = document.getElementById('qtd-cones'); if(elCon) elCon.value = dados.qtd_cones || 0;
         
@@ -145,15 +145,20 @@ function selecionarPlaca(placa) {
         if (dados.pneus) {
             let todosIds = ['dd','de','tde','tdi','tee','tei','tkde','tkdi','tkee','tkei','1step','c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','2step'];
             todosIds.forEach(pos => {
-                let p = dados.pneus[pos] || {};
-                let eE = document.getElementById(`estado-${pos}`); if(eE) eE.innerText = p.estado || "---";
-                let eT = document.getElementById(`twi-${pos}`); if(eT) eT.innerText = p.milimetros ? p.milimetros + " mm" : "---";
-                let eK = document.getElementById(`km-troca-${pos}`); if(eK) eK.value = p.km_ultima_troca || 0;
-                let eD = document.getElementById(`data-troca-${pos}`); if(eD) eD.value = p.data_ultima_troca || "";
+                let pneu = dados.pneus[pos] || {};
+                let elEstado = document.getElementById(`estado-${pos}`);
+                let elTwi = document.getElementById(`twi-${pos}`);
+                let elKmTroca = document.getElementById(`km-troca-${pos}`);
+                let elDataTroca = document.getElementById(`data-troca-${pos}`);
+                
+                if(elEstado) elEstado.innerText = pneu.estado || "---";
+                if(elTwi) elTwi.innerText = pneu.milimetros ? pneu.milimetros + " mm" : "---";
+                if(elKmTroca) elKmTroca.value = pneu.km_ultima_troca || 0;
+                if(elDataTroca) elDataTroca.value = pneu.data_ultima_troca || "";
             });
         }
 
-        // Fotos
+        // Fotos do Mês na Ficha Técnica
         let iL = document.getElementById('ficha-img-lat'); let pL = document.getElementById('ficha-pl-lat');
         if (iL && pL) { 
             if (dados.foto_lateral) { iL.src = dados.foto_lateral; iL.style.display = 'block'; pL.style.display = 'none'; } 
@@ -170,7 +175,7 @@ function selecionarPlaca(placa) {
         let aK = document.getElementById('aviso-ultimo-km'); if(aK) aK.innerText = dados.km_atual || 0;
         let aG = document.getElementById('abast-gasto-mes'); if(aG) aG.innerText = (dados.gasto_mes || 0) + " L";
 
-        // Chama calculadoras matemáticas
+        // Chama calculadoras matemáticas da Ficha
         atualizarKMGeral(); 
         calcularTacografo(); 
         calcularGraxa();
@@ -187,7 +192,7 @@ function selecionarPlaca(placa) {
 
 function voltarParaPlacas() { esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex'; }
 
-// Sobrescreve a função de abrir pagina pra interceptar o abastecimento
+// Sobrescreve a função de abrir pagina pra interceptar o abastecimento e injetar dados na tela
 let oldAbrirPagina = abrirPagina;
 abrirPagina = function(nomeDaPagina) {
     if(nomeDaPagina === 'Abastecimento' && typeof preencherDataHoraAbast === 'function') preencherDataHoraAbast();
@@ -258,30 +263,26 @@ function atualizarKMGeral() {
 function alternarEdicaoHeader() { 
     let c = [document.getElementById('nome-motorista'), document.getElementById('km-master')]; 
     let b = document.getElementById('btn-editar-header'); 
-    
     if (c[0].hasAttribute('readonly')) { 
         c.forEach(x => { x.removeAttribute('readonly'); x.classList.remove('travado'); }); 
         b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; c[0].focus(); 
     } else { 
         c.forEach(x => { x.setAttribute('readonly', 'true'); x.classList.add('travado'); }); 
         b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; 
-        atualizarKMGeral(); 
-        salvarFichaNaNuvemBackground(); 
+        atualizarKMGeral(); salvarFichaNaNuvemBackground(); 
     } 
 }
 
 function alternarEdicaoOleo() { 
     let c = document.getElementById('km-proxima-troca'); 
     let b = document.getElementById('btn-editar-oleo'); 
-    
     if (c.hasAttribute('readonly')) { 
         c.removeAttribute('readonly'); c.classList.remove('travado'); 
         b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; 
     } else { 
         c.setAttribute('readonly', 'true'); c.classList.add('travado'); 
         b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; 
-        calcularOleo(); 
-        salvarFichaNaNuvemBackground(); 
+        calcularOleo(); salvarFichaNaNuvemBackground(); 
     } 
 }
 
@@ -303,63 +304,59 @@ function calcularOleo() {
 function alternarEdicaoTacografo() { 
     let c = document.getElementById('data-proxima-afericao'); 
     let b = document.getElementById('btn-editar-tacografo'); 
-    
     if (c.hasAttribute('readonly')) { 
         c.removeAttribute('readonly'); c.classList.remove('travado'); 
         b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; 
     } else { 
         c.setAttribute('readonly', 'true'); c.classList.add('travado'); 
         b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; 
-        calcularTacografo(); 
-        salvarFichaNaNuvemBackground(); 
+        calcularTacografo(); salvarFichaNaNuvemBackground(); 
     } 
 }
 
 function calcularTacografo() { 
-    let s = document.getElementById('data-proxima-afericao').value; 
-    let t = document.getElementById('status-tacografo'); 
+    let valorData = document.getElementById('data-proxima-afericao').value; 
+    let statusTexto = document.getElementById('status-tacografo'); 
     
-    if (!s || s.length < 8 || !s.includes('-')) { 
-        if(t) t.innerHTML = "---"; 
-        let dU = document.getElementById('data-ultima-afericao'); 
-        if(dU) dU.innerText = "--/--/----"; 
+    // O erro estava aqui. Se não tiver data na planilha, ele sai da função sem quebrar
+    if (!valorData || valorData.length < 8 || !valorData.includes('-')) { 
+        if(statusTexto) statusTexto.innerHTML = "---"; 
+        let dUltima = document.getElementById('data-ultima-afericao'); 
+        if(dUltima) dUltima.innerText = "--/--/----"; 
         return; 
     } 
     
-    let p = s.split('-'); 
-    let px = new Date(p[0], p[1] - 1, p[2]); 
-    let ul = new Date(px); 
-    ul.setFullYear(ul.getFullYear() - 2); 
+    let partes = valorData.split('-'); 
+    let dataProxima = new Date(partes[0], partes[1] - 1, partes[2]); 
+    let dataUltima = new Date(dataProxima); 
+    dataUltima.setFullYear(dataUltima.getFullYear() - 2); 
     
-    document.getElementById('data-ultima-afericao').innerText = `${String(ul.getDate()).padStart(2,'0')}/${String(ul.getMonth()+1).padStart(2,'0')}/${ul.getFullYear()}`; 
+    document.getElementById('data-ultima-afericao').innerText = `${String(dataUltima.getDate()).padStart(2,'0')}/${String(dataUltima.getMonth()+1).padStart(2,'0')}/${dataUltima.getFullYear()}`; 
     
-    // CORREÇÃO DA DATA: Para evitar bug, a data "hoje" é instanciada corretamente
-    let hj = new Date(); 
-    hj.setHours(0,0,0,0); 
+    let dataHoje = new Date(); 
+    dataHoje.setHours(0,0,0,0); 
     
-    let d = Math.ceil((px.getTime() - hj.getTime()) / (1000 * 3600 * 24)); 
+    let diasFaltantes = Math.ceil((dataProxima.getTime() - dataHoje.getTime()) / (1000 * 3600 * 24)); 
     
-    if (d < 0) { 
-        t.innerHTML = `VENCIDO há ${Math.abs(d)} dias ❌`; t.style.color = "red"; 
-    } else if (d <= 30) { 
-        t.innerHTML = `Atenção: Faltam ${d} dias ⚠️`; t.style.color = "#d4a017"; 
+    if (diasFaltantes < 0) { 
+        statusTexto.innerHTML = `VENCIDO há ${Math.abs(diasFaltantes)} dias ❌`; statusTexto.style.color = "red"; 
+    } else if (diasFaltantes <= 30) { 
+        statusTexto.innerHTML = `Atenção: Faltam ${diasFaltantes} dias ⚠️`; statusTexto.style.color = "#d4a017"; 
     } else { 
-        t.innerHTML = `Faltam ${d} dias ✅`; t.style.color = "green"; 
+        statusTexto.innerHTML = `Faltam ${diasFaltantes} dias ✅`; statusTexto.style.color = "green"; 
     } 
 }
 
 function alternarEdicaoPneus() { 
     let i = document.querySelectorAll('#conteudo-Ficha\\ Técnica input[id^="km-troca-"], #conteudo-Ficha\\ Técnica input[id^="data-troca-"]'); 
     let b = document.getElementById('btn-editar-pneus'); 
-    
     if (i[0].hasAttribute('readonly')) { 
         i.forEach(c => { c.removeAttribute('readonly'); c.classList.remove('travado'); }); 
         b.innerHTML = "💾 Salvar Pneus"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; 
     } else { 
         i.forEach(c => { c.setAttribute('readonly', 'true'); c.classList.add('travado'); }); 
         b.innerHTML = "✏️ Editar Pneus"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; 
-        calcularRodizioPneus(); 
-        salvarFichaNaNuvemBackground(); 
+        calcularRodizioPneus(); salvarFichaNaNuvemBackground(); 
     } 
 }
 
@@ -403,7 +400,6 @@ function calcularRodizioPneus() {
 function alternarEdicaoEquip() { 
     let c = [document.getElementById('qtd-carrinhos'), document.getElementById('qtd-cones')]; 
     let b = document.getElementById('btn-editar-equip'); 
-    
     if (c[0].hasAttribute('readonly')) { 
         c.forEach(x => { x.removeAttribute('readonly'); x.classList.remove('travado'); }); 
         b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; 
@@ -417,16 +413,13 @@ function alternarEdicaoEquip() {
 function alternarEdicaoAbast() { 
     let c = [document.getElementById('abast-km-ant'), document.getElementById('abast-km-atual'), document.getElementById('abast-litros'), document.getElementById('data-engraxada')]; 
     let b = document.getElementById('btn-editar-abast'); 
-    
     if (c[0].hasAttribute('readonly')) { 
         c.forEach(x => { x.removeAttribute('readonly'); x.classList.remove('travado'); }); 
         b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; 
     } else { 
         c.forEach(x => { x.setAttribute('readonly', 'true'); x.classList.add('travado'); }); 
         b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; 
-        calcularAbastecimento(); 
-        calcularGraxa(); 
-        salvarFichaNaNuvemBackground(); 
+        calcularAbastecimento(); calcularGraxa(); salvarFichaNaNuvemBackground(); 
     } 
 }
 
@@ -476,7 +469,7 @@ function abrirDocPDF() {
 }
 
 // ----------------------------------------------------
-// 5. ABASTECIMENTO (Estoque)
+// 5. ABASTECIMENTO (Estoque e Chegada)
 // ----------------------------------------------------
 function mudarFormAbast() { 
     let t = document.getElementById('tipo-abast').value; 
@@ -580,6 +573,7 @@ function processarFoto(input, idPreview) {
             const cv = document.createElement('canvas'); 
             const MW = 800; 
             let w = img.width; let h = img.height;
+            
             if (w > MW) { h = Math.round((h * MW) / w); w = MW; } 
             cv.width = w; cv.height = h;
             
