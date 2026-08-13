@@ -1,14 +1,15 @@
 /* =========================================================
-   ARQUIVO JAVASCRIPT - O "CÉREBRO" DO SEU APLICATIVO
-   Se for adicionar uma regra nova, um botão novo ou um cálculo, é aqui!
+   ARQUIVO JAVASCRIPT - O "CÉREBRO" DO APLICATIVO
    ========================================================= */
 
-// O endereço do seu Google Apps Script (A Ponte)
+// O endereço do seu Google Apps Script (Sempre que criar nova versão lá, atualize aqui se mudar)
 const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
 
-let urlDocAtual = ""; // Guarda o link do PDF do Drive na memória
+let urlDocAtual = ""; 
 
-// Esconde todas as telas principais para fazer a transição
+// A variável mágica que guarda toda a sua frota na memória do celular
+window.frota = {}; 
+
 function esconderTodasTelas() {
     document.getElementById('tela-login').style.display = 'none';
     document.getElementById('tela-placas').style.display = 'none';
@@ -16,14 +17,15 @@ function esconderTodasTelas() {
     document.getElementById('tela-interna').style.display = 'none';
 }
 
-// ----------------------------------------------------
-// TELA 1: LOGIN (Conecta com a aba "Usuarios" na planilha)
-// ----------------------------------------------------
+/* =========================================================
+   1. LOGIN E SINCRONIZAÇÃO INICIAL
+   Aqui o app baixa todos os 19 caminhões de uma vez
+   ========================================================= */
 async function fazerLogin() {
     let usuario = document.getElementById('campo-usuario').value;
     let senha = document.getElementById('campo-senha').value;
     let msgErro = document.getElementById('mensagem-erro');
-    let btnEntrar = document.querySelector('#tela-login .btn-principal');
+    let btnEntrar = document.getElementById('btn-login');
 
     if (!usuario || !senha) {
         msgErro.innerText = "Preencha usuário e senha!";
@@ -31,24 +33,32 @@ async function fazerLogin() {
         return;
     }
 
-    btnEntrar.innerText = "Conectando...";
+    btnEntrar.innerText = "Autenticando...";
     msgErro.style.display = 'none';
 
     try {
         let resposta = await fetch(`${API_URL}?acao=login&usuario=${usuario}&senha=${senha}`);
-        let texto = await resposta.text(); 
-        try {
-            let dados = JSON.parse(texto);
-            if (dados.sucesso) {
+        let dados = await resposta.json();
+        
+        if (dados.sucesso) {
+            // Se logou, ele pede TODOS os caminhões de uma vez para ficar rápido depois
+            btnEntrar.innerText = "Sincronizando Frota... ⏳";
+            
+            let resSync = await fetch(`${API_URL}?acao=buscar_inicial`);
+            let dadosSync = await resSync.json();
+            
+            if (dadosSync.sucesso) {
+                window.frota = dadosSync.frota;      // Salva a frota na memória
+                renderizarHistorico(dadosSync.historico); // Desenha os checks verdes
+                
                 esconderTodasTelas();
                 document.getElementById('tela-placas').style.display = 'flex';
-                carregarHistoricoVisual(); // Já dispara o carregamento do histórico lá no fundo
             } else {
-                msgErro.innerText = dados.erro ? dados.erro : "Usuário ou senha incorretos!";
+                msgErro.innerText = "Erro ao baixar frota: " + dadosSync.erro;
                 msgErro.style.display = 'block';
             }
-        } catch (e) {
-            msgErro.innerText = "Erro no servidor. Verifique o Google Planilhas.";
+        } else {
+            msgErro.innerText = "Usuário ou senha incorretos!";
             msgErro.style.display = 'block';
         }
     } catch (erro) {
@@ -64,102 +74,54 @@ function sairDaConta() {
     document.getElementById('tela-login').style.display = 'flex';
 }
 
-// ----------------------------------------------------
-// TELA 2: BUSCAR VEÍCULO (Acessa a aba Veiculos e Pneus)
-// ----------------------------------------------------
-async function selecionarPlaca(placa) {
-    document.getElementById('texto-placa-escolhida').innerText = "Buscando dados na nuvem...";
+/* =========================================================
+   2. SELECIONAR VEÍCULO (Agora é INSTANTÂNEO)
+   ========================================================= */
+function selecionarPlaca(placa) {
+    // Pega os dados direto da memória do celular, sem ir na internet!
+    let dados = window.frota[placa];
+    
+    if (!dados) {
+        alert("Veículo não encontrado na base de dados!");
+        return;
+    }
+
+    document.getElementById('texto-placa-escolhida').innerText = placa;
     document.getElementById('texto-placa-interna').innerText = placa; 
+    
+    // PREENCHE A FICHA TÉCNICA
+    document.getElementById('km-master').value = dados.km_atual || 0;
+    
+    let kmProximaTroca = 15000;
+    if (dados.km_oleo) kmProximaTroca = parseInt(String(dados.km_oleo).replace(/\./g, '')) || 15000;
+    document.getElementById('km-proxima-troca').value = kmProximaTroca;
+    
+    document.getElementById('data-proxima-afericao').value = dados.data_tacografo || "";
+    document.getElementById('data-engraxada').value = dados.data_graxa || "";
+    urlDocAtual = dados.link_documento || "";
+
+    // PNEUS
+    if (dados.pneus) {
+        for (let pos in dados.pneus) {
+            let pneu = dados.pneus[pos];
+            let elEstado = document.getElementById(`estado-${pos}`);
+            let elTwi = document.getElementById(`twi-${pos}`);
+            let elKmTroca = document.getElementById(`km-troca-${pos}`);
+            let elDataTroca = document.getElementById(`data-troca-${pos}`); // NOVA DATA
+            
+            if(elEstado) elEstado.innerText = pneu.estado || "---";
+            if(elTwi) elTwi.innerText = pneu.milimetros ? pneu.milimetros + " mm" : "---";
+            if(elKmTroca) elKmTroca.value = pneu.km_ultima_troca || 0;
+            if(elDataTroca) elDataTroca.value = pneu.data_ultima_troca || "";
+        }
+    }
+
+    atualizarKMGeral(); 
+    calcularTacografo(); 
+    calcularGraxa();
     
     esconderTodasTelas();
     document.getElementById('tela-menu').style.display = 'flex';
-
-    // Desativa os botões para o motorista não clicar antes da hora
-    let botoesMenu = document.querySelectorAll('#tela-menu .btn-principal');
-    botoesMenu.forEach(btn => {
-        btn.disabled = true;
-        btn.style.opacity = '0.5';
-        btn.style.cursor = 'not-allowed';
-    });
-
-    try {
-        let resposta = await fetch(`${API_URL}?acao=buscar_veiculo&placa=${placa}`);
-        let texto = await resposta.text();
-        let dados = JSON.parse(texto);
-
-        let kmProximaTroca = 15000; 
-        let dataTacografo = '';
-        let dataGraxa = ''; 
-        urlDocAtual = ""; 
-
-        if (!dados.erro) {
-            if (dados.km_atual) document.getElementById('km-master').value = dados.km_atual;
-
-            if (dados.km_oleo !== undefined && dados.km_oleo !== null && dados.km_oleo !== "") {
-                let kmLimp = String(dados.km_oleo).replace(/\./g, '').replace(/,/g, '');
-                kmProximaTroca = parseInt(kmLimp);
-                if (isNaN(kmProximaTroca)) kmProximaTroca = 15000;
-            }
-            
-            if (dados.data_tacografo) {
-                let dtStr = String(dados.data_tacografo);
-                if (dtStr.includes('T')) dataTacografo = dtStr.split('T')[0];
-                else if (dtStr.includes('/')) {
-                    let partes = dtStr.split('/');
-                    if (partes.length === 3) dataTacografo = `${partes[2]}-${partes[1]}-${partes[0]}`;
-                } else dataTacografo = dtStr;
-            }
-            
-            if (dados.data_graxa) {
-                let dtStr = String(dados.data_graxa);
-                if (dtStr.includes('T')) dataGraxa = dtStr.split('T')[0];
-                else if (dtStr.includes('/')) {
-                    let partes = dtStr.split('/');
-                    if (partes.length === 3) dataGraxa = `${partes[2]}-${partes[1]}-${partes[0]}`;
-                } else dataGraxa = dtStr;
-            }
-
-            if (dados.link_documento) urlDocAtual = dados.link_documento;
-
-            if (dados.pneus) {
-                for (let pos in dados.pneus) {
-                    let pneu = dados.pneus[pos];
-                    let elEstado = document.getElementById(`estado-${pos}`);
-                    let elTwi = document.getElementById(`twi-${pos}`);
-                    let elKmTroca = document.getElementById(`km-troca-${pos}`);
-                    
-                    if(elEstado) elEstado.innerText = pneu.estado || "---";
-                    if(elTwi) elTwi.innerText = pneu.milimetros ? pneu.milimetros + " mm" : "---";
-                    if(elKmTroca) elKmTroca.innerText = pneu.km_ultima_troca || "0";
-                }
-            }
-            document.getElementById('texto-placa-escolhida').innerText = placa;
-        } else {
-            document.getElementById('texto-placa-escolhida').innerText = placa + " (Não Cadastrada)";
-        }
-
-        document.getElementById('km-proxima-troca').value = kmProximaTroca;
-        if(!dados.km_atual) document.getElementById('km-master').value = 0; 
-        document.getElementById('data-proxima-afericao').value = dataTacografo;
-        document.getElementById('data-engraxada').value = dataGraxa; 
-        
-        atualizarKMGeral(); 
-        calcularTacografo(); 
-        calcularGraxa();
-
-    } catch (erro) {
-        document.getElementById('texto-placa-escolhida').innerText = placa + " (Offline / Erro)";
-        document.getElementById('km-proxima-troca').value = 15000;
-        document.getElementById('km-master').value = 0;
-        urlDocAtual = "";
-    } finally {
-        // Libera os botões assim que termina
-        botoesMenu.forEach(btn => {
-            btn.disabled = false;
-            btn.style.opacity = '1';
-            btn.style.cursor = 'pointer';
-        });
-    }
 }
 
 function voltarParaPlacas() {
@@ -182,9 +144,50 @@ function voltarParaMenu() {
     document.getElementById('tela-menu').style.display = 'flex';
 }
 
-// ----------------------------------------------------
-// MATEMÁTICA E EDIÇÃO DA FICHA TÉCNICA
-// ----------------------------------------------------
+/* =========================================================
+   3. EDIÇÃO DA FICHA TÉCNICA E SALVAMENTO INVISÍVEL
+   Se o cara clicar em Salvar, manda pro Google no fundo
+   ========================================================= */
+function salvarFichaNaNuvemBackground() {
+    let payload = {
+        acao: "salvar_ficha_tecnica",
+        placa: document.getElementById('texto-placa-interna').innerText,
+        km_atual: document.getElementById('km-master').value,
+        km_oleo: document.getElementById('km-proxima-troca').value,
+        data_tacografo: document.getElementById('data-proxima-afericao').value,
+        data_graxa: document.getElementById('data-engraxada').value,
+        pneus: {}
+    };
+    
+    // Pega as datas e km de troca dos pneus
+    const idsPneus = ['dd', 'de', 'tde', 'tdi', 'tee', 'tei', 'tkde', 'tkdi', 'tkee', 'tkei', '1step'];
+    idsPneus.forEach(id => {
+        let km = document.getElementById('km-troca-'+id);
+        let dt = document.getElementById('data-troca-'+id);
+        if(km && dt) {
+            payload.pneus[id] = { km_ultima_troca: km.value, data_ultima_troca: dt.value };
+        }
+    });
+
+    // Envia pro Google sem travar a tela (O cara nem percebe)
+    fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) })
+    .then(res => res.json())
+    .then(dados => {
+        if(dados.sucesso) {
+            // Atualiza a memória local para não perder se ele sair e voltar
+            window.frota[payload.placa].km_atual = payload.km_atual;
+            window.frota[payload.placa].km_oleo = payload.km_oleo;
+            window.frota[payload.placa].data_tacografo = payload.data_tacografo;
+            window.frota[payload.placa].data_graxa = payload.data_graxa;
+            for(let id in payload.pneus) {
+                if(!window.frota[payload.placa].pneus[id]) window.frota[payload.placa].pneus[id] = {};
+                window.frota[payload.placa].pneus[id].km_ultima_troca = payload.pneus[id].km_ultima_troca;
+                window.frota[payload.placa].pneus[id].data_ultima_troca = payload.pneus[id].data_ultima_troca;
+            }
+        }
+    });
+}
+
 function atualizarKMGeral() {
     let kmMaster = document.getElementById('km-master').value;
     document.getElementById('km-atual-oleo').innerText = kmMaster;
@@ -203,6 +206,7 @@ function alternarEdicaoHeader() {
         campos.forEach(c => { c.setAttribute('readonly', 'true'); c.classList.add('travado'); });
         btn.innerHTML = "✏️ Editar"; btn.style.backgroundColor = "transparent"; btn.style.color = "#1a4d2e";
         atualizarKMGeral();
+        salvarFichaNaNuvemBackground(); // Salva invisível
     }
 }
 
@@ -216,6 +220,7 @@ function alternarEdicaoOleo() {
         campo.setAttribute('readonly', 'true'); campo.classList.add('travado');
         btn.innerHTML = "✏️ Editar"; btn.style.backgroundColor = "transparent"; btn.style.color = "#1a4d2e";
         calcularOleo();
+        salvarFichaNaNuvemBackground(); // Salva invisível
     }
 }
 
@@ -243,6 +248,7 @@ function alternarEdicaoTacografo() {
         campo.setAttribute('readonly', 'true'); campo.classList.add('travado');
         btn.innerHTML = "✏️ Editar"; btn.style.backgroundColor = "transparent"; btn.style.color = "#1a4d2e";
         calcularTacografo();
+        salvarFichaNaNuvemBackground(); // Salva invisível
     }
 }
 
@@ -265,6 +271,22 @@ function calcularTacografo() {
     }
 }
 
+// EDIÇÃO DA ABA PNEUS INTEIRA
+function alternarEdicaoPneus() {
+    let inputs = document.querySelectorAll('#conteudo-Ficha\\ Técnica input[id^="km-troca-"], #conteudo-Ficha\\ Técnica input[id^="data-troca-"]');
+    let btn = document.getElementById('btn-editar-pneus');
+    
+    if (inputs[0].hasAttribute('readonly')) {
+        inputs.forEach(c => { c.removeAttribute('readonly'); c.classList.remove('travado'); });
+        btn.innerHTML = "💾 Salvar Pneus"; btn.style.backgroundColor = "#1a4d2e"; btn.style.color = "white";
+    } else {
+        inputs.forEach(c => { c.setAttribute('readonly', 'true'); c.classList.add('travado'); });
+        btn.innerHTML = "✏️ Editar Pneus"; btn.style.backgroundColor = "transparent"; btn.style.color = "#1a4d2e";
+        calcularRodizioPneus();
+        salvarFichaNaNuvemBackground(); // Salva invisível
+    }
+}
+
 function calcularRodizioPneus() {
     let placa = document.getElementById('texto-placa-interna').innerText;
     let kmMaster = parseInt(document.getElementById('km-master').value) || 0;
@@ -276,10 +298,11 @@ function calcularRodizioPneus() {
     idsPneus.forEach(pos => {
         let spanEstado = document.getElementById(`estado-${pos}`);
         let txtStatus = document.getElementById(`status-rod-${pos}`);
-        if(!spanEstado || !txtStatus) return; // Se a tela não carregou, ignora para não dar erro
+        let inputKmTroca = document.getElementById(`km-troca-${pos}`);
+        if(!spanEstado || !txtStatus || !inputKmTroca) return; 
         
         let estadoStr = spanEstado.innerText.toLowerCase();
-        let kmTroca = parseInt(document.getElementById(`km-troca-${pos}`).innerText) || 0;
+        let kmTroca = parseInt(inputKmTroca.value) || 0;
         
         if (estadoStr === "---" || kmTroca === 0) {
             txtStatus.innerText = "Aguardando...";
@@ -305,6 +328,7 @@ function calcularRodizioPneus() {
     });
 }
 
+// ... as outras funções de edição (Equip e Abast) continuam normales
 function alternarEdicaoEquip() {
     let campos = [document.getElementById('qtd-carrinhos'), document.getElementById('qtd-cones')];
     let btn = document.getElementById('btn-editar-equip');
@@ -318,12 +342,7 @@ function alternarEdicaoEquip() {
 }
 
 function alternarEdicaoAbast() {
-    let campos = [
-        document.getElementById('abast-km-ant'), 
-        document.getElementById('abast-km-atual'), 
-        document.getElementById('abast-litros'),
-        document.getElementById('data-engraxada')
-    ];
+    let campos = [document.getElementById('abast-km-ant'), document.getElementById('abast-km-atual'), document.getElementById('abast-litros'), document.getElementById('data-engraxada')];
     let btn = document.getElementById('btn-editar-abast');
     
     if (campos[0].hasAttribute('readonly')) {
@@ -334,6 +353,7 @@ function alternarEdicaoAbast() {
         btn.innerHTML = "✏️ Editar"; btn.style.backgroundColor = "transparent"; btn.style.color = "#1a4d2e";
         calcularAbastecimento();
         calcularGraxa();
+        salvarFichaNaNuvemBackground(); // Salva invisível
     }
 }
 
@@ -383,51 +403,37 @@ function abrirDocPDF() {
     }
 }
 
-// ----------------------------------------------------
-// TELA DO CHECKLIST E SISTEMA DE VALIDAÇÃO
-// ----------------------------------------------------
 
-// Essa função carrega os últimos 24 registros e desenha a tela
-async function carregarHistoricoVisual() {
+/* =========================================================
+   4. SISTEMA DE CHECKLIST (Com Validação Obrigatória)
+   ========================================================= */
+
+// Desenha a lista de histórico na tela
+function renderizarHistorico(dados) {
     let container = document.getElementById('container-historico');
-    container.innerHTML = "<p style='text-align:center; color:#666;'>Buscando histórico na nuvem... ⏳</p>";
+    container.innerHTML = "";
     
-    try {
-        let resposta = await fetch(`${API_URL}?acao=buscar_historico`);
-        let dados = await resposta.json();
-        
-        container.innerHTML = "";
-        if (dados.erro) {
-            container.innerHTML = `<p style='text-align:center; color:red; font-weight:bold;'>Erro:<br>${dados.erro}</p>`;
-            return;
-        }
-
-        if (dados.length === 0) {
-            container.innerHTML = "<p style='text-align:center; color:#666;'>Nenhum checklist registrado ainda.</p>";
-            return;
-        }
-
-        dados.forEach(item => {
-            let div = document.createElement('div');
-            div.className = "historico-item";
-            let dataFormatada = String(item.data).split('T')[0]; 
-            div.innerHTML = `<span style="font-weight: bold; color: #1a4d2e;">${item.placa}</span>
-                             <span style="color: #555; font-size: 12px;">${dataFormatada} ✅</span>`;
-            container.appendChild(div);
-        });
-
-    } catch (e) {
-        container.innerHTML = "<p style='text-align:center; color:red;'>Erro ao carregar histórico (Offline).</p>";
+    if (!dados || dados.length === 0) {
+        container.innerHTML = "<p style='text-align:center; color:#666;'>Nenhum checklist registrado ainda.</p>";
+        return;
     }
+
+    dados.forEach(item => {
+        let div = document.createElement('div');
+        div.className = "historico-item";
+        let dataFormatada = String(item.data).split('T')[0]; 
+        div.innerHTML = `<span style="font-weight: bold; color: #1a4d2e;">${item.placa}</span>
+                         <span style="color: #555; font-size: 12px;">${dataFormatada} ✅</span>`;
+        container.appendChild(div);
+    });
 }
 
-// Zera os formulários e limpa a tela para preencher um novo checklist
 function iniciarNovoChecklist() {
     document.getElementById('lista-historico-checklist').style.display = 'none';
     document.getElementById('form-novo-checklist').style.display = 'block';
     
     document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
-    document.querySelectorAll('input[id$="-outro"]').forEach(c => { c.value = ""; });
+    document.querySelectorAll('input[id$="-outro"]').forEach(c => { c.value = ""; c.style.display = 'none'; });
     
     document.querySelectorAll('input[id^="chk-twi-"]').forEach(i => i.value = "");
     document.querySelectorAll('.twi-estado-badge').forEach(b => {
@@ -458,10 +464,9 @@ function mudarAbaChecklist(passo) {
     document.getElementById('tab-chk-' + passo).classList.add('ativo');
 }
 
-// **NOVIDADE: O MOTOR DE VALIDAÇÃO OBRIGATÓRIA!**
-// Ele checa se os grupos de checkboxes têm pelo menos um clicado antes de pular a aba.
+// O FISCAL DO APLICATIVO! Não deixa avançar sem preencher.
 function avancarPasso(proximo) {
-    let passoAtual = proximo - 1; // Se quero ir pro Passo 2, significa que eu estava no Passo 1
+    let passoAtual = proximo - 1; 
     
     if (passoAtual === 1) {
         if(!document.getElementById('chk-modelo').value) return alert("❌ Selecione o Modelo do Caminhão!");
@@ -470,12 +475,10 @@ function avancarPasso(proximo) {
     }
     
     if (passoAtual === 2) {
-        // As "names" dos checkboxes do passo 2
         let gruposMecanica = ['chk-motor', 'chk-cambio', 'chk-embreagem', 'chk-direcao', 'chk-freios', 'chk-suspensao'];
         for (let grupo of gruposMecanica) {
-            let marcados = document.querySelectorAll(`input[name="${grupo}"]:checked`);
-            if (marcados.length === 0) {
-                return alert(`❌ Você esqueceu de preencher uma das sessões de Mecânica!\n\nPor favor, marque se "Não apresenta nenhum problema" ou indique qual o defeito em todas as opções.`);
+            if (document.querySelectorAll(`input[name="${grupo}"]:checked`).length === 0) {
+                return alert(`❌ Você esqueceu de preencher uma das sessões de Mecânica!\n\nMarque se "Não apresenta problema" ou aponte o defeito.`);
             }
         }
     }
@@ -483,75 +486,74 @@ function avancarPasso(proximo) {
     if (passoAtual === 3) {
         let gruposEletrica = ['chk-pneus_geral', 'chk-eletrica', 'chk-indicadores', 'chk-cabine'];
         for (let grupo of gruposEletrica) {
-            let marcados = document.querySelectorAll(`input[name="${grupo}"]:checked`);
-            if (marcados.length === 0) {
-                return alert(`❌ Você esqueceu de preencher uma das sessões de Cabine/Elétrica!\n\nPor favor, marque se "Não apresenta nenhum problema" ou indique qual o defeito.`);
+            if (document.querySelectorAll(`input[name="${grupo}"]:checked`).length === 0) {
+                return alert(`❌ Você esqueceu de preencher uma das sessões de Elétrica/Cabine!`);
             }
         }
     }
-
-    // Se chegou até aqui sem retornar erro, ele deixa mudar de aba!
     mudarAbaChecklist(proximo);
 }
 
-// Essa função faz a caixa de texto do "OUTRO" aparecer se você marcar nele
-function verificarOutro(elementoSelect, idCampoTexto) {
+function verificarOutro(checkboxClicado, idCampoTexto) {
+    // Essa função foi alterada porque agora usamos Checkboxes
     let campoTexto = document.getElementById(idCampoTexto);
-    if (elementoSelect.value === "OUTRO") {
+    if (checkboxClicado.value === "OUTRO" && checkboxClicado.checked) {
         campoTexto.style.display = 'block';
         campoTexto.focus();
-    } else {
+    } else if (checkboxClicado.value === "OUTRO" && !checkboxClicado.checked) {
         campoTexto.style.display = 'none';
         campoTexto.value = ''; 
     }
 }
 
-// Mágica do "NÃO APRESENTA NENHUM PROBLEMA" - Se clicar nele, desmarca todos os defeitos.
 function verificarTudoOk(checkboxClicado, nomeGrupo) {
     if (checkboxClicado.checked && checkboxClicado.value.includes("NÃO APRESENTA")) {
         let todosDoGrupo = document.querySelectorAll(`input[name="${nomeGrupo}"]`);
         todosDoGrupo.forEach(c => {
             if (c !== checkboxClicado) c.checked = false;
         });
+        // Esconde o "Outros" se existir
+        let txtOutro = document.getElementById(nomeGrupo + "-outro");
+        if(txtOutro) { txtOutro.style.display = 'none'; txtOutro.value = ''; }
     } else if (checkboxClicado.checked) {
         let todosDoGrupo = document.querySelectorAll(`input[name="${nomeGrupo}"]`);
         todosDoGrupo.forEach(c => {
             if (c.value.includes("NÃO APRESENTA")) c.checked = false;
         });
     }
+    
+    // Mostra/Esconde campo "Outro" se foi clicado
+    if (checkboxClicado.value === "OUTRO") {
+        let txtOutro = document.getElementById(nomeGrupo + "-outro");
+        if(checkboxClicado.checked) { txtOutro.style.display = 'block'; txtOutro.focus(); }
+        else { txtOutro.style.display = 'none'; txtOutro.value = ''; }
+    }
 }
 
-// Calcula automaticamente a cor do TWI
 function calcularStatusTwi(inputEl, badgeId) {
     let badge = document.getElementById(badgeId);
     let val = parseFloat(inputEl.value);
     
     if (isNaN(val)) {
         badge.innerText = "Aguardando...";
-        badge.style.backgroundColor = "#eee";
-        badge.style.color = "#666";
+        badge.style.backgroundColor = "#eee"; badge.style.color = "#666";
         return;
     }
     
     if (val >= 10) {
-        badge.innerText = "Pneu Novo";
-        badge.style.backgroundColor = "#d4edda";
-        badge.style.color = "#155724";
+        badge.innerText = "Pneu Novo"; badge.style.backgroundColor = "#d4edda"; badge.style.color = "#155724";
     } else if (val >= 5) {
-        badge.innerText = "Meia-Vida";
-        badge.style.backgroundColor = "#fff3cd";
-        badge.style.color = "#856404";
+        badge.innerText = "Meia-Vida"; badge.style.backgroundColor = "#fff3cd"; badge.style.color = "#856404";
     } else {
-        badge.innerText = "No Limite";
-        badge.style.backgroundColor = "#f8d7da";
-        badge.style.color = "#721c24";
+        badge.innerText = "No Limite"; badge.style.backgroundColor = "#f8d7da"; badge.style.color = "#721c24";
     }
 }
 
-// Pega os quadradinhos que foram marcados e junta numa frase só
 function pegarMarcados(nomeGrupo, idOutro) {
     let selecionados = [];
-    document.querySelectorAll(`input[name="${nomeGrupo}"]:checked`).forEach(c => selecionados.push(c.value));
+    document.querySelectorAll(`input[name="${nomeGrupo}"]:checked`).forEach(c => {
+        if(c.value !== "OUTRO") selecionados.push(c.value);
+    });
     
     let txtOutro = document.getElementById(idOutro);
     if (txtOutro && txtOutro.value.trim() !== "") {
@@ -561,31 +563,25 @@ function pegarMarcados(nomeGrupo, idOutro) {
     return selecionados.length > 0 ? selecionados.join(" | ") : "Não avaliado";
 }
 
-// ----------------------------------------------------
-// BOTÃO FINAL: ENVIAR O CHECKLIST COMPLETO PRA NUVEM
-// ----------------------------------------------------
 async function enviarChecklist() {
-    
-    // VALIDAÇÃO FINAL ANTES DE ENVIAR (Para o Passo 4)
-    let marcadosFaltantes = document.querySelectorAll(`input[name="chk-faltantes"]:checked`);
-    if (marcadosFaltantes.length === 0) return alert("❌ Você esqueceu de informar os Itens Faltantes no Caminhão!");
+    // VALIDAÇÃO FINAL ANTES DE ENVIAR
+    if (document.querySelectorAll(`input[name="chk-faltantes"]:checked`).length === 0) 
+        return alert("❌ Você esqueceu de informar os Itens Faltantes no Caminhão!");
 
-    if (!document.getElementById('chk-extintor-data').value) return alert("❌ Informe a Data de Validade do Extintor!");
+    if (!document.getElementById('chk-extintor-data').value) 
+        return alert("❌ Informe a Data de Validade do Extintor!");
 
-    // Trava do TWI Obrigatório para TODOS os pneus!
     const idsPneus = ['dd', 'de', 'tde', 'tdi', 'tee', 'tei', 'tkde', 'tkdi', 'tkee', 'tkei', '1step'];
     for (let id of idsPneus) {
         if (!document.getElementById('chk-twi-' + id).value) {
-            return alert(`❌ Você esqueceu de preencher o TWI do Pneu ${id.toUpperCase()}! É obrigatório preencher todos os 11.`);
+            return alert(`❌ Preencha o TWI do Pneu ${id.toUpperCase()}! É obrigatório preencher todos os 11.`);
         }
     }
 
-    // Se chegou até aqui, é porque está TUDO validado. Vamos enviar!
     let btn = document.getElementById('btn-enviar-chk');
     btn.innerText = "Salvando na Nuvem... ⏳";
     btn.disabled = true;
 
-    // Constrói a frase do extintor
     let dataExt = document.getElementById('chk-extintor-data').value;
     let pressExt = document.getElementById('chk-extintor-pressao').value;
     let textoExtintor = `Val: ${dataExt} - ${pressExt}`;
@@ -619,37 +615,40 @@ async function enviarChecklist() {
         pneus: {}
     };
 
-    // Coleta TWI e Estado de todos
     idsPneus.forEach(id => {
         let twi = document.getElementById('chk-twi-' + id).value;
         let badge = document.getElementById('badge-estado-' + id).innerText;
         if (twi) {
-            payload.pneus[id] = {
-                milimetros: twi,
-                estado: badge
-            };
+            payload.pneus[id] = { milimetros: twi, estado: badge };
         }
     });
 
     try {
-        let resposta = await fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        
+        let resposta = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
         let dados = await resposta.json();
 
         if (dados.sucesso) {
-            alert("✅ Sucesso! Checklist salvo e Ficha Técnica atualizada.");
+            alert("✅ Sucesso! Checklist salvo com sucesso.");
+            
+            // Atualiza a memória para não precisar carregar o app todo de novo
+            window.frota[payload.placa].km_atual = payload.km_atual;
+            window.frota[payload.placa].km_oleo = payload.km_oleo;
+            for(let id in payload.pneus) {
+                if(!window.frota[payload.placa].pneus[id]) window.frota[payload.placa].pneus[id] = {};
+                window.frota[payload.placa].pneus[id].milimetros = payload.pneus[id].milimetros;
+                window.frota[payload.placa].pneus[id].estado = payload.pneus[id].estado;
+            }
+
+            // Atualiza a lista do Histórico verde e a tela
+            let hojeStr = new Date().toISOString();
+            renderizarHistorico([{ data: hojeStr, placa: payload.placa }]); 
             cancelarChecklist(); 
-            carregarHistoricoVisual();
             selecionarPlaca(payload.placa); 
         } else {
             alert("❌ Erro ao salvar: " + dados.erro);
         }
     } catch (erro) {
         alert("❌ Falha na conexão. O Google não recebeu os dados.");
-        console.error(erro);
     }
 
     btn.innerText = "💾 Enviar Checklist";
