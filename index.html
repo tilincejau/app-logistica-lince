@@ -159,7 +159,8 @@
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">⛽ Abastecimento e Graxa</h3>
                     <button id="btn-editar-abast" onclick="alternarEdicaoAbast()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar</button>
                 </div>
-                <div class="linha-info"><span class="info-label" style="margin:0;">KM Anterior:</span> <input type="number" id="abast-km-ant" class="input-editavel travado" value="0" oninput="calcularAbastecimento()" readonly></div>
+                <div class="linha-info"><span class="info-label" style="margin:0;">Gasto Mês (Diesel):</span><span id="abast-gasto-mes" style="font-weight:bold; color:#b30000; font-size: 16px;">0 L</span></div>
+                <div class="linha-info" style="margin-top:10px;"><span class="info-label" style="margin:0;">KM Anterior:</span> <input type="number" id="abast-km-ant" class="input-editavel travado" value="0" oninput="calcularAbastecimento()" readonly></div>
                 <div class="linha-info"><span class="info-label" style="margin:0;">KM Atual:</span> <input type="number" id="abast-km-atual" class="input-editavel travado" value="0" oninput="calcularAbastecimento()" readonly></div>
                 <div class="linha-info"><span class="info-label" style="margin:0;">Litros Abast.:</span> <input type="number" id="abast-litros" class="input-editavel travado" value="0" oninput="calcularAbastecimento()" readonly></div>
                 <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;"><span class="info-label" style="margin:0;">Média do Veículo:</span><span id="abast-media" style="font-weight:bold; font-size: 17px; color: #1a4d2e;">0.00 km/L</span></div>
