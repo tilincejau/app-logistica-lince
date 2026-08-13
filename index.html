@@ -5,19 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logística - Lince</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        .grupo-checkbox { background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 15px; }
-        .linha-check { display: flex; align-items: flex-start; margin-bottom: 8px; font-size: 13px; color: #333; cursor: pointer; }
-        .linha-check input { margin-right: 8px; margin-top: 2px; width: 16px; height: 16px; }
-        .titulo-grupo-chk { font-weight: bold; color: #1a4d2e; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-        .twi-estado-badge { font-weight: bold; font-size: 11px; padding: 4px 8px; border-radius: 12px; background-color: #eee; color: #666; text-align: center; }
-        .foto-preview { max-width: 100%; border-radius: 8px; border: 2px solid #1a4d2e; margin-top: 5px; display: none; }
-        .foto-placeholder { background-color: #f0f0f0; height: 120px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px; border: 1px dashed #ccc; margin-top: 5px; }
-    </style>
 </head>
 <body>
 
-    <!-- TELA 1: LOGIN -->
+    <!-- ==========================================
+         TELA 1: LOGIN E CARREGAMENTO
+         ========================================== -->
     <div id="tela-login" class="app-container">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logo Lince" class="logo">
         <input type="text" id="campo-usuario" class="input-campo" placeholder="Usuário">
@@ -26,7 +19,9 @@
         <button class="btn-principal" onclick="fazerLogin()" id="btn-login">Entrar</button>
     </div>
 
-    <!-- TELA 2: PLACAS -->
+    <!-- ==========================================
+         TELA 2: LISTA DE CAMINHÕES
+         ========================================== -->
     <div id="tela-placas" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
         <button class="btn-secundario" onclick="sairDaConta()">⬅ Sair da Conta</button>
@@ -55,7 +50,9 @@
         </div>
     </div>
 
-    <!-- TELA 3: MENU DO VEÍCULO -->
+    <!-- ==========================================
+         TELA 3: MENU DO VEÍCULO
+         ========================================== -->
     <div id="tela-menu" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
         <button class="btn-secundario" onclick="voltarParaPlacas()">⬅ Trocar Veículo</button>
@@ -66,12 +63,14 @@
         </div>
         <button class="btn-principal" onclick="abrirPagina('Ficha Técnica')">📄 Ficha Técnica</button>
         <button class="btn-principal" onclick="abrirPagina('Checklist')">✅ Checklist</button>
+        <button class="btn-principal" onclick="abrirPagina('Abastecimento')">⛽ Abastecimento e Estoque</button>
         <button class="btn-principal" onclick="abrirPagina('Manutenções')">🔧 Manutenções</button>
-        <button class="btn-principal" onclick="abrirPagina('Estoque')">📦 Estoque</button>
-        <button class="btn-principal" onclick="abrirPagina('Abastecimento')">⛽ Abastecimento</button>
+        <button class="btn-principal" onclick="abrirPagina('Estoque')">📦 Estoque (Peças)</button>
     </div>
 
-    <!-- TELA 4: PÁGINAS INTERNAS (FICHA E CHECKLIST) -->
+    <!-- ==========================================
+         TELA 4: PÁGINAS INTERNAS
+         ========================================== -->
     <div id="tela-interna" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
         <button class="btn-secundario" onclick="voltarParaMenu()">⬅ Voltar ao Menu</button>
@@ -97,7 +96,6 @@
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">💧 Óleo do Motor</h3>
                     <button id="btn-editar-oleo" onclick="alternarEdicaoOleo()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar</button>
                 </div>
-                <p style="font-size: 11px; color: #666; margin: -5px 0 10px 0;">* Troca recomendada a cada 15.000 KMs.</p>
                 <div class="linha-info"><span class="info-label">KM Atual:</span> <span id="km-atual-oleo" style="font-weight: bold; color: #555; font-size: 16px;">0</span></div>
                 <div class="linha-info"><span class="info-label">Próxima Troca (KM):</span> <input type="number" id="km-proxima-troca" class="input-editavel travado" value="0" oninput="calcularOleo()" readonly></div>
                 <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;"><span class="info-label">Status da Troca:</span><span id="status-oleo" style="font-weight:bold; font-size: 15px;">---</span></div>
@@ -170,10 +168,8 @@
                 <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;"><span class="info-label" style="margin:0;">Status Graxa:</span><span id="status-graxa" style="font-weight:bold; font-size: 15px;">---</span></div>
             </div>
 
-            <!-- FOTOS NA FICHA TÉCNICA -->
             <div class="card">
                 <h3 class="card-titulo">📸 Fotos do Mês</h3>
-                <p style="font-size: 11px; color: #666; margin: -5px 0 10px 0;">As fotos são puxadas automaticamente do Checklist.</p>
                 <div style="display: flex; gap: 10px; justify-content: space-between;">
                     <div style="flex: 1; text-align: center;">
                         <span style="font-size: 13px; font-weight: bold; color: #1a4d2e;">Lateral</span>
@@ -198,10 +194,7 @@
         <div id="conteudo-Checklist" class="secao-conteudo">
             <div class="card" id="lista-historico-checklist">
                 <h3 class="card-titulo">✅ Últimos Checklists</h3>
-                <p style="font-size: 12px; color: #666; margin: -5px 0 15px 0;">Mostrando os 24 registros mais recentes da frota.</p>
-                <div id="container-historico" style="margin-bottom: 15px;">
-                    <p style="text-align:center; color:#666;">Os dados aparecerão aqui após a sincronização.</p>
-                </div>
+                <div id="container-historico" style="margin-bottom: 15px;"></div>
                 <button class="btn-principal" onclick="iniciarNovoChecklist()" style="margin-bottom: 0;">➕ Iniciar Novo Checklist</button>
             </div>
 
@@ -404,7 +397,6 @@
 
                     <div class="grupo-checkbox">
                         <div class="titulo-grupo-chk">13. MEDIDAS TWI DOS PNEUS <span style="color:red">*</span></div>
-                        <p style="font-size: 11px; color: #666; margin-top: -10px;">Digite a profundidade. O sistema calcula a saúde do pneu sozinho.</p>
                         <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
                             <script>
                                 const pneusForm = [
@@ -427,9 +419,7 @@
 
                     <div class="grupo-checkbox" id="sessao-fotos-checklist">
                         <div class="titulo-grupo-chk">14. FOTOS DO MÊS <span style="color:red">*</span></div>
-                        <p style="font-size: 11px; color: #666; margin-top: -10px;">Obrigatório enviar fotos do caminhão apenas 1x por mês.</p>
                         <p id="aviso-fotos-ok" style="display:none; color:green; font-weight:bold; text-align:center;">✅ Fotos deste mês já foram enviadas!</p>
-                        
                         <div id="container-inputs-fotos">
                             <label class="info-label" style="font-size:12px;">Foto Lateral:</label>
                             <input type="file" id="foto-lat-input" accept="image/*" class="input-campo" style="padding: 10px;" onchange="processarFoto(this, 'preview-lat')">
@@ -448,7 +438,7 @@
                     </select>
 
                     <label class="info-label">Considerações Finais:</label>
-                    <textarea id="chk-obs" class="input-campo" rows="3" placeholder="Digite aqui alguma observação extra..."></textarea>
+                    <textarea id="chk-obs" class="input-campo" rows="3" placeholder="Digite alguma observação extra..."></textarea>
 
                     <button class="btn-principal" id="btn-enviar-chk" style="background-color: #0056b3;" onclick="enviarChecklist()">💾 Enviar Checklist</button>
                     <button class="btn-secundario" onclick="mudarAbaChecklist(3)" style="margin-bottom:0;">⬅️ Voltar</button>
@@ -456,12 +446,64 @@
             </div>
         </div>
 
+        <!-- ---------------- ABASTECIMENTO DA FROTA E ESTOQUE ---------------- -->
+        <div id="conteudo-Abastecimento" class="secao-conteudo">
+            <div class="card" style="background-color: #f1f8f5; border: 1px solid #1a4d2e;">
+                <h3 class="card-titulo" style="text-align: center; border:none; margin-bottom:5px;">📊 Resumo do Tanque</h3>
+                <div class="linha-info"><span class="info-label" style="margin:0;">Estoque Diesel:</span> <span id="estoque-diesel-geral" style="font-weight:bold; color:#0056b3; font-size: 18px;">0 L</span></div>
+                <div class="linha-info"><span class="info-label" style="margin:0;">Estoque Arla:</span> <span id="estoque-arla-geral" style="font-weight:bold; color:#0056b3; font-size: 18px;">0 L</span></div>
+                <div class="linha-info" style="border-top: 1px dashed #ccc; padding-top: 5px; margin-top:5px;"><span class="info-label" style="margin:0;">Gasto Frota (Mês):</span> <span id="gasto-mes-geral" style="font-weight:bold; color:#b30000; font-size: 16px;">0 L</span></div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-titulo">⛽ Novo Lançamento</h3>
+                <select id="tipo-abast" class="input-campo" onchange="mudarFormAbast()" style="background-color: #1a4d2e; color: white; font-weight: bold;">
+                    <option value="DIESEL">Abastecer DIESEL no Caminhão</option>
+                    <option value="ARLA">Abastecer ARLA no Caminhão</option>
+                    <option value="CHEGADA DE DIESEL">📥 Receber CHEGADA DE DIESEL</option>
+                    <option value="CHEGADA DE ARLA">📥 Receber CHEGADA DE ARLA</option>
+                </select>
+
+                <!-- FORMULÁRIO DO CAMINHÃO -->
+                <div id="form-abast-veiculo">
+                    <label class="info-label">Data e Hora:</label>
+                    <input type="datetime-local" id="abast-data" class="input-campo">
+                    
+                    <label class="info-label">KM Atual da Bomba: <span style="color:red">*</span></label>
+                    <p style="font-size: 11px; color: #b30000; margin-top: -10px;">Último KM cadastrado: <span id="aviso-ultimo-km" style="font-weight:bold;">0</span></p>
+                    <input type="number" id="abast-km-novo" class="input-campo" placeholder="Atenção: Não pode ser menor que o Último KM">
+                    
+                    <label class="info-label">Litros Abastecidos: <span style="color:red">*</span></label>
+                    <input type="number" id="abast-litros-bomba" class="input-campo" placeholder="Ex: 150">
+                    
+                    <label class="info-label">Motorista (Selecione ou Digite): <span style="color:red">*</span></label>
+                    <input type="text" id="abast-motorista" class="input-campo" placeholder="Nome do motorista">
+                    
+                    <label class="info-label">Responsável (Frentista): <span style="color:red">*</span></label>
+                    <input type="text" id="abast-resp" class="input-campo" placeholder="Seu nome">
+                </div>
+
+                <!-- FORMULÁRIO DA CHEGADA DO TANQUE -->
+                <div id="form-abast-chegada" style="display:none; padding: 10px; border: 2px dashed #0056b3; border-radius: 8px;">
+                    <label class="info-label">Data e Hora da Chegada:</label>
+                    <input type="datetime-local" id="chegada-data" class="input-campo">
+                    
+                    <label class="info-label">Quantos Litros Chegou no Tanque? <span style="color:red">*</span></label>
+                    <input type="number" id="chegada-litros" class="input-campo" placeholder="Ex: 5000">
+                    
+                    <label class="info-label">Número da NF: <span style="color:red">*</span></label>
+                    <input type="text" id="chegada-nf" class="input-campo" placeholder="Nota Fiscal">
+                </div>
+
+                <button class="btn-principal" id="btn-salvar-abast-nuvem" style="background-color: #0056b3; margin-top: 15px;" onclick="salvarAbastecimentoNuvem()">💾 Salvar Lançamento</button>
+            </div>
+        </div>
+
         <div id="conteudo-Manutenções" class="secao-conteudo"><p style="text-align:center;">Tela de Manutenções em construção...</p></div>
-        <div id="conteudo-Estoque" class="secao-conteudo"><p style="text-align:center;">Tela de Estoque em construção...</p></div>
-        <div id="conteudo-Abastecimento" class="secao-conteudo"><p style="text-align:center;">Tela de Abastecimento em construção...</p></div>
+        <div id="conteudo-Estoque" class="secao-conteudo"><p style="text-align:center;">Tela de Peças em construção...</p></div>
     </div>
 
-    <!-- v=21 FORÇA O CACHE PARA NÃO TRAVAR A TELA -->
-    <script src="script.js?v=21"></script>
+    <!-- v=24 GARANTE A RENOVAÇÃO DO APLICATIVO -->
+    <script src="script.js?v=24"></script>
 </body>
 </html>
