@@ -16,13 +16,11 @@
         <input type="text" id="campo-usuario" class="input-campo" placeholder="Usuário">
         <input type="password" id="campo-senha" class="input-campo" placeholder="Senha">
         <p id="mensagem-erro">Usuário ou senha incorretos!</p>
-        <button class="btn-principal" onclick="fazerLogin()">Entrar</button>
+        <button class="btn-principal" onclick="fazerLogin()" id="btn-login">Entrar</button>
     </div>
 
     <!-- ==========================================
-         TELA 2: SELEÇÃO DE PLACAS
-         Se a empresa comprar caminhão novo, adicione a imagem abaixo
-         copiando a linha <img src="..."> e trocando a placa!
+         TELA 2: PLACAS (O menu principal da Frota)
          ========================================== -->
     <div id="tela-placas" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
@@ -53,7 +51,7 @@
     </div>
 
     <!-- ==========================================
-         TELA 3: MENU DE AÇÕES 
+         TELA 3: MENU DO VEÍCULO 
          ========================================== -->
     <div id="tela-menu" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
@@ -64,26 +62,26 @@
             <span id="texto-placa-escolhida" style="font-size: 24px;">NENHUM</span>
         </div>
         <button class="btn-principal" onclick="abrirPagina('Ficha Técnica')">📄 Ficha Técnica</button>
-        <button class="btn-principal" onclick="abrirPagina('Manutenções')">🔧 Manutenções</button>
         <button class="btn-principal" onclick="abrirPagina('Checklist')">✅ Checklist</button>
+        <button class="btn-principal" onclick="abrirPagina('Manutenções')">🔧 Manutenções</button>
         <button class="btn-principal" onclick="abrirPagina('Estoque')">📦 Estoque</button>
         <button class="btn-principal" onclick="abrirPagina('Abastecimento')">⛽ Abastecimento</button>
     </div>
 
     <!-- ==========================================
-         TELA 4: PÁGINAS INTERNAS (FICHA TÉCNICA E CHECKLIST)
+         TELA 4: PÁGINAS INTERNAS (FICHA E CHECKLIST)
          ========================================== -->
     <div id="tela-interna" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
         <button class="btn-secundario" onclick="voltarParaMenu()">⬅ Voltar ao Menu</button>
         <h2 id="titulo-tela-interna" class="titulo-tela">Nome da Página</h2>
-        
         <div class="alerta-veiculo" style="font-size: 14px; padding: 5px;">
             Trabalhando no veículo: <span id="texto-placa-interna"></span>
         </div>
 
-        <!-- CONTEÚDO: FICHA TÉCNICA -->
+        <!-- ---------------- FICHA TÉCNICA ---------------- -->
         <div id="conteudo-Ficha Técnica" class="secao-conteudo">
+            
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a4d2e; margin-bottom: 10px; padding-bottom: 5px;">
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">📋 Dados do Veículo</h3>
@@ -104,13 +102,10 @@
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">💧 Óleo do Motor</h3>
                     <button id="btn-editar-oleo" onclick="alternarEdicaoOleo()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar</button>
                 </div>
-                <p style="font-size: 11px; color: #666; margin: -5px 0 10px 0;">* Troca recomendada a cada 15.000 KMs rodados.</p>
+                <p style="font-size: 11px; color: #666; margin: -5px 0 10px 0;">* Troca recomendada a cada 15.000 KMs.</p>
                 <div class="linha-info"><span class="info-label">KM Atual:</span> <span id="km-atual-oleo" style="font-weight: bold; color: #555; font-size: 16px;">0</span></div>
                 <div class="linha-info"><span class="info-label">Próxima Troca (KM):</span> <input type="number" id="km-proxima-troca" class="input-editavel travado" value="0" oninput="calcularOleo()" readonly></div>
-                <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
-                    <span class="info-label">Status da Troca:</span>
-                    <span id="status-oleo" style="font-weight:bold; font-size: 15px;">---</span>
-                </div>
+                <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;"><span class="info-label">Status da Troca:</span><span id="status-oleo" style="font-weight:bold; font-size: 15px;">---</span></div>
             </div>
 
             <div class="card">
@@ -121,14 +116,15 @@
                 <p style="font-size: 11px; color: #666; margin: -5px 0 10px 0;">* Aferição obrigatória a cada 2 anos.</p>
                 <div class="linha-info"><span class="info-label">Última Aferição:</span> <span id="data-ultima-afericao" style="font-weight: bold; color: #555; font-size: 16px;">--/--/----</span></div>
                 <div class="linha-info"><span class="info-label">Próxima Aferição:</span> <input type="date" id="data-proxima-afericao" class="input-editavel travado" oninput="calcularTacografo()" readonly></div>
-                <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
-                    <span class="info-label">Status:</span>
-                    <span id="status-tacografo" style="font-weight:bold; font-size: 15px;">---</span>
-                </div>
+                <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;"><span class="info-label">Status:</span><span id="status-tacografo" style="font-weight:bold; font-size: 15px;">---</span></div>
             </div>
 
             <div class="card">
-                <h3 class="card-titulo">🛞 Pneus</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a4d2e; margin-bottom: 10px; padding-bottom: 5px;">
+                    <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">🛞 Pneus</h3>
+                    <button id="btn-editar-pneus" onclick="alternarEdicaoPneus()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar Pneus</button>
+                </div>
+                <p style="font-size: 11px; color: #666; margin: -5px 0 10px 0;">O Estado e o TWI vêm automaticamente do Checklist.</p>
                 <script>
                     const listaPneusTags = [
                         {id: 'dd', nome: 'DD (Dianteiro Direito)'}, {id: 'de', nome: 'DE (Dianteiro Esquerdo)'},
@@ -138,36 +134,22 @@
                         {id: 'tkde', nome: 'TKDE (Truck Dir. Externo)'}, {id: 'tkdi', nome: 'TKDI (Truck Dir. Interno)'},
                         {id: '1step', nome: '1STEP (Estepe)'}
                     ];
-                    listaPneusTags.forEach(pneu => {
+                    listaPneusTags.forEach(p => {
                         document.write(`
                             <details>
-                                <summary>${pneu.nome}</summary>
+                                <summary>${p.nome}</summary>
                                 <div class="pneu-detalhes">
-                                    <div class="linha-info"><span class="info-label" style="margin:0;">Estado Atual:</span> <span class="info-valor" id="estado-${pneu.id}" style="font-weight:bold;">---</span></div>
-                                    <div class="linha-info"><span class="info-label" style="margin:0;">TWI (Sulcos):</span> <span class="info-valor" id="twi-${pneu.id}">---</span></div>
-                                    <div class="linha-info"><span class="info-label" style="margin:0;">KM Última Troca:</span> <span class="info-valor" id="km-troca-${pneu.id}">0</span></div>
-                                    <div class="linha-info"><span class="info-label" style="margin:0;">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-${pneu.id}">---</span></div>
-                                    <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label" style="margin:0;">Status Rodízio:</span> <span id="status-rod-${pneu.id}" style="font-weight:bold;">---</span></div>
+                                    <div class="linha-info"><span class="info-label" style="margin:0;">Estado Atual:</span> <span class="info-valor" id="estado-${p.id}" style="font-weight:bold;">---</span></div>
+                                    <div class="linha-info"><span class="info-label" style="margin:0;">TWI (Sulcos):</span> <span class="info-valor" id="twi-${p.id}">---</span></div>
+                                    <div class="linha-info" style="margin-top:10px;"><span class="info-label" style="margin:0;">KM da Troca:</span> <input type="number" id="km-troca-${p.id}" class="input-editavel travado" value="0" readonly></div>
+                                    <div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Data da Troca:</span> <input type="date" id="data-troca-${p.id}" class="input-editavel travado" readonly></div>
+                                    <div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label" style="margin:0;">Próximo Rodízio:</span> <span class="info-valor" id="prox-rod-${p.id}">---</span></div>
+                                    <div class="linha-info"><span class="info-label" style="margin:0;">Status Rodízio:</span> <span id="status-rod-${p.id}" style="font-weight:bold;">---</span></div>
                                 </div>
                             </details>
                         `);
                     });
                 </script>
-            </div>
-
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a4d2e; margin-bottom: 10px; padding-bottom: 5px;">
-                    <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">🚧 Equipamentos</h3>
-                    <button id="btn-editar-equip" onclick="alternarEdicaoEquip()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar</button>
-                </div>
-                <div class="linha-info">
-                    <span class="info-label" style="margin:0;">Qtd. Carrinhos:</span> 
-                    <input type="number" id="qtd-carrinhos" class="input-editavel travado" value="2" readonly>
-                </div>
-                <div class="linha-info">
-                    <span class="info-label" style="margin:0;">Qtd. Cones:</span> 
-                    <input type="number" id="qtd-cones" class="input-editavel travado" value="3" readonly>
-                </div>
             </div>
 
             <div class="card">
@@ -178,36 +160,27 @@
                 <div class="linha-info"><span class="info-label" style="margin:0;">KM Anterior:</span> <input type="number" id="abast-km-ant" class="input-editavel travado" value="0" oninput="calcularAbastecimento()" readonly></div>
                 <div class="linha-info"><span class="info-label" style="margin:0;">KM Atual:</span> <input type="number" id="abast-km-atual" class="input-editavel travado" value="0" oninput="calcularAbastecimento()" readonly></div>
                 <div class="linha-info"><span class="info-label" style="margin:0;">Litros Abast.:</span> <input type="number" id="abast-litros" class="input-editavel travado" value="0" oninput="calcularAbastecimento()" readonly></div>
-                <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
-                    <span class="info-label" style="margin:0;">Média do Veículo:</span>
-                    <span id="abast-media" style="font-weight:bold; font-size: 17px; color: #1a4d2e;">0.00 km/L</span>
-                </div>
+                <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;"><span class="info-label" style="margin:0;">Média do Veículo:</span><span id="abast-media" style="font-weight:bold; font-size: 17px; color: #1a4d2e;">0.00 km/L</span></div>
                 <hr style="border: 0.5px solid #eee; margin: 15px 0;">
                 <div class="linha-info"><span class="info-label" style="margin:0;">Última Engraxada:</span> <input type="date" id="data-engraxada" class="input-editavel travado" oninput="calcularGraxa()" readonly></div>
                 <div class="linha-info"><span class="info-label" style="margin:0;">Próxima (+30 dias):</span> <span id="data-prox-engraxada" style="font-weight: bold; color: #555;">--/--/----</span></div>
-                <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
-                    <span class="info-label" style="margin:0;">Status Graxa:</span>
-                    <span id="status-graxa" style="font-weight:bold; font-size: 15px;">---</span>
-                </div>
+                <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;"><span class="info-label" style="margin:0;">Status Graxa:</span><span id="status-graxa" style="font-weight:bold; font-size: 15px;">---</span></div>
             </div>
 
             <div class="card">
                 <h3 class="card-titulo">📄 Documentação</h3>
-                <p style="font-size: 12px; color: #666; margin: -5px 0 10px 0;">Os documentos devem ser salvos no Google Drive e vinculados à Planilha.</p>
+                <p style="font-size: 12px; color: #666; margin: -5px 0 10px 0;">O PDF é puxado automaticamente do Google Drive.</p>
                 <button class="btn-principal" style="background-color: #0056b3; margin-bottom: 0;" onclick="abrirDocPDF()">⬇️ Abrir PDF do Documento</button>
             </div>
         </div>
 
-        <!-- ==============================================
-             CONTEÚDO: CHECKLIST (AGORA COM VALIDAÇÃO OBRIGATÓRIA)
-             ============================================== -->
+        <!-- ---------------- CHECKLIST ---------------- -->
         <div id="conteudo-Checklist" class="secao-conteudo">
-            
             <div class="card" id="lista-historico-checklist">
                 <h3 class="card-titulo">✅ Últimos Checklists</h3>
                 <p style="font-size: 12px; color: #666; margin: -5px 0 15px 0;">Mostrando os 24 registros mais recentes da frota.</p>
                 <div id="container-historico" style="margin-bottom: 15px;">
-                    <p style="text-align:center; color:#666;">Buscando histórico na nuvem... ⏳</p>
+                    <p style="text-align:center; color:#666;">Os dados aparecerão aqui após a sincronização.</p>
                 </div>
                 <button class="btn-principal" onclick="iniciarNovoChecklist()" style="margin-bottom: 0;">➕ Iniciar Novo Checklist</button>
             </div>
@@ -222,7 +195,7 @@
                     <button id="tab-chk-4" class="btn-tab-chk" onclick="mudarAbaChecklist(4)">4. Pneus/Fim</button>
                 </div>
 
-                <!-- PASSO 1 (Básicos) -->
+                <!-- PASSO 1 -->
                 <div id="passo-chk-1" style="padding: 0 10px;">
                     <label class="info-label">Placa do Veículo:</label>
                     <input type="text" id="chk-placa" class="input-campo" style="background-color:#eee; font-weight:bold; color:#1a4d2e;" readonly>
@@ -253,10 +226,8 @@
                     <button class="btn-secundario" onclick="cancelarChecklist()" style="margin-bottom:0;">Cancelar</button>
                 </div>
 
-                <!-- PASSO 2 (Mecânica) -->
+                <!-- PASSO 2 -->
                 <div id="passo-chk-2" style="display:none; padding: 0 10px;">
-                    
-                    <!-- Para adicionar mais problemas aqui, é só criar uma <label> nova e colocar o nome correto do grupo na opção 'name' -->
                     <div class="grupo-checkbox">
                         <div class="titulo-grupo-chk">1. MOTOR APRESENTA PROBLEMA? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-motor" value="MOTOR NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-motor')"> MOTOR NÃO APRESENTA NENHUM PROBLEMA</label>
@@ -328,9 +299,8 @@
                     <button class="btn-secundario" onclick="mudarAbaChecklist(1)" style="margin-bottom:0;">⬅️ Voltar</button>
                 </div>
 
-                <!-- PASSO 3 (Elétrica e Cabine) -->
+                <!-- PASSO 3 -->
                 <div id="passo-chk-3" style="display:none; padding: 0 10px;">
-                    
                     <div class="grupo-checkbox">
                         <div class="titulo-grupo-chk">7. PROBLEMAS GERAIS NOS PNEUS? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-pneus_geral" value="PNEUS NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-pneus_geral')"> PNEUS NÃO APRESENTA NENHUM PROBLEMA</label>
@@ -386,9 +356,8 @@
                     <button class="btn-secundario" onclick="mudarAbaChecklist(2)" style="margin-bottom:0;">⬅️ Voltar</button>
                 </div>
 
-                <!-- PASSO 4 (Faltantes, Extintor, TWI e Fim) -->
+                <!-- PASSO 4 -->
                 <div id="passo-chk-4" style="display:none; padding: 0 10px;">
-                    
                     <div class="grupo-checkbox">
                         <div class="titulo-grupo-chk">11. ITENS FALTANTES NO CAMINHÃO? <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-faltantes" value="TODOS OS ITENS ESTÃO NO CAMINHÃO" onchange="verificarTudoOk(this, 'chk-faltantes')"> TODOS OS ITENS ESTÃO NO CAMINHÃO</label>
@@ -415,10 +384,9 @@
 
                     <div class="grupo-checkbox">
                         <div class="titulo-grupo-chk">13. MEDIDAS TWI DOS PNEUS <span style="color:red">*</span></div>
-                        <p style="font-size: 11px; color: #666; margin-top: -10px;">É obrigatório digitar a profundidade (em mm) de TODOS os 11 pneus abaixo.</p>
+                        <p style="font-size: 11px; color: #666; margin-top: -10px;">Digite a profundidade (em mm). O sistema calcula a saúde do pneu sozinho.</p>
                         
                         <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
-                            <!-- Esta mágica cria os 11 campos de pneu e calcula a cor verde/amarelo/vermelho sozinha -->
                             <script>
                                 const pneusForm = [
                                     {id: 'dd', n: 'DD'}, {id: 'de', n: 'DE'}, {id: 'tde', n: 'TDE'}, {id: 'tdi', n: 'TDI'}, 
@@ -447,20 +415,18 @@
                     <label class="info-label">Considerações Finais:</label>
                     <textarea id="chk-obs" class="input-campo" rows="3" placeholder="Digite aqui alguma observação extra..."></textarea>
 
-                    <!-- O botão ENVIAR agora também passa por uma validação antes de ir pra nuvem -->
                     <button class="btn-principal" id="btn-enviar-chk" style="background-color: #0056b3;" onclick="enviarChecklist()">💾 Enviar Checklist</button>
                     <button class="btn-secundario" onclick="mudarAbaChecklist(3)" style="margin-bottom:0;">⬅️ Voltar</button>
                 </div>
             </div>
         </div>
 
-        <!-- Telas Futuras -->
         <div id="conteudo-Manutenções" class="secao-conteudo"><p style="text-align:center;">Tela de Manutenções em construção...</p></div>
         <div id="conteudo-Estoque" class="secao-conteudo"><p style="text-align:center;">Tela de Estoque em construção...</p></div>
         <div id="conteudo-Abastecimento" class="secao-conteudo"><p style="text-align:center;">Tela de Abastecimento em construção...</p></div>
     </div>
 
-    <!-- O v=17 GARANTE QUE A VALIDAÇÃO FUNCIONE NO CELULAR -->
-    <script src="script.js?v=17"></script>
+    <!-- v=18 garante limpeza de cache -->
+    <script src="script.js?v=18"></script>
 </body>
 </html>
