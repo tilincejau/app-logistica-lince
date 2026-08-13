@@ -32,7 +32,7 @@ async function fazerLogin() {
             if (dados.sucesso) {
                 esconderTodasTelas();
                 document.getElementById('tela-placas').style.display = 'flex';
-                carregarHistoricoVisual(); // Já carrega o histórico no fundo
+                carregarHistoricoVisual(); 
             } else {
                 msgErro.innerText = dados.erro ? dados.erro : "Usuário ou senha incorretos!";
                 msgErro.style.display = 'block';
@@ -376,19 +376,20 @@ async function carregarHistoricoVisual() {
         let dados = await resposta.json();
         
         container.innerHTML = "";
-        if (dados.erro || dados.length === 0) {
+        if (dados.erro) {
+            container.innerHTML = `<p style='text-align:center; color:red; font-weight:bold;'>Erro:<br>${dados.erro}</p>`;
+            return;
+        }
+
+        if (dados.length === 0) {
             container.innerHTML = "<p style='text-align:center; color:#666;'>Nenhum checklist registrado ainda.</p>";
             return;
         }
 
-        // Monta a tela com os dados que vieram do Google
         dados.forEach(item => {
             let div = document.createElement('div');
             div.className = "historico-item";
-            
-            // Formatando a data que vem do Google (se vier com "T", cortamos só a data e hora)
             let dataFormatada = String(item.data).split('T')[0]; 
-
             div.innerHTML = `<span style="font-weight: bold; color: #1a4d2e;">${item.placa}</span>
                              <span style="color: #555; font-size: 12px;">${dataFormatada} ✅</span>`;
             container.appendChild(div);
@@ -403,6 +404,16 @@ function iniciarNovoChecklist() {
     document.getElementById('lista-historico-checklist').style.display = 'none';
     document.getElementById('form-novo-checklist').style.display = 'block';
     
+    // Zera todos os checkboxes antigos de outras sessões
+    document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+    document.querySelectorAll('input[id$="-outro"]').forEach(c => { c.value = ""; });
+    
+    // Zera os TWI e badges
+    document.querySelectorAll('input[id^="chk-twi-"]').forEach(i => i.value = "");
+    document.querySelectorAll('.twi-estado-badge').forEach(b => {
+        b.innerText = "Aguardando..."; b.style.backgroundColor = "#eee"; b.style.color = "#666";
+    });
+
     document.getElementById('chk-placa').value = document.getElementById('texto-placa-interna').innerText;
     document.getElementById('chk-motorista').value = document.getElementById('nome-motorista').value;
     document.getElementById('chk-km').value = document.getElementById('km-master').value;
@@ -427,29 +438,71 @@ function mudarAbaChecklist(passo) {
     document.getElementById('tab-chk-' + passo).classList.add('ativo');
 }
 
-function verificarOutro(elementoSelect, idCampoTexto) {
-    let campoTexto = document.getElementById(idCampoTexto);
-    if (elementoSelect.value === "OUTRO") {
-        campoTexto.style.display = 'block';
-        campoTexto.focus();
-    } else {
-        campoTexto.style.display = 'none';
-        campoTexto.value = ''; 
+// MÁGICA 1: Se clicar em "NÃO APRESENTA PROBLEMA", ele limpa todos os outros daquela categoria
+function verificarTudoOk(checkboxClicado, nomeGrupo) {
+    if (checkboxClicado.checked && checkboxClicado.value.includes("NÃO APRESENTA")) {
+        let todosDoGrupo = document.querySelectorAll(`input[name="${nomeGrupo}"]`);
+        todosDoGrupo.forEach(c => {
+            if (c !== checkboxClicado) c.checked = false;
+        });
+    } else if (checkboxClicado.checked) {
+        // Se ele clicou em um problema, garante que o "TUDO OK" fique desmarcado
+        let todosDoGrupo = document.querySelectorAll(`input[name="${nomeGrupo}"]`);
+        todosDoGrupo.forEach(c => {
+            if (c.value.includes("NÃO APRESENTA")) c.checked = false;
+        });
     }
 }
 
-function getSelectOuOutro(idInputOutro) {
-    let input = document.getElementById(idInputOutro);
-    if (!input) return "";
-    let select = input.previousElementSibling;
-    if (select.value === "OUTRO") return input.value || "Outro (Não especificado)";
-    return select.value;
+// MÁGICA 2: TWI Automático (Novo, Meia-Vida, Limite)
+function calcularStatusTwi(inputEl, badgeId) {
+    let badge = document.getElementById(badgeId);
+    let val = parseFloat(inputEl.value);
+    
+    if (isNaN(val)) {
+        badge.innerText = "Aguardando...";
+        badge.style.backgroundColor = "#eee";
+        badge.style.color = "#666";
+        return;
+    }
+    
+    if (val >= 10) {
+        badge.innerText = "Pneu Novo";
+        badge.style.backgroundColor = "#d4edda";
+        badge.style.color = "#155724";
+    } else if (val >= 5) {
+        badge.innerText = "Meia-Vida";
+        badge.style.backgroundColor = "#fff3cd";
+        badge.style.color = "#856404";
+    } else {
+        badge.innerText = "No Limite";
+        badge.style.backgroundColor = "#f8d7da";
+        badge.style.color = "#721c24";
+    }
+}
+
+// VARREDURA DE DADOS: Pega tudo o que foi selecionado e junta com vírgulas
+function pegarMarcados(nomeGrupo, idOutro) {
+    let selecionados = [];
+    document.querySelectorAll(`input[name="${nomeGrupo}"]:checked`).forEach(c => selecionados.push(c.value));
+    
+    let txtOutro = document.getElementById(idOutro);
+    if (txtOutro && txtOutro.value.trim() !== "") {
+        selecionados.push("OUTROS: " + txtOutro.value.trim());
+    }
+    
+    return selecionados.length > 0 ? selecionados.join(" | ") : "Não avaliado";
 }
 
 async function enviarChecklist() {
     let btn = document.getElementById('btn-enviar-chk');
     btn.innerText = "Salvando na Nuvem... ⏳";
     btn.disabled = true;
+
+    // Constrói a string do extintor "10/2026 - Pressão OK"
+    let dataExt = document.getElementById('chk-extintor-data').value;
+    let pressExt = document.getElementById('chk-extintor-pressao').value;
+    let textoExtintor = (dataExt ? `Val: ${dataExt}` : "Sem Data") + ` - ${pressExt}`;
 
     let payload = {
         acao: "salvar_checklist",
@@ -461,33 +514,36 @@ async function enviarChecklist() {
         data_tacografo: document.getElementById('chk-data-taco').value,
         data_graxa: document.getElementById('chk-data-graxa').value,
         
-        chk_motor: getSelectOuOutro('chk-motor-outro'),
-        chk_cambio: getSelectOuOutro('chk-cambio-outro'),
-        chk_embreagem: getSelectOuOutro('chk-emb-outro'),
-        chk_direcao: getSelectOuOutro('chk-dir-outro'),
-        chk_freios: getSelectOuOutro('chk-freio-outro'),
-        chk_suspensao: getSelectOuOutro('chk-susp-outro'),
-        chk_pneus_geral: getSelectOuOutro('chk-pneu-outro'),
-        chk_eletrica: getSelectOuOutro('chk-elet-outro'),
-        chk_indicadores: getSelectOuOutro('chk-ind-outro'),
-        chk_cabine: getSelectOuOutro('chk-cab-outro'),
-        chk_faltantes: getSelectOuOutro('chk-falta-outro'),
+        // Pega as caixinhas marcadas com a mágica do varredor
+        chk_motor: pegarMarcados('chk-motor', 'chk-motor-outro'),
+        chk_cambio: pegarMarcados('chk-cambio', 'chk-cambio-outro'),
+        chk_embreagem: pegarMarcados('chk-embreagem', 'chk-emb-outro'),
+        chk_direcao: pegarMarcados('chk-direcao', 'chk-dir-outro'),
+        chk_freios: pegarMarcados('chk-freios', 'chk-freio-outro'),
+        chk_suspensao: pegarMarcados('chk-suspensao', 'chk-susp-outro'),
+        chk_pneus_geral: pegarMarcados('chk-pneus_geral', 'chk-pneu-outro'),
+        chk_eletrica: pegarMarcados('chk-eletrica', 'chk-elet-outro'),
+        chk_indicadores: pegarMarcados('chk-indicadores', 'chk-ind-outro'),
+        chk_cabine: pegarMarcados('chk-cabine', 'chk-cab-outro'),
+        chk_faltantes: pegarMarcados('chk-faltantes', 'chk-falta-outro'),
         
-        chk_extintores: document.getElementById('chk-extintor').value,
+        chk_extintores: textoExtintor,
         chk_parada: document.getElementById('chk-parada').value,
         chk_obs: document.getElementById('chk-obs').value,
         
         pneus: {}
     };
 
+    // Coleta TWI e o Estado (que agora é a badge!)
     const idsPneus = ['dd', 'de', 'tde', 'tdi', 'tee', 'tei', 'tkde', 'tkdi', 'tkee', 'tkei', '1step'];
     idsPneus.forEach(id => {
         let twi = document.getElementById('chk-twi-' + id).value;
-        let est = document.getElementById('chk-estado-' + id).value;
-        if (twi || est) {
+        let badge = document.getElementById('badge-estado-' + id).innerText;
+        
+        if (twi) {
             payload.pneus[id] = {
                 milimetros: twi,
-                estado: est
+                estado: badge // Envia "Novo", "Meia-Vida", etc direto pro Google
             };
         }
     });
@@ -503,8 +559,6 @@ async function enviarChecklist() {
         if (dados.sucesso) {
             alert("✅ Sucesso! Checklist salvo e Ficha Técnica atualizada.");
             cancelarChecklist(); 
-            
-            // Recarrega o Histórico e a Ficha na hora!
             carregarHistoricoVisual();
             selecionarPlaca(payload.placa); 
         } else {
