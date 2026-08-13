@@ -105,7 +105,6 @@ body {
     border: 2px dashed #1a4d2e;
 }
 
-/* --- ESTILOS DOS CARDS --- */
 .secao-conteudo {
     width: 100%;
     display: none;
@@ -189,7 +188,6 @@ summary {
     font-weight: bold;
     transition: all 0.3s;
 }
-
 .input-editavel.travado {
     background-color: #f0f0f0;
     border: 1px solid #e0e0e0;
@@ -201,7 +199,6 @@ summary {
     background-color: #e8f5e9;
 }
 
-/* --- ESTILOS DO CHECKLIST --- */
 .abas-checklist {
     display: flex;
     gap: 5px;
@@ -209,7 +206,6 @@ summary {
     overflow-x: auto;
     padding-bottom: 5px;
 }
-
 .btn-tab-chk {
     background-color: #e0e0e0;
     color: #555;
@@ -220,12 +216,10 @@ summary {
     font-weight: bold;
     white-space: nowrap;
 }
-
 .btn-tab-chk.ativo {
     background-color: #1a4d2e;
     color: white;
 }
-
 .historico-item {
     display: flex;
     justify-content: space-between;
