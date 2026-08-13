@@ -119,6 +119,10 @@ async function selecionarPlaca(placa) {
                     if(elKmTroca) elKmTroca.innerText = pneu.km_ultima_troca || "0";
                 }
             }
+            
+            document.getElementById('texto-placa-escolhida').innerText = placa;
+        } else {
+            document.getElementById('texto-placa-escolhida').innerText = placa + " (Não Cadastrada)";
         }
 
         document.getElementById('km-proxima-troca').value = kmProximaTroca;
@@ -130,21 +134,20 @@ async function selecionarPlaca(placa) {
         calcularTacografo(); 
         calcularGraxa();
 
-        document.getElementById('texto-placa-escolhida').innerText = dados.erro ? placa + " (Não Cadastrada)" : placa;
-
     } catch (erro) {
-        document.getElementById('texto-placa-escolhida').innerText = placa + " (Offline)";
+        console.log("Erro ao carregar dados:", erro);
+        document.getElementById('texto-placa-escolhida').innerText = placa + " (Offline / Erro)";
         document.getElementById('km-proxima-troca').value = 15000;
         document.getElementById('km-master').value = 0;
         urlDocAtual = "";
-        atualizarKMGeral();
+    } finally {
+        // A MÁGICA DE DESTRAVAR FICA AQUI! Funciona mesmo se der erro antes.
+        botoesMenu.forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        });
     }
-    
-    botoesMenu.forEach(btn => {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        btn.style.cursor = 'pointer';
-    });
 }
 
 function voltarParaPlacas() {
