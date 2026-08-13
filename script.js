@@ -83,9 +83,11 @@ function selecionarPlaca(placa) {
     if (dados.km_oleo) kmProximaTroca = parseInt(String(dados.km_oleo).replace(/\./g, '')) || 15000;
     document.getElementById('km-proxima-troca').value = kmProximaTroca;
     
-    // DATAS
+    // DATAS E EQUIPAMENTOS
     document.getElementById('data-proxima-afericao').value = dados.data_tacografo || "";
     document.getElementById('data-engraxada').value = dados.data_graxa || "";
+    document.getElementById('qtd-carrinhos').value = dados.qtd_carrinhos || 0; // Puxa do Google!
+    document.getElementById('qtd-cones').value = dados.qtd_cones || 0;         // Puxa do Google!
     urlDocAtual = dados.link_documento || "";
 
     // PNEUS
@@ -104,30 +106,17 @@ function selecionarPlaca(placa) {
         }
     }
 
-    // FOTOS (Renderiza na Ficha Técnica se existir)
-    let imgLat = document.getElementById('ficha-img-lat');
-    let plLat = document.getElementById('ficha-pl-lat');
-    if (dados.foto_lateral) {
-        imgLat.src = dados.foto_lateral; imgLat.style.display = 'block'; plLat.style.display = 'none';
-    } else {
-        imgLat.style.display = 'none'; plLat.style.display = 'flex';
-    }
+    // FOTOS (Renderiza se existir)
+    let imgLat = document.getElementById('ficha-img-lat'); let plLat = document.getElementById('ficha-pl-lat');
+    if (dados.foto_lateral) { imgLat.src = dados.foto_lateral; imgLat.style.display = 'block'; plLat.style.display = 'none'; } 
+    else { imgLat.style.display = 'none'; plLat.style.display = 'flex'; }
 
-    let imgTras = document.getElementById('ficha-img-tras');
-    let plTras = document.getElementById('ficha-pl-tras');
-    if (dados.foto_traseira) {
-        imgTras.src = dados.foto_traseira; imgTras.style.display = 'block'; plTras.style.display = 'none';
-    } else {
-        imgTras.style.display = 'none'; plTras.style.display = 'flex';
-    }
+    let imgTras = document.getElementById('ficha-img-tras'); let plTras = document.getElementById('ficha-pl-tras');
+    if (dados.foto_traseira) { imgTras.src = dados.foto_traseira; imgTras.style.display = 'block'; plTras.style.display = 'none'; } 
+    else { imgTras.style.display = 'none'; plTras.style.display = 'flex'; }
 
-    // DISPARA OS CALCULADORES
-    atualizarKMGeral(); 
-    calcularTacografo(); 
-    calcularGraxa();
-    
-    esconderTodasTelas();
-    document.getElementById('tela-menu').style.display = 'flex';
+    atualizarKMGeral(); calcularTacografo(); calcularGraxa();
+    esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex';
 }
 
 function voltarParaPlacas() { esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex'; }
@@ -154,13 +143,14 @@ function salvarFichaNaNuvemBackground() {
         km_oleo: document.getElementById('km-proxima-troca').value,
         data_tacografo: document.getElementById('data-proxima-afericao').value,
         data_graxa: document.getElementById('data-engraxada').value,
+        qtd_carrinhos: document.getElementById('qtd-carrinhos').value, // Manda pro Google
+        qtd_cones: document.getElementById('qtd-cones').value,         // Manda pro Google
         pneus: {}
     };
     
     const idsPneus = ['dd', 'de', 'tde', 'tdi', 'tee', 'tei', 'tkde', 'tkdi', 'tkee', 'tkei', '1step'];
     idsPneus.forEach(id => {
-        let km = document.getElementById('km-troca-'+id);
-        let dt = document.getElementById('data-troca-'+id);
+        let km = document.getElementById('km-troca-'+id); let dt = document.getElementById('data-troca-'+id);
         if(km && dt) { payload.pneus[id] = { km_ultima_troca: km.value, data_ultima_troca: dt.value }; }
     });
 
@@ -172,6 +162,9 @@ function salvarFichaNaNuvemBackground() {
             window.frota[payload.placa].km_oleo = payload.km_oleo;
             window.frota[payload.placa].data_tacografo = payload.data_tacografo;
             window.frota[payload.placa].data_graxa = payload.data_graxa;
+            window.frota[payload.placa].qtd_carrinhos = payload.qtd_carrinhos; // Atualiza Memória
+            window.frota[payload.placa].qtd_cones = payload.qtd_cones;         // Atualiza Memória
+            
             for(let id in payload.pneus) {
                 if(!window.frota[payload.placa].pneus[id]) window.frota[payload.placa].pneus[id] = {};
                 window.frota[payload.placa].pneus[id].km_ultima_troca = payload.pneus[id].km_ultima_troca;
@@ -304,6 +297,7 @@ function alternarEdicaoEquip() {
     } else {
         campos.forEach(c => { c.setAttribute('readonly', 'true'); c.classList.add('travado'); });
         btn.innerHTML = "✏️ Editar"; btn.style.backgroundColor = "transparent"; btn.style.color = "#1a4d2e";
+        salvarFichaNaNuvemBackground(); // Salva invisível e dispara pra nuvem
     }
 }
 
