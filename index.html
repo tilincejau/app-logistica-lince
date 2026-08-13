@@ -423,7 +423,7 @@
                 <div id="passo-chk-4" style="display:none; padding: 0 10px;">
                     
                     <label class="info-label">11. Itens FALTANTES no Caminhão?</label>
-                    <select class="input-campo" onchange="verificarOutro(this, 'chk-falta-outro')">
+                    <select id="chk-faltantes-select" class="input-campo" onchange="verificarOutro(this, 'chk-falta-outro')">
                         <option>TODOS OS ITENS ESTÃO NO CAMINHÃO</option>
                         <option>AVISOS SONOROS DE RÉ / SETA / FREIO</option>
                         <option>ADESIVO DE VELOCIDADE / DOCUMENTAÇÃO</option>
@@ -439,30 +439,44 @@
                     <label class="info-label" style="border-top: 1px solid #ccc; padding-top: 15px;">Extintores (Validade e Pressão):</label>
                     <input type="text" id="chk-extintor" class="input-campo" placeholder="Ex: Val 10/2026 - Pressão OK">
 
-                    <label class="info-label" style="border-top: 1px solid #ccc; padding-top: 15px;">Medidas TWI dos Pneus (Obrigatório):</label>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                        <input type="number" placeholder="DD" class="input-campo" style="margin:0;">
-                        <input type="number" placeholder="DE" class="input-campo" style="margin:0;">
-                        <input type="number" placeholder="TDE" class="input-campo" style="margin:0;">
-                        <input type="number" placeholder="TDI" class="input-campo" style="margin:0;">
-                        <input type="number" placeholder="TEE" class="input-campo" style="margin:0;">
-                        <input type="number" placeholder="TEI" class="input-campo" style="margin:0;">
-                        <input type="number" placeholder="TKEE" class="input-campo" style="margin:0;">
-                        <input type="number" placeholder="TKEI" class="input-campo" style="margin:0;">
-                        <input type="number" placeholder="TKDE" class="input-campo" style="margin:0;">
-                        <input type="number" placeholder="TKDI" class="input-campo" style="margin:0;">
+                    <label class="info-label" style="border-top: 1px solid #ccc; padding-top: 15px;">Medidas TWI e Estado dos Pneus:</label>
+                    <p style="font-size: 11px; color: #666; margin-top: -10px;">Preencha o TWI e escolha se a carcaça é Nova ou Ressolada.</p>
+                    
+                    <div id="grade-pneus-checklist" style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                        <script>
+                            const pneusForm = [
+                                {id: 'dd', n: 'DD'}, {id: 'de', n: 'DE'}, {id: 'tde', n: 'TDE'}, {id: 'tdi', n: 'TDI'}, 
+                                {id: 'tee', n: 'TEE'}, {id: 'tei', n: 'TEI'}, {id: 'tkde', n: 'TKDE'}, {id: 'tkdi', n: 'TKDI'}, 
+                                {id: 'tkee', n: 'TKEE'}, {id: 'tkei', n: 'TKEI'}, {id: '1step', n: 'STEP'}
+                            ];
+                            pneusForm.forEach(p => {
+                                document.write(`
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 5px;">
+                                        <span style="font-weight: bold; width: 45px;">${p.n}</span>
+                                        <input type="number" id="chk-twi-${p.id}" placeholder="TWI" class="input-campo" style="margin:0; width: 70px; padding: 10px;">
+                                        <select id="chk-estado-${p.id}" class="input-campo" style="margin:0; padding: 10px; flex: 1;">
+                                            <option value="">Estado...</option>
+                                            <option value="Novo">Novo</option>
+                                            <option value="1ª Ressolagem">1ª Ressolagem</option>
+                                            <option value="2ª Ressolagem">2ª Ressolagem</option>
+                                            <option value="3ª Ressolagem">3ª Ressolagem</option>
+                                        </select>
+                                    </div>
+                                `);
+                            });
+                        </script>
                     </div>
 
                     <label class="info-label" style="border-top: 1px solid #ccc; padding-top: 15px;">Necessário Parada para Revisão?</label>
-                    <select class="input-campo" style="border: 2px solid red;">
+                    <select id="chk-parada" class="input-campo" style="border: 2px solid red;">
                         <option value="Não">Não</option>
                         <option value="Sim">Sim, Urgente</option>
                     </select>
 
                     <label class="info-label">Considerações Finais:</label>
-                    <textarea class="input-campo" rows="3" placeholder="Digite aqui alguma observação extra..."></textarea>
+                    <textarea id="chk-obs" class="input-campo" rows="3" placeholder="Digite aqui alguma observação extra..."></textarea>
 
-                    <button class="btn-principal" style="background-color: #0056b3;" onclick="alert('Função de salvar no Google em construção!')">💾 Enviar e Atualizar Ficha</button>
+                    <button class="btn-principal" id="btn-enviar-chk" style="background-color: #0056b3;" onclick="enviarChecklist()">💾 Enviar Checklist</button>
                     <button class="btn-secundario" onclick="mudarAbaChecklist(3)" style="margin-bottom:0;">⬅️ Voltar</button>
                 </div>
 
