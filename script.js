@@ -11,6 +11,7 @@ window.frota = {};
 window.estoqueDiesel = 0; 
 window.estoqueArla = 0; 
 window.gastoMesGeral = 0;
+window.histAbast = { diesel: [], arla: [], cheg_diesel: [], cheg_arla: [] };
 
 const pneusCavalo = [ {id:'dd',n:'DD'}, {id:'de',n:'DE'}, {id:'tde',n:'TDE'}, {id:'tdi',n:'TDI'}, {id:'tee',n:'TEE'}, {id:'tei',n:'TEI'}, {id:'tkde',n:'TKDE'}, {id:'tkdi',n:'TKDI'}, {id:'tkee',n:'TKEE'}, {id:'tkei',n:'TKEI'}, {id:'1step',n:'1º STEP'} ];
 const pneusCarreta = [ {id:'c1',n:'C1'}, {id:'c2',n:'C2'}, {id:'c3',n:'C3'}, {id:'c4',n:'C4'}, {id:'c5',n:'C5'}, {id:'c6',n:'C6'}, {id:'c7',n:'C7'}, {id:'c8',n:'C8'}, {id:'c9',n:'C9'}, {id:'c10',n:'C10'}, {id:'2step',n:'2º STEP'} ];
@@ -43,25 +44,12 @@ window.onload = function() {
     let chkCarreta = document.getElementById('chk-pneus-carreta-container'); if(chkCarreta) chkCarreta.innerHTML = construtorChk(pneusCarreta);
 };
 
-// ==========================================
-// CONVERSOR MÁGICO DE FOTOS (ATUALIZADO)
-// O Google bloqueou o link uc?export. Agora usamos o servidor de fotos oficial!
-// ==========================================
 function forcarImagemDiretaDrive(url) {
     if (!url || typeof url !== 'string') return "";
-    
-    // Procura o ID do arquivo dentro do link do Google Drive
     let matchId = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if (matchId && matchId[1]) {
-        // Redireciona para o servidor de conteúdo puro do Google
-        return "https://lh3.googleusercontent.com/d/" + matchId[1];
-    }
-    
+    if (matchId && matchId[1]) return "https://lh3.googleusercontent.com/d/" + matchId[1];
     let matchId2 = url.match(/id=([a-zA-Z0-9_-]+)/);
-    if (matchId2 && matchId2[1]) {
-        return "https://lh3.googleusercontent.com/d/" + matchId2[1];
-    }
-    
+    if (matchId2 && matchId2[1]) return "https://lh3.googleusercontent.com/d/" + matchId2[1];
     return url;
 }
 
@@ -92,7 +80,11 @@ async function fazerLogin() {
                 window.estoqueDiesel = res2.estoque_diesel; 
                 window.estoqueArla = res2.estoque_arla; 
                 window.gastoMesGeral = res2.gasto_mes_geral;
+                window.histAbast = res2.hist_abast || window.histAbast;
+                
                 renderizarHistorico(res2.historico); 
+                renderizarHistoricoAbast();
+                
                 esconderTodasTelas(); 
                 document.getElementById('tela-placas').style.display = 'flex';
             } else { msg.innerText = "Erro: " + res2.erro; msg.style.display = 'block'; }
@@ -142,7 +134,6 @@ function selecionarPlaca(placa) {
             });
         }
 
-        // FOTOS COM O TRADUTOR DE LINK SEGURO
         let iL = document.getElementById('ficha-img-lat'); let pL = document.getElementById('ficha-pl-lat');
         if (iL && pL) { 
             if (dados.foto_lateral && dados.foto_lateral !== "") { 
@@ -204,9 +195,7 @@ function salvarFichaNaNuvemBackground() {
         if(km && dt) { payload.pneus[id] = { km_ultima_troca: km.value, data_ultima_troca: dt.value }; } 
     });
 
-    fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) })
-    .then(res => res.json())
-    .then(d => {
+    fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(res => res.json()).then(d => {
         if(d.sucesso) {
             window.frota[payload.placa].tipo = payload.tipo; window.frota[payload.placa].motorista = payload.motorista; window.frota[payload.placa].km_atual = payload.km_atual; window.frota[payload.placa].km_oleo = payload.km_oleo; window.frota[payload.placa].data_tacografo = payload.data_tacografo; window.frota[payload.placa].data_graxa = payload.data_graxa; window.frota[payload.placa].qtd_carrinhos = payload.qtd_carrinhos; window.frota[payload.placa].qtd_cones = payload.qtd_cones; window.frota[payload.placa].data_extintor = payload.data_extintor;
             for(let id in payload.pneus) { if(!window.frota[payload.placa].pneus[id]) window.frota[payload.placa].pneus[id] = {}; window.frota[payload.placa].pneus[id].km_ultima_troca = payload.pneus[id].km_ultima_troca; window.frota[payload.placa].pneus[id].data_ultima_troca = payload.pneus[id].data_ultima_troca; }
@@ -230,8 +219,21 @@ function calcularAbastecimento() { let kA = parseFloat(document.getElementById('
 function calcularGraxa() { let s = document.getElementById('data-engraxada').value; let t = document.getElementById('status-graxa'); if (!s || s.length < 8) { if(t) t.innerHTML = "---"; document.getElementById('data-prox-engraxada').innerText = "--/--/----"; return; } let p = s.split('-'); let ultima = new Date(p[0], p[1] - 1, p[2]); let proxima = new Date(ultima); proxima.setDate(proxima.getDate() + 30); document.getElementById('data-prox-engraxada').innerText = `${String(proxima.getDate()).padStart(2,'0')}/${String(proxima.getMonth()+1).padStart(2,'0')}/${proxima.getFullYear()}`; let h = new Date(); h.setHours(0,0,0,0); let d = Math.ceil((proxima.getTime() - h.getTime()) / (1000 * 3600 * 24)); if (d < 0) { t.innerHTML = `VENCIDO há ${Math.abs(d)} dias ❌`; t.style.color = "red"; } else if (d <= 5) { t.innerHTML = `Atenção: Faltam ${d} dias ⚠️`; t.style.color = "#d4a017"; } else { t.innerHTML = `Faltam ${d} dias ✅`; t.style.color = "green"; } }
 function abrirDocPDF() { if (urlDocAtual && urlDocAtual.trim() !== "") window.open(urlDocAtual, '_blank'); else alert("Nenhum documento cadastrado para este veículo."); }
 
+// CONSTRUTOR DO HISTÓRICO DE ABASTECIMENTOS
+function renderizarHistoricoAbast() {
+    let construtorHTML = (lista, isChegada) => {
+        if (!lista || lista.length === 0) return "<p style='color:#666; font-size:12px; margin:0;'>Nenhum registro encontrado.</p>";
+        return lista.map(i => `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #eee; font-size:12px;"><span>📅 ${i.data} ${isChegada ? '' : `- <b>${i.placa}</b>`}</span><span style="font-weight:bold; color:${isChegada ? '#1a4d2e' : '#b30000'};">${isChegada ? '+' : '-'} ${i.litros} L</span></div>`).join('');
+    };
+    let eD = document.getElementById('hist-abast-diesel'); if(eD) eD.innerHTML = construtorHTML(window.histAbast.diesel, false);
+    let eA = document.getElementById('hist-abast-arla'); if(eA) eA.innerHTML = construtorHTML(window.histAbast.arla, false);
+    let eCD = document.getElementById('hist-cheg-diesel'); if(eCD) eCD.innerHTML = construtorHTML(window.histAbast.cheg_diesel, true);
+    let eCA = document.getElementById('hist-cheg-arla'); if(eCA) eCA.innerHTML = construtorHTML(window.histAbast.cheg_arla, true);
+}
+
 function mudarFormAbast() { let t = document.getElementById('tipo-abast').value; if (t.includes("CHEGADA")) { document.getElementById('form-abast-veiculo').style.display = 'none'; document.getElementById('form-abast-chegada').style.display = 'block'; } else { document.getElementById('form-abast-veiculo').style.display = 'block'; document.getElementById('form-abast-chegada').style.display = 'none'; } }
 function preencherDataHoraAbast() { let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString().slice(0,16); let eA = document.getElementById('abast-data'); if(eA) eA.value = hL; let eC = document.getElementById('chegada-data'); if(eC) eC.value = hL; document.getElementById('estoque-diesel-geral').innerText = window.estoqueDiesel + " L"; document.getElementById('estoque-arla-geral').innerText = window.estoqueArla + " L"; document.getElementById('gasto-mes-geral').innerText = window.gastoMesGeral + " L"; }
+
 async function salvarAbastecimentoNuvem() {
     let t = document.getElementById('tipo-abast').value; let pl = document.getElementById('texto-placa-interna').innerText;
     let p = { acao: "salvar_abastecimento", tipo: t, placa: t.includes("CHEGADA") ? "ESTOQUE" : pl };
@@ -249,17 +251,39 @@ async function salvarAbastecimentoNuvem() {
         let req = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); let res = await req.json();
         if (res.sucesso) {
             alert("✅ Salvo com sucesso!"); document.getElementById('abast-km-novo').value = ""; document.getElementById('abast-litros-bomba').value = ""; document.getElementById('chegada-litros').value = ""; document.getElementById('chegada-nf').value = "";
+            
+            // Adiciona o lançamento na lista de histórico localmente na hora!
+            let hj = new Date(); let hjStr = String(hj.getDate()).padStart(2,'0') + '/' + String(hj.getMonth()+1).padStart(2,'0') + '/' + hj.getFullYear();
+            let newItem = { data: hjStr, placa: pl, litros: p.litros };
+            
             if (!t.includes("CHEGADA")) {
                 window.frota[pl].km_atual = p.km; document.getElementById('km-master').value = p.km; document.getElementById('aviso-ultimo-km').innerText = p.km; atualizarKMGeral(); 
-                if(t === "DIESEL") { window.frota[pl].gasto_mes = (window.frota[pl].gasto_mes || 0) + p.litros; document.getElementById('abast-gasto-mes').innerText = window.frota[pl].gasto_mes + " L"; window.estoqueDiesel -= p.litros; window.gastoMesGeral += p.litros; }
-                if(t === "ARLA") window.estoqueArla -= p.litros;
-            } else { if(t === "CHEGADA DE DIESEL") window.estoqueDiesel += p.litros; if(t === "CHEGADA DE ARLA") window.estoqueArla += p.litros; }
+                if(t === "DIESEL") { 
+                    window.frota[pl].gasto_mes = (window.frota[pl].gasto_mes || 0) + p.litros; document.getElementById('abast-gasto-mes').innerText = window.frota[pl].gasto_mes + " L"; window.estoqueDiesel -= p.litros; window.gastoMesGeral += p.litros; 
+                    window.histAbast.diesel.unshift(newItem); window.histAbast.diesel = window.histAbast.diesel.slice(0, 24);
+                }
+                if(t === "ARLA") {
+                    window.estoqueArla -= p.litros;
+                    window.histAbast.arla.unshift(newItem); window.histAbast.arla = window.histAbast.arla.slice(0, 24);
+                }
+            } else { 
+                if(t === "CHEGADA DE DIESEL") {
+                    window.estoqueDiesel += p.litros; 
+                    window.histAbast.cheg_diesel.unshift(newItem); window.histAbast.cheg_diesel = window.histAbast.cheg_diesel.slice(0, 3);
+                }
+                if(t === "CHEGADA DE ARLA") {
+                    window.estoqueArla += p.litros; 
+                    window.histAbast.cheg_arla.unshift(newItem); window.histAbast.cheg_arla = window.histAbast.cheg_arla.slice(0, 3);
+                }
+            }
             preencherDataHoraAbast(); 
+            renderizarHistoricoAbast(); // Atualiza a tela de histórico na mesma hora
         } else { alert("❌ Erro: " + res.erro); }
     } catch (e) { alert("❌ Erro de conexão."); }
     b.innerText = "💾 Salvar Lançamento"; b.disabled = false;
 }
 
+// CHECKLIST E FOTOS
 let b64Lateral = ""; let b64Traseira = "";
 function processarFoto(input, idPreview) {
     if (!input.files || !input.files[0]) return; const r = new FileReader();
