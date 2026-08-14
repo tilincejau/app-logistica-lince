@@ -20,6 +20,7 @@
 
     <div id="tela-login" class="app-container">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logo Lince" class="logo">
+        <div class="desenvolvedor">Desenvolvido por João Marcelo Magon Bonini</div>
         
         <input type="text" id="campo-usuario" class="input-campo" placeholder="Usuário">
         <input type="password" id="campo-senha" class="input-campo" placeholder="Senha">
@@ -29,6 +30,8 @@
 
     <div id="tela-placas" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
+        <div class="desenvolvedor">Desenvolvido por João Marcelo Magon Bonini</div>
+
         <button class="btn-secundario" onclick="sairDaConta()">⬅ Sair da Conta</button>
         <h2 class="titulo-tela">Selecione o Veículo</h2>
         
@@ -60,6 +63,8 @@
 
     <div id="tela-menu" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
+        <div class="desenvolvedor">Desenvolvido por João Marcelo Magon Bonini</div>
+
         <button class="btn-secundario" onclick="voltarParaPlacas()">⬅ Trocar Veículo</button>
         <h2 class="titulo-tela">Menu Principal</h2>
         <div class="alerta-veiculo">
@@ -75,6 +80,8 @@
 
     <div id="tela-interna" class="app-container" style="display: none;">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
+        <div class="desenvolvedor">Desenvolvido João Marcelo Magon Bonini</div>
+
         <button class="btn-secundario" onclick="voltarParaMenu()">⬅ Voltar ao Menu</button>
         <h2 id="titulo-tela-interna" class="titulo-tela">Nome da Página</h2>
         <div class="alerta-veiculo" style="font-size: 14px; padding: 5px;">
@@ -152,7 +159,8 @@
                 <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;"><span class="info-label" style="margin:0;">Status Graxa:</span><span id="status-graxa" style="font-weight:bold; font-size: 15px;">---</span></div>
             </div>
 
-            <div class="card">
+            <!-- FOTOS NA FICHA TÉCNICA (Suma para cavalos) -->
+            <div class="card" id="card-fotos-ficha">
                 <h3 class="card-titulo">📸 Fotos do Mês</h3>
                 <div style="display: flex; gap: 10px; justify-content: space-between;">
                     <div style="flex: 1; text-align: center;"><span style="font-size: 13px; font-weight: bold; color: #1a4d2e;">Lateral</span><div id="ficha-pl-lat" class="foto-placeholder">Aguardando Foto...</div><img id="ficha-img-lat" class="foto-preview"></div>
@@ -259,6 +267,7 @@
                         <div id="chk-pneus-carreta-container" style="display: grid; grid-template-columns: 1fr; gap: 10px;"></div>
                     </div>
 
+                    <!-- FOTOS SOMEM COMPLETAMENTE SE FOR CAVALO -->
                     <div class="grupo-checkbox" id="sessao-fotos-checklist">
                         <div class="titulo-grupo-chk">15. FOTOS DO MÊS <span style="color:red">*</span></div>
                         <p id="aviso-fotos-ok" style="display:none; color:green; font-weight:bold; text-align:center;">✅ Fotos deste mês já foram enviadas!</p>
@@ -314,7 +323,6 @@
         <div id="conteudo-Estoque" class="secao-conteudo"><p style="text-align:center;">Tela de Peças em construção...</p></div>
     </div>
 
-    <!-- v=45 LIMPEZA TOTAL DE CACHE -->
-    <script src="script.js?v=45"></script>
+    <script src="script.js?v=48"></script>
 </body>
 </html>
