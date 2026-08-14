@@ -12,6 +12,7 @@ window.estoqueDiesel = 0;
 window.estoqueArla = 0; 
 window.gastoMesGeral = 0;
 window.histAbast = { diesel: [], arla: [], cheg_diesel: [], cheg_arla: [] };
+window.estoquePecas = []; // NOVO ARRAY DE ESTOQUE
 
 const pneusCavalo = [ {id:'dd',n:'DD'}, {id:'de',n:'DE'}, {id:'tde',n:'TDE'}, {id:'tdi',n:'TDI'}, {id:'tee',n:'TEE'}, {id:'tei',n:'TEI'}, {id:'tkde',n:'TKDE'}, {id:'tkdi',n:'TKDI'}, {id:'tkee',n:'TKEE'}, {id:'tkei',n:'TKEI'}, {id:'1step',n:'1º STEP'} ];
 const pneusCarreta = [ {id:'c1',n:'C1'}, {id:'c2',n:'C2'}, {id:'c3',n:'C3'}, {id:'c4',n:'C4'}, {id:'c5',n:'C5'}, {id:'c6',n:'C6'}, {id:'c7',n:'C7'}, {id:'c8',n:'C8'}, {id:'c9',n:'C9'}, {id:'c10',n:'C10'}, {id:'2step',n:'2º STEP'} ];
@@ -81,9 +82,11 @@ async function fazerLogin() {
                 window.estoqueArla = res2.estoque_arla; 
                 window.gastoMesGeral = res2.gasto_mes_geral;
                 window.histAbast = res2.hist_abast || window.histAbast;
-                
+                window.estoquePecas = res2.estoque_pecas || []; // GUARDA O ESTOQUE
+
                 renderizarHistorico(res2.historico); 
                 renderizarHistoricoAbast();
+                renderizarEstoquePecas(); // RENDERIZA AS PEÇAS E DROPDOWNS
                 
                 esconderTodasTelas(); 
                 document.getElementById('tela-placas').style.display = 'flex';
@@ -219,7 +222,7 @@ function calcularAbastecimento() { let kA = parseFloat(document.getElementById('
 function calcularGraxa() { let s = document.getElementById('data-engraxada').value; let t = document.getElementById('status-graxa'); if (!s || s.length < 8) { if(t) t.innerHTML = "---"; document.getElementById('data-prox-engraxada').innerText = "--/--/----"; return; } let p = s.split('-'); let ultima = new Date(p[0], p[1] - 1, p[2]); let proxima = new Date(ultima); proxima.setDate(proxima.getDate() + 30); document.getElementById('data-prox-engraxada').innerText = `${String(proxima.getDate()).padStart(2,'0')}/${String(proxima.getMonth()+1).padStart(2,'0')}/${proxima.getFullYear()}`; let h = new Date(); h.setHours(0,0,0,0); let d = Math.ceil((proxima.getTime() - h.getTime()) / (1000 * 3600 * 24)); if (d < 0) { t.innerHTML = `VENCIDO há ${Math.abs(d)} dias ❌`; t.style.color = "red"; } else if (d <= 5) { t.innerHTML = `Atenção: Faltam ${d} dias ⚠️`; t.style.color = "#d4a017"; } else { t.innerHTML = `Faltam ${d} dias ✅`; t.style.color = "green"; } }
 function abrirDocPDF() { if (urlDocAtual && urlDocAtual.trim() !== "") window.open(urlDocAtual, '_blank'); else alert("Nenhum documento cadastrado para este veículo."); }
 
-// CONSTRUTOR DO HISTÓRICO DE ABASTECIMENTOS
+// FUNÇÕES DE HISTÓRICO DE ABASTECIMENTO
 function renderizarHistoricoAbast() {
     let construtorHTML = (lista, isChegada) => {
         if (!lista || lista.length === 0) return "<p style='color:#666; font-size:12px; margin:0;'>Nenhum registro encontrado.</p>";
@@ -251,39 +254,157 @@ async function salvarAbastecimentoNuvem() {
         let req = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); let res = await req.json();
         if (res.sucesso) {
             alert("✅ Salvo com sucesso!"); document.getElementById('abast-km-novo').value = ""; document.getElementById('abast-litros-bomba').value = ""; document.getElementById('chegada-litros').value = ""; document.getElementById('chegada-nf').value = "";
-            
-            // Adiciona o lançamento na lista de histórico localmente na hora!
             let hj = new Date(); let hjStr = String(hj.getDate()).padStart(2,'0') + '/' + String(hj.getMonth()+1).padStart(2,'0') + '/' + hj.getFullYear();
             let newItem = { data: hjStr, placa: pl, litros: p.litros };
-            
             if (!t.includes("CHEGADA")) {
                 window.frota[pl].km_atual = p.km; document.getElementById('km-master').value = p.km; document.getElementById('aviso-ultimo-km').innerText = p.km; atualizarKMGeral(); 
-                if(t === "DIESEL") { 
-                    window.frota[pl].gasto_mes = (window.frota[pl].gasto_mes || 0) + p.litros; document.getElementById('abast-gasto-mes').innerText = window.frota[pl].gasto_mes + " L"; window.estoqueDiesel -= p.litros; window.gastoMesGeral += p.litros; 
-                    window.histAbast.diesel.unshift(newItem); window.histAbast.diesel = window.histAbast.diesel.slice(0, 24);
-                }
-                if(t === "ARLA") {
-                    window.estoqueArla -= p.litros;
-                    window.histAbast.arla.unshift(newItem); window.histAbast.arla = window.histAbast.arla.slice(0, 24);
-                }
+                if(t === "DIESEL") { window.frota[pl].gasto_mes = (window.frota[pl].gasto_mes || 0) + p.litros; document.getElementById('abast-gasto-mes').innerText = window.frota[pl].gasto_mes + " L"; window.estoqueDiesel -= p.litros; window.gastoMesGeral += p.litros; window.histAbast.diesel.unshift(newItem); window.histAbast.diesel = window.histAbast.diesel.slice(0, 24); }
+                if(t === "ARLA") { window.estoqueArla -= p.litros; window.histAbast.arla.unshift(newItem); window.histAbast.arla = window.histAbast.arla.slice(0, 24); }
             } else { 
-                if(t === "CHEGADA DE DIESEL") {
-                    window.estoqueDiesel += p.litros; 
-                    window.histAbast.cheg_diesel.unshift(newItem); window.histAbast.cheg_diesel = window.histAbast.cheg_diesel.slice(0, 3);
-                }
-                if(t === "CHEGADA DE ARLA") {
-                    window.estoqueArla += p.litros; 
-                    window.histAbast.cheg_arla.unshift(newItem); window.histAbast.cheg_arla = window.histAbast.cheg_arla.slice(0, 3);
-                }
+                if(t === "CHEGADA DE DIESEL") { window.estoqueDiesel += p.litros; window.histAbast.cheg_diesel.unshift(newItem); window.histAbast.cheg_diesel = window.histAbast.cheg_diesel.slice(0, 3); }
+                if(t === "CHEGADA DE ARLA") { window.estoqueArla += p.litros; window.histAbast.cheg_arla.unshift(newItem); window.histAbast.cheg_arla = window.histAbast.cheg_arla.slice(0, 3); }
             }
-            preencherDataHoraAbast(); 
-            renderizarHistoricoAbast(); // Atualiza a tela de histórico na mesma hora
+            preencherDataHoraAbast(); renderizarHistoricoAbast();
         } else { alert("❌ Erro: " + res.erro); }
     } catch (e) { alert("❌ Erro de conexão."); }
     b.innerText = "💾 Salvar Lançamento"; b.disabled = false;
 }
 
-// CHECKLIST E FOTOS
+// ----------------------------------------------------
+// MÓDULO DE ESTOQUE DE PEÇAS E COMPRAS
+// ----------------------------------------------------
+function renderizarEstoquePecas() {
+    let container = document.getElementById('lista-estoque-atual');
+    let comboMov = document.getElementById('est-item');
+    let comboCompra = document.getElementById('compra-item');
+    
+    if(!container || !comboMov || !comboCompra) return;
+
+    if (!window.estoquePecas || window.estoquePecas.length === 0) {
+        container.innerHTML = "<p style='text-align:center; color:#666;'>Nenhuma peça cadastrada no estoque.</p>";
+        return;
+    }
+
+    let html = "";
+    comboMov.innerHTML = "";
+    comboCompra.innerHTML = "";
+
+    window.estoquePecas.forEach((peca, index) => {
+        let pct = (peca.qtd / peca.min) * 100;
+        let cor = "green"; if (pct <= 100) cor = "#d4a017"; if (pct <= 50) cor = "red";
+        
+        html += `
+            <div style="border-bottom: 1px dashed #ccc; padding: 10px 0;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span style="font-weight:bold; color:#1a4d2e;">${peca.item}</span>
+                    <span style="font-weight:bold; color:${cor}; font-size:14px;">${peca.qtd} no Estoque</span>
+                </div>
+                <div style="font-size: 11px; color: #555;">
+                    Mínimo exigido: <b>${peca.min}</b> | Última compra: <b>${peca.qtd_compra}</b> unid. por <b>R$ ${peca.valor}</b>
+                </div>
+            </div>
+        `;
+        
+        let op = `<option value="${index}">${peca.item}</option>`;
+        comboMov.innerHTML += op;
+        comboCompra.innerHTML += op;
+    });
+
+    container.innerHTML = html;
+}
+
+function mudarFormEstoque() {
+    let t = document.getElementById('est-tipo').value;
+    document.getElementById('div-est-placa').style.display = t === "SAÍDA" ? "block" : "none";
+    document.getElementById('div-est-compra').style.display = t === "ENTRADA" ? "block" : "none";
+}
+
+async function salvarMovimentacaoEstoque() {
+    let idItem = document.getElementById('est-item').value;
+    let tipo = document.getElementById('est-tipo').value;
+    let qtd = document.getElementById('est-qtd').value;
+    let placa = document.getElementById('est-placa').value;
+    let valor = document.getElementById('est-valor').value;
+    let link = document.getElementById('est-link').value;
+    let resp = document.getElementById('est-resp').value;
+
+    if(!qtd || !resp) return alert("❌ Digite a quantidade e o Responsável!");
+    
+    let peca = window.estoquePecas[idItem];
+    let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString().slice(0,16); 
+
+    let p = {
+        acao: "salvar_estoque",
+        data: hL.replace('T', ' '),
+        item: peca.item,
+        tipo: tipo,
+        qtd: qtd,
+        placa: tipo === "SAÍDA" ? placa : "",
+        valor: tipo === "ENTRADA" ? valor : "",
+        link: tipo === "ENTRADA" ? link : "",
+        responsavel: resp
+    };
+
+    let btn = document.getElementById('btn-salvar-mov-est'); btn.innerText = "Salvando... ⏳"; btn.disabled = true;
+
+    try {
+        let req = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); let res = await req.json();
+        if (res.sucesso) {
+            alert("✅ Movimentação salva com sucesso!");
+            
+            // Atualiza na tela imediatamente
+            let q = parseFloat(qtd);
+            if (tipo === "SAÍDA") { peca.qtd = parseFloat(peca.qtd) - q; }
+            if (tipo === "ENTRADA") { 
+                peca.qtd = parseFloat(peca.qtd) + q; 
+                if(valor) peca.valor = valor; 
+                if(q) peca.qtd_compra = q; 
+                if(link) peca.link = link; 
+            }
+            renderizarEstoquePecas();
+            document.getElementById('est-qtd').value = ""; document.getElementById('est-placa').value = ""; document.getElementById('est-valor').value = ""; document.getElementById('est-link').value = "";
+        } else { alert("❌ Erro: " + res.erro); }
+    } catch (e) { alert("❌ Erro de conexão."); }
+    btn.innerText = "💾 Salvar Movimentação"; btn.disabled = false;
+}
+
+async function gerarSolicitacaoCompra() {
+    let idItem = document.getElementById('compra-item').value;
+    let qtd = document.getElementById('compra-qtd').value;
+    let urgencia = document.getElementById('compra-urgencia').value;
+
+    if(!qtd) return alert("❌ Digite a quantidade que precisa comprar!");
+    
+    let peca = window.estoquePecas[idItem];
+    let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString(); 
+
+    let p = {
+        acao: "solicitar_compra",
+        data: hL,
+        item: peca.item,
+        qtd: qtd,
+        urgencia: urgencia,
+        qtd_ref: peca.qtd_compra,
+        valor_ref: peca.valor,
+        link_ref: peca.link
+    };
+
+    let btn = document.getElementById('btn-gerar-compra'); btn.innerText = "Gerando PDF... ⏳"; btn.disabled = true;
+
+    try {
+        let req = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); let res = await req.json();
+        if (res.sucesso) {
+            alert("✅ Pedido de Compra gerado com sucesso no Google Drive!");
+            window.open(res.link_pdf, '_blank');
+            document.getElementById('compra-qtd').value = "";
+        } else { alert("❌ Erro: " + res.erro); }
+    } catch (e) { alert("❌ Erro de conexão."); }
+    btn.innerText = "📄 Gerar Pedido de Compra (PDF)"; btn.disabled = false;
+}
+
+// ==========================================
+// MÓDULO DE CHECKLIST E FOTOS 
+// ==========================================
 let b64Lateral = ""; let b64Traseira = "";
 function processarFoto(input, idPreview) {
     if (!input.files || !input.files[0]) return; const r = new FileReader();
