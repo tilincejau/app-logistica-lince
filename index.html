@@ -6,6 +6,13 @@
     <title>Logística - Lince</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        .grupo-checkbox { background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 15px; }
+        .linha-check { display: flex; align-items: flex-start; margin-bottom: 8px; font-size: 13px; color: #333; cursor: pointer; }
+        .linha-check input { margin-right: 8px; margin-top: 2px; width: 16px; height: 16px; }
+        .titulo-grupo-chk { font-weight: bold; color: #1a4d2e; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+        .twi-estado-badge { font-weight: bold; font-size: 11px; padding: 4px 8px; border-radius: 12px; background-color: #eee; color: #666; text-align: center; }
+        .foto-preview { max-width: 100%; border-radius: 8px; border: 2px solid #1a4d2e; margin-top: 5px; display: none; }
+        .foto-placeholder { background-color: #f0f0f0; height: 120px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px; border: 1px dashed #ccc; margin-top: 5px; }
         .is-carreta { display: none; } 
     </style>
 </head>
@@ -13,8 +20,6 @@
 
     <div id="tela-login" class="app-container">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logo Lince" class="logo">
-        <!-- SUA ASSINATURA DE DESENVOLVEDOR AQUI -->
-        <div class="desenvolvedor">Desenvolvido por João Marcelo Magon Bonini</div>
         
         <input type="text" id="campo-usuario" class="input-campo" placeholder="Usuário">
         <input type="password" id="campo-senha" class="input-campo" placeholder="Senha">
@@ -187,8 +192,8 @@
                         </select>
                     </div>
 
-                    <label class="info-label">Tipo / Modelo do Caminhão: <span style="color:red">*</span></label>
-                    <input type="text" id="chk-modelo" class="input-campo" placeholder="Ex: TOCO, TRUCK...">
+                    <label class="info-label">Tipo / Modelo do Caminhão:</label>
+                    <input type="text" id="chk-modelo" class="input-campo" style="background-color:#eee; font-weight:bold; color:#1a4d2e;" readonly>
                     
                     <label class="info-label">Motorista: <span style="color:red">*</span></label>
                     <input type="text" id="chk-motorista" class="input-campo" placeholder="Nome do motorista">
@@ -309,6 +314,7 @@
         <div id="conteudo-Estoque" class="secao-conteudo"><p style="text-align:center;">Tela de Peças em construção...</p></div>
     </div>
 
-    <script src="script.js?v=40"></script>
+    <!-- v=45 LIMPEZA TOTAL DE CACHE -->
+    <script src="script.js?v=45"></script>
 </body>
 </html>
