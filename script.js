@@ -1,5 +1,5 @@
 /* =========================================================
-   SISTEMA LINCE - CÉREBRO JAVASCRIPT LOCAL
+   SISTEMA LINCE - CÉREBRO JAVASCRIPT LOCAL (OTIMIZADO)
    ========================================================= */
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
@@ -12,7 +12,7 @@ window.estoqueDiesel = 0;
 window.estoqueArla = 0; 
 window.gastoMesGeral = 0;
 window.histAbast = { diesel: [], arla: [], cheg_diesel: [], cheg_arla: [] };
-window.estoquePecas = []; // NOVO ARRAY DE ESTOQUE
+window.estoquePecas = [];
 
 const pneusCavalo = [ {id:'dd',n:'DD'}, {id:'de',n:'DE'}, {id:'tde',n:'TDE'}, {id:'tdi',n:'TDI'}, {id:'tee',n:'TEE'}, {id:'tei',n:'TEI'}, {id:'tkde',n:'TKDE'}, {id:'tkdi',n:'TKDI'}, {id:'tkee',n:'TKEE'}, {id:'tkei',n:'TKEI'}, {id:'1step',n:'1º STEP'} ];
 const pneusCarreta = [ {id:'c1',n:'C1'}, {id:'c2',n:'C2'}, {id:'c3',n:'C3'}, {id:'c4',n:'C4'}, {id:'c5',n:'C5'}, {id:'c6',n:'C6'}, {id:'c7',n:'C7'}, {id:'c8',n:'C8'}, {id:'c9',n:'C9'}, {id:'c10',n:'C10'}, {id:'2step',n:'2º STEP'} ];
@@ -67,13 +67,12 @@ async function fazerLogin() {
     let msg = document.getElementById('mensagem-erro'); 
     let btn = document.getElementById('btn-login');
     if (!u || !s) { msg.innerText = "Preencha usuário e senha!"; msg.style.display = 'block'; return; }
-    btn.innerText = "Autenticando..."; msg.style.display = 'none';
+    btn.innerText = "Baixando Dados... ⏳"; msg.style.display = 'none';
 
     try {
         let req1 = await fetch(`${API_URL}?acao=login&usuario=${u}&senha=${s}`);
         let res1 = await req1.json();
         if (res1.sucesso) {
-            btn.innerText = "Baixando Frota... ⏳";
             let req2 = await fetch(`${API_URL}?acao=buscar_inicial`);
             let res2 = await req2.json();
             if (res2.sucesso) {
@@ -82,11 +81,11 @@ async function fazerLogin() {
                 window.estoqueArla = res2.estoque_arla; 
                 window.gastoMesGeral = res2.gasto_mes_geral;
                 window.histAbast = res2.hist_abast || window.histAbast;
-                window.estoquePecas = res2.estoque_pecas || []; // GUARDA O ESTOQUE
+                window.estoquePecas = res2.estoque_pecas || []; 
 
                 renderizarHistorico(res2.historico); 
                 renderizarHistoricoAbast();
-                renderizarEstoquePecas(); // RENDERIZA AS PEÇAS E DROPDOWNS
+                renderizarEstoquePecas(); 
                 
                 esconderTodasTelas(); 
                 document.getElementById('tela-placas').style.display = 'flex';
@@ -271,7 +270,7 @@ async function salvarAbastecimentoNuvem() {
 }
 
 // ----------------------------------------------------
-// MÓDULO DE ESTOQUE DE PEÇAS E COMPRAS
+// MÓDULO DE ESTOQUE (OTIMIZADO)
 // ----------------------------------------------------
 function renderizarEstoquePecas() {
     let container = document.getElementById('lista-estoque-atual');
@@ -285,15 +284,14 @@ function renderizarEstoquePecas() {
         return;
     }
 
-    let html = "";
-    comboMov.innerHTML = "";
-    comboCompra.innerHTML = "";
+    let htmlStr = "";
+    let comboStr = "";
 
     window.estoquePecas.forEach((peca, index) => {
         let pct = (peca.qtd / peca.min) * 100;
         let cor = "green"; if (pct <= 100) cor = "#d4a017"; if (pct <= 50) cor = "red";
         
-        html += `
+        htmlStr += `
             <div style="border-bottom: 1px dashed #ccc; padding: 10px 0;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
                     <span style="font-weight:bold; color:#1a4d2e;">${peca.item}</span>
@@ -305,12 +303,12 @@ function renderizarEstoquePecas() {
             </div>
         `;
         
-        let op = `<option value="${index}">${peca.item}</option>`;
-        comboMov.innerHTML += op;
-        comboCompra.innerHTML += op;
+        comboStr += `<option value="${index}">${peca.item}</option>`;
     });
 
-    container.innerHTML = html;
+    comboMov.innerHTML = comboStr;
+    comboCompra.innerHTML = comboStr;
+    container.innerHTML = htmlStr;
 }
 
 function mudarFormEstoque() {
@@ -351,8 +349,6 @@ async function salvarMovimentacaoEstoque() {
         let req = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); let res = await req.json();
         if (res.sucesso) {
             alert("✅ Movimentação salva com sucesso!");
-            
-            // Atualiza na tela imediatamente
             let q = parseFloat(qtd);
             if (tipo === "SAÍDA") { peca.qtd = parseFloat(peca.qtd) - q; }
             if (tipo === "ENTRADA") { 
@@ -402,9 +398,6 @@ async function gerarSolicitacaoCompra() {
     btn.innerText = "📄 Gerar Pedido de Compra (PDF)"; btn.disabled = false;
 }
 
-// ==========================================
-// MÓDULO DE CHECKLIST E FOTOS 
-// ==========================================
 let b64Lateral = ""; let b64Traseira = "";
 function processarFoto(input, idPreview) {
     if (!input.files || !input.files[0]) return; const r = new FileReader();
