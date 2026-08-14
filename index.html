@@ -75,7 +75,6 @@
         <button class="btn-principal" onclick="abrirPagina('Checklist')">✅ Checklist</button>
         <button class="btn-principal" onclick="abrirPagina('Abastecimento')">⛽ Abastecimento e Estoque</button>
         <button class="btn-principal" onclick="abrirPagina('Estoque')">📦 Estoque (Peças e Óleo)</button>
-        <button class="btn-principal" onclick="abrirPagina('Manutenções')">🔧 Manutenções</button>
     </div>
 
     <div id="tela-interna" class="app-container" style="display: none;">
@@ -203,10 +202,13 @@
 
                     <label class="info-label">Tipo / Modelo do Caminhão:</label>
                     <input type="text" id="chk-modelo" class="input-campo" style="background-color:#eee; font-weight:bold; color:#1a4d2e;" readonly>
+                    
                     <label class="info-label">Motorista: <span style="color:red">*</span></label>
                     <input type="text" id="chk-motorista" class="input-campo" placeholder="Nome do motorista">
+                    
                     <label class="info-label">KM Atual (Painel): <span style="color:red">*</span></label>
                     <input type="number" id="chk-km" class="input-campo">
+                    
                     <label class="info-label">Próxima Troca Óleo (KM):</label>
                     <input type="number" id="chk-km-oleo" class="input-campo">
                     <label class="info-label">Última Aferição Tacógrafo:</label>
@@ -236,7 +238,7 @@
                     </div>
 
                     <button class="btn-principal" onclick="avancarPasso(3)">Próximo Passo ➡️</button>
-                    <button class="btn-secundario" onclick="mudarAbaChecklist(1)" style="margin-bottom:0;">⬅️ Voltar</button>
+                    <button class="btn-secundario" onclick="mudarAbaChecklist(2)" style="margin-bottom:0;">⬅️ Voltar</button>
                 </div>
 
                 <div id="passo-chk-3" style="display:none; padding: 0 10px;">
@@ -388,11 +390,9 @@
                 <button class="btn-principal" id="btn-gerar-compra" style="background-color: #b30000;" onclick="gerarSolicitacaoCompra()">📄 Gerar Pedido de Compra (PDF)</button>
             </div>
         </div>
-
-        <div id="conteudo-Manutenções" class="secao-conteudo"><p style="text-align:center;">Tela de Manutenções em construção...</p></div>
     </div>
 
-    <!-- v=80 GARANTIA DE CACHE -->
-    <script src="script.js?v=80"></script>
+    <!-- v=85: Removida a tela Manutenções -->
+    <script src="script.js?v=85"></script>
 </body>
 </html>
