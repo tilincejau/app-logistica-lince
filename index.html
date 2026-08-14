@@ -74,8 +74,8 @@
         <button class="btn-principal" onclick="abrirPagina('Ficha Técnica')">📄 Ficha Técnica</button>
         <button class="btn-principal" onclick="abrirPagina('Checklist')">✅ Checklist</button>
         <button class="btn-principal" onclick="abrirPagina('Abastecimento')">⛽ Abastecimento e Estoque</button>
+        <button class="btn-principal" onclick="abrirPagina('Estoque')">📦 Estoque (Peças e Óleo)</button>
         <button class="btn-principal" onclick="abrirPagina('Manutenções')">🔧 Manutenções</button>
-        <button class="btn-principal" onclick="abrirPagina('Estoque')">📦 Estoque (Peças)</button>
     </div>
 
     <div id="tela-interna" class="app-container" style="display: none;">
@@ -203,13 +203,10 @@
 
                     <label class="info-label">Tipo / Modelo do Caminhão:</label>
                     <input type="text" id="chk-modelo" class="input-campo" style="background-color:#eee; font-weight:bold; color:#1a4d2e;" readonly>
-                    
                     <label class="info-label">Motorista: <span style="color:red">*</span></label>
                     <input type="text" id="chk-motorista" class="input-campo" placeholder="Nome do motorista">
-                    
                     <label class="info-label">KM Atual (Painel): <span style="color:red">*</span></label>
                     <input type="number" id="chk-km" class="input-campo">
-                    
                     <label class="info-label">Próxima Troca Óleo (KM):</label>
                     <input type="number" id="chk-km-oleo" class="input-campo">
                     <label class="info-label">Última Aferição Tacógrafo:</label>
@@ -321,34 +318,84 @@
             
             <div class="card">
                 <h3 class="card-titulo">📋 Histórico de Movimentações</h3>
+                <details style="margin-bottom: 5px;"><summary style="font-size: 13px;">🚚 Últimos 24 (Diesel)</summary><div id="hist-abast-diesel" style="margin-top:10px;">Aguardando...</div></details>
+                <details style="margin-bottom: 5px;"><summary style="font-size: 13px;">💧 Últimos 24 (Arla)</summary><div id="hist-abast-arla" style="margin-top:10px;">Aguardando...</div></details>
+                <details style="margin-bottom: 5px;"><summary style="font-size: 13px;">📥 Últimas 3 Chegadas (Diesel)</summary><div id="hist-cheg-diesel" style="margin-top:10px;">Aguardando...</div></details>
+                <details style="margin-bottom: 5px;"><summary style="font-size: 13px;">📥 Últimas 3 Chegadas (Arla)</summary><div id="hist-cheg-arla" style="margin-top:10px;">Aguardando...</div></details>
+            </div>
+        </div>
+
+        <!-- ---------------- MÓDULO DE ESTOQUE (PEÇAS E ÓLEO) ---------------- -->
+        <div id="conteudo-Estoque" class="secao-conteudo">
+            
+            <!-- Painel Atual do Estoque -->
+            <div class="card">
+                <h3 class="card-titulo">📦 Posição do Estoque</h3>
+                <div id="lista-estoque-atual">
+                    <p style="text-align:center; color:#666;">Carregando peças...</p>
+                </div>
+            </div>
+
+            <!-- Movimentação de Estoque -->
+            <div class="card">
+                <h3 class="card-titulo">🔄 Lançar Entrada ou Saída</h3>
+                <label class="info-label">Selecione o Item:</label>
+                <select id="est-item" class="input-campo"></select>
                 
-                <details style="margin-bottom: 5px;">
-                    <summary style="font-size: 13px;">🚚 Últimos 24 (Diesel)</summary>
-                    <div id="hist-abast-diesel" style="margin-top:10px;">Aguardando...</div>
-                </details>
+                <label class="info-label">Tipo de Movimento:</label>
+                <select id="est-tipo" class="input-campo" onchange="mudarFormEstoque()">
+                    <option value="SAÍDA">Saída (Uso na frota)</option>
+                    <option value="ENTRADA">Entrada (Chegou mercadoria nova)</option>
+                </select>
                 
-                <details style="margin-bottom: 5px;">
-                    <summary style="font-size: 13px;">💧 Últimos 24 (Arla)</summary>
-                    <div id="hist-abast-arla" style="margin-top:10px;">Aguardando...</div>
-                </details>
+                <label class="info-label">Quantidade:</label>
+                <input type="number" id="est-qtd" class="input-campo" placeholder="Ex: 5">
                 
-                <details style="margin-bottom: 5px;">
-                    <summary style="font-size: 13px;">📥 Últimas 3 Chegadas (Diesel)</summary>
-                    <div id="hist-cheg-diesel" style="margin-top:10px;">Aguardando...</div>
-                </details>
+                <div id="div-est-placa">
+                    <label class="info-label">Placa / Observação:</label>
+                    <input type="text" id="est-placa" class="input-campo" placeholder="Placa do caminhão ou onde foi usado">
+                </div>
                 
-                <details style="margin-bottom: 5px;">
-                    <summary style="font-size: 13px;">📥 Últimas 3 Chegadas (Arla)</summary>
-                    <div id="hist-cheg-arla" style="margin-top:10px;">Aguardando...</div>
-                </details>
+                <div id="div-est-compra" style="display:none; border: 1px dashed #1a4d2e; padding: 10px; border-radius: 8px; margin-bottom: 15px; background: #f1f8f5;">
+                    <p style="margin-top:0; font-size:12px; color:#1a4d2e; font-weight:bold;">Dados da Compra (Para o Histórico)</p>
+                    <label class="info-label">Valor Total Pago (R$):</label>
+                    <input type="number" id="est-valor" class="input-campo" placeholder="Ex: 1500.00">
+                    <label class="info-label">Link de Referência / NF:</label>
+                    <input type="text" id="est-link" class="input-campo" placeholder="Link do Mercado Livre, número da NF...">
+                </div>
+                
+                <label class="info-label">Seu Nome (Responsável):</label>
+                <input type="text" id="est-resp" class="input-campo">
+                
+                <button class="btn-principal" id="btn-salvar-mov-est" onclick="salvarMovimentacaoEstoque()">💾 Salvar Movimentação</button>
+            </div>
+
+            <!-- Solicitação de Compra -->
+            <div class="card" style="border: 2px solid #b30000;">
+                <h3 class="card-titulo" style="color: #b30000; border-bottom: 2px solid #b30000;">🛒 Solicitar Compra</h3>
+                <p style="font-size:11px; color:#555; margin-top:-5px;">Isso gerará um PDF de solicitação para a diretoria, puxando o link da última compra automaticamente.</p>
+                
+                <label class="info-label">Item que precisa comprar:</label>
+                <select id="compra-item" class="input-campo"></select>
+                
+                <label class="info-label">Quantidade Necessária:</label>
+                <input type="number" id="compra-qtd" class="input-campo">
+                
+                <label class="info-label">Urgência:</label>
+                <select id="compra-urgencia" class="input-campo" style="border: 1px solid #b30000;">
+                    <option value="Baixa">Baixa (Pode esperar)</option>
+                    <option value="Média">Média (Para a próxima semana)</option>
+                    <option value="ALTA">ALTA (Caminhão parado/sem estoque)</option>
+                </select>
+                
+                <button class="btn-principal" id="btn-gerar-compra" style="background-color: #b30000;" onclick="gerarSolicitacaoCompra()">📄 Gerar Pedido de Compra (PDF)</button>
             </div>
         </div>
 
         <div id="conteudo-Manutenções" class="secao-conteudo"><p style="text-align:center;">Tela de Manutenções em construção...</p></div>
-        <div id="conteudo-Estoque" class="secao-conteudo"><p style="text-align:center;">Tela de Peças em construção...</p></div>
     </div>
 
-    <!-- v=70 GARANTIA DE LIMPEZA DE CACHE -->
-    <script src="script.js?v=70"></script>
+    <!-- v=75 PARA LIMPEZA FORÇADA DE CACHE DO NAVEGADOR -->
+    <script src="script.js?v=75"></script>
 </body>
 </html>
