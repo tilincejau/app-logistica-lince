@@ -15,9 +15,6 @@ window.gastoMesGeral = 0;
 const pneusCavalo = [ {id:'dd',n:'DD'}, {id:'de',n:'DE'}, {id:'tde',n:'TDE'}, {id:'tdi',n:'TDI'}, {id:'tee',n:'TEE'}, {id:'tei',n:'TEI'}, {id:'tkde',n:'TKDE'}, {id:'tkdi',n:'TKDI'}, {id:'tkee',n:'TKEE'}, {id:'tkei',n:'TKEI'}, {id:'1step',n:'1º STEP'} ];
 const pneusCarreta = [ {id:'c1',n:'C1'}, {id:'c2',n:'C2'}, {id:'c3',n:'C3'}, {id:'c4',n:'C4'}, {id:'c5',n:'C5'}, {id:'c6',n:'C6'}, {id:'c7',n:'C7'}, {id:'c8',n:'C8'}, {id:'c9',n:'C9'}, {id:'c10',n:'C10'}, {id:'2step',n:'2º STEP'} ];
 
-// ----------------------------------------------------
-// 1. INJEÇÃO DOS PNEUS NO HTML
-// ----------------------------------------------------
 window.onload = function() {
     let construtorFicha = arr => arr.map(p => `
         <details>
@@ -54,9 +51,6 @@ window.onload = function() {
     if(chkCarreta) chkCarreta.innerHTML = construtorChk(pneusCarreta);
 };
 
-// ----------------------------------------------------
-// 2. SISTEMA DE LOGIN E NAVEGAÇÃO BÁSICA
-// ----------------------------------------------------
 function esconderTodasTelas() {
     document.getElementById('tela-login').style.display = 'none';
     document.getElementById('tela-placas').style.display = 'none';
@@ -110,9 +104,6 @@ function sairDaConta() {
     document.getElementById('tela-login').style.display = 'flex'; 
 }
 
-// ----------------------------------------------------
-// 3. SELEÇÃO DA PLACA E PREENCHIMENTO DE DADOS
-// ----------------------------------------------------
 function selecionarPlaca(placa) {
     let btnMenu = document.querySelectorAll('#tela-menu .btn-principal');
     try {
@@ -122,10 +113,14 @@ function selecionarPlaca(placa) {
         document.getElementById('texto-placa-escolhida').innerText = placa; 
         document.getElementById('texto-placa-interna').innerText = placa; 
         
-        window.isCavalo = CAVALOS.includes(placa);
+        window.isCavalo = CAVALOS.includes(placa.trim());
         document.querySelectorAll('.is-carreta').forEach(el => {
             el.style.display = window.isCavalo ? 'block' : 'none';
         });
+
+        // ESCONDE FOTOS DA FICHA TÉCNICA SE FOR CAVALO
+        let cardFotosFicha = document.getElementById('card-fotos-ficha');
+        if (cardFotosFicha) cardFotosFicha.style.display = window.isCavalo ? 'none' : 'block';
 
         let elTipo = document.getElementById('tipo-veiculo'); if(elTipo) elTipo.value = dados.tipo || "";
         let elMotorista = document.getElementById('nome-motorista'); if(elMotorista) elMotorista.value = dados.motorista || "";
@@ -188,9 +183,8 @@ function selecionarPlaca(placa) {
 
 function voltarParaPlacas() { esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex'; }
 
-// CORREÇÃO: Função de navegação simples e segura
 function abrirPagina(nomeDaPagina) {
-    if(nomeDaPagina === 'Abastecimento') {
+    if(nomeDaPagina === 'Abastecimento' && typeof preencherDataHoraAbast === 'function') {
         preencherDataHoraAbast();
     }
     
@@ -212,9 +206,7 @@ function abrirPagina(nomeDaPagina) {
 
 function voltarParaMenu() { esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; }
 
-// ----------------------------------------------------
-// 4. EDIÇÃO E CÁLCULOS DA FICHA TÉCNICA
-// ----------------------------------------------------
+// EDIÇÕES DA FICHA TÉCNICA
 function salvarFichaNaNuvemBackground() {
     let payload = {
         acao: "salvar_ficha_tecnica",
@@ -485,9 +477,7 @@ function abrirDocPDF() {
     else alert("Nenhum documento cadastrado para este veículo."); 
 }
 
-// ----------------------------------------------------
-// 5. ABASTECIMENTO (Estoque)
-// ----------------------------------------------------
+// ABASTECIMENTO
 function mudarFormAbast() { 
     let t = document.getElementById('tipo-abast').value; 
     if (t.includes("CHEGADA")) { 
@@ -574,12 +564,8 @@ async function salvarAbastecimentoNuvem() {
     b.innerText = "💾 Salvar Lançamento"; b.disabled = false;
 }
 
-// ----------------------------------------------------
-// 6. CHECKLIST E PROCESSAMENTO DE FOTOS
-// ----------------------------------------------------
-let b64Lateral = ""; 
-let b64Traseira = "";
-
+// CHECKLIST & FOTOS
+let b64Lateral = ""; let b64Traseira = "";
 function processarFoto(input, idPreview) {
     if (!input.files || !input.files[0]) return; 
     const r = new FileReader();
@@ -623,30 +609,34 @@ function iniciarNovoChecklist() {
     document.getElementById('lista-historico-checklist').style.display = 'none'; 
     document.getElementById('form-novo-checklist').style.display = 'block'; 
     
-    // Zera opções
     document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false); 
     document.querySelectorAll('input[id$="-outro"]').forEach(c => { c.value = ""; c.style.display = 'none'; }); 
     document.querySelectorAll('input[id^="chk-twi-"]').forEach(i => i.value = ""); 
     document.querySelectorAll('.twi-estado-badge').forEach(b => { b.innerText = "Aguardando..."; b.style.backgroundColor = "#eee"; b.style.color = "#666"; }); 
     
-    // Zera Fotos
     b64Lateral = ""; b64Traseira = ""; 
     let lI = document.getElementById('foto-lat-input'); if(lI) lI.value = ""; 
     let tI = document.getElementById('foto-tras-input'); if(tI) tI.value = ""; 
     let pL = document.getElementById('preview-lat'); if(pL) pL.style.display = "none"; 
     let pT = document.getElementById('preview-tras'); if(pT) pT.style.display = "none"; 
     
-    // Controla se o mês pede foto
-    let mA = new Date().toISOString().slice(0, 7); 
-    let ve = window.frota[pl]; 
+    // GATILHO DAS FOTOS: Some completamente se for cavalo
+    let sessaoFotos = document.getElementById('sessao-fotos-checklist');
     let cF = document.getElementById('container-inputs-fotos'); 
     let aF = document.getElementById('aviso-fotos-ok'); 
-    if(cF && aF) { 
-        if (ve && ve.mes_foto === mA) { cF.style.display = 'none'; aF.style.display = 'block'; } 
-        else { cF.style.display = 'block'; aF.style.display = 'none'; } 
-    } 
+
+    if (window.isCavalo) {
+        if (sessaoFotos) sessaoFotos.style.display = 'none'; 
+    } else {
+        if (sessaoFotos) sessaoFotos.style.display = 'block';
+        let mA = new Date().toISOString().slice(0, 7); 
+        let ve = window.frota[pl]; 
+        if(cF && aF) { 
+            if (ve && ve.mes_foto === mA) { cF.style.display = 'none'; aF.style.display = 'block'; } 
+            else { cF.style.display = 'block'; aF.style.display = 'none'; } 
+        } 
+    }
     
-    // Puxa dados pro form
     document.getElementById('chk-placa').value = pl; 
     document.getElementById('chk-modelo').value = document.getElementById('tipo-veiculo').value; 
     document.getElementById('chk-motorista').value = document.getElementById('nome-motorista').value; 
@@ -672,9 +662,6 @@ function mudarAbaChecklist(ps) {
     let tA = document.getElementById('tab-chk-'+ps); if(tA) tA.classList.add('ativo'); 
 }
 
-// ----------------------------------------------------
-// 7. VALIDAÇÃO DO CHECKLIST (OBRIGATÓRIO)
-// ----------------------------------------------------
 function avancarPasso(px) {
     let pA = px - 1; 
     
@@ -711,9 +698,6 @@ function calcularStatusTwi(inE, bId) { let b = document.getElementById(bId); let
 function pegarMarcados(nG, idO) { let s = []; document.querySelectorAll(`input[name="${nG}"]:checked`).forEach(c => { if(c.value !== "OUTRO") s.push(c.value); }); let tO = document.getElementById(idO); if (tO && tO.value.trim() !== "") s.push("OUTROS: " + tO.value.trim()); return s.length > 0 ? s.join(" | ") : "Não avaliado"; }
 function getSelOuOutro(idO) { let i = document.getElementById(idO); if(!i) return ""; let s = i.previousElementSibling; return s.value === "OUTRO" ? (i.value || "Outro não esp.") : s.value; }
 
-// ----------------------------------------------------
-// 8. ENVIO PARA NUVEM E GERAÇÃO DE PDF
-// ----------------------------------------------------
 async function enviarChecklist() {
     if (document.querySelectorAll(`input[name="chk-faltantes"]:checked`).length === 0) return alert("❌ Informe os Itens Faltantes!");
     if (!document.getElementById('chk-extintor-data').value) return alert("❌ Informe a Data de Validade do Extintor!");
