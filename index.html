@@ -134,7 +134,6 @@
                 </div>
             </div>
 
-            <!-- ADICIONADO O CAMPO EXTINTOR AQUI NA FICHA TÉCNICA -->
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1a4d2e; margin-bottom: 10px; padding-bottom: 5px;">
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">🚧 Equip. e Extintor</h3>
@@ -299,6 +298,7 @@
                 <div class="linha-info"><span class="info-label" style="margin:0;">Estoque Arla:</span> <span id="estoque-arla-geral" style="font-weight:bold; color:#0056b3; font-size: 18px;">0 L</span></div>
                 <div class="linha-info" style="border-top: 1px dashed #ccc; padding-top: 5px; margin-top:5px;"><span class="info-label" style="margin:0;">Gasto Frota (Mês):</span> <span id="gasto-mes-geral" style="font-weight:bold; color:#b30000; font-size: 16px;">0 L</span></div>
             </div>
+            
             <div class="card">
                 <h3 class="card-titulo">⛽ Novo Lançamento</h3>
                 <select id="tipo-abast" class="input-campo" onchange="mudarFormAbast()" style="background-color: #1a4d2e; color: white; font-weight: bold;">
@@ -318,13 +318,37 @@
                 </div>
                 <button class="btn-principal" id="btn-salvar-abast-nuvem" style="background-color: #0056b3; margin-top: 15px;" onclick="salvarAbastecimentoNuvem()">💾 Salvar Lançamento</button>
             </div>
+            
+            <div class="card">
+                <h3 class="card-titulo">📋 Histórico de Movimentações</h3>
+                
+                <details style="margin-bottom: 5px;">
+                    <summary style="font-size: 13px;">🚚 Últimos 24 (Diesel)</summary>
+                    <div id="hist-abast-diesel" style="margin-top:10px;">Aguardando...</div>
+                </details>
+                
+                <details style="margin-bottom: 5px;">
+                    <summary style="font-size: 13px;">💧 Últimos 24 (Arla)</summary>
+                    <div id="hist-abast-arla" style="margin-top:10px;">Aguardando...</div>
+                </details>
+                
+                <details style="margin-bottom: 5px;">
+                    <summary style="font-size: 13px;">📥 Últimas 3 Chegadas (Diesel)</summary>
+                    <div id="hist-cheg-diesel" style="margin-top:10px;">Aguardando...</div>
+                </details>
+                
+                <details style="margin-bottom: 5px;">
+                    <summary style="font-size: 13px;">📥 Últimas 3 Chegadas (Arla)</summary>
+                    <div id="hist-cheg-arla" style="margin-top:10px;">Aguardando...</div>
+                </details>
+            </div>
         </div>
 
         <div id="conteudo-Manutenções" class="secao-conteudo"><p style="text-align:center;">Tela de Manutenções em construção...</p></div>
         <div id="conteudo-Estoque" class="secao-conteudo"><p style="text-align:center;">Tela de Peças em construção...</p></div>
     </div>
 
-    <!-- v=55 ATUALIZANDO PARA LER O EXTINTOR -->
-    <script src="script.js?v=55"></script>
+    <!-- v=70 GARANTIA DE LIMPEZA DE CACHE -->
+    <script src="script.js?v=70"></script>
 </body>
 </html>
