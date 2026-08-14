@@ -15,7 +15,6 @@ window.gastoMesGeral = 0;
 const pneusCavalo = [ {id:'dd',n:'DD'}, {id:'de',n:'DE'}, {id:'tde',n:'TDE'}, {id:'tdi',n:'TDI'}, {id:'tee',n:'TEE'}, {id:'tei',n:'TEI'}, {id:'tkde',n:'TKDE'}, {id:'tkdi',n:'TKDI'}, {id:'tkee',n:'TKEE'}, {id:'tkei',n:'TKEI'}, {id:'1step',n:'1º STEP'} ];
 const pneusCarreta = [ {id:'c1',n:'C1'}, {id:'c2',n:'C2'}, {id:'c3',n:'C3'}, {id:'c4',n:'C4'}, {id:'c5',n:'C5'}, {id:'c6',n:'C6'}, {id:'c7',n:'C7'}, {id:'c8',n:'C8'}, {id:'c9',n:'C9'}, {id:'c10',n:'C10'}, {id:'2step',n:'2º STEP'} ];
 
-// 1. INJEÇÃO DOS PNEUS NO HTML
 window.onload = function() {
     let construtorFicha = arr => arr.map(p => `
         <details>
@@ -30,12 +29,8 @@ window.onload = function() {
             </div>
         </details>
     `).join('');
-    
-    let ctCavalo = document.getElementById('ficha-pneus-cavalo-container'); 
-    if(ctCavalo) ctCavalo.innerHTML = construtorFicha(pneusCavalo);
-    
-    let ctCarreta = document.getElementById('ficha-pneus-carreta-container'); 
-    if(ctCarreta) ctCarreta.innerHTML = construtorFicha(pneusCarreta);
+    let ctCavalo = document.getElementById('ficha-pneus-cavalo-container'); if(ctCavalo) ctCavalo.innerHTML = construtorFicha(pneusCavalo);
+    let ctCarreta = document.getElementById('ficha-pneus-carreta-container'); if(ctCarreta) ctCarreta.innerHTML = construtorFicha(pneusCarreta);
 
     let construtorChk = arr => arr.map(p => `
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;">
@@ -44,15 +39,10 @@ window.onload = function() {
             <span id="badge-estado-${p.id}" class="twi-estado-badge" style="flex: 1;">Aguardando...</span>
         </div>
     `).join('');
-    
-    let chkCavalo = document.getElementById('chk-pneus-cavalo-container'); 
-    if(chkCavalo) chkCavalo.innerHTML = construtorChk(pneusCavalo);
-    
-    let chkCarreta = document.getElementById('chk-pneus-carreta-container'); 
-    if(chkCarreta) chkCarreta.innerHTML = construtorChk(pneusCarreta);
+    let chkCavalo = document.getElementById('chk-pneus-cavalo-container'); if(chkCavalo) chkCavalo.innerHTML = construtorChk(pneusCavalo);
+    let chkCarreta = document.getElementById('chk-pneus-carreta-container'); if(chkCarreta) chkCarreta.innerHTML = construtorChk(pneusCarreta);
 };
 
-// 2. SISTEMA DE LOGIN
 function esconderTodasTelas() {
     document.getElementById('tela-login').style.display = 'none';
     document.getElementById('tela-placas').style.display = 'none';
@@ -65,25 +55,21 @@ async function fazerLogin() {
     let s = document.getElementById('campo-senha').value;
     let msg = document.getElementById('mensagem-erro'); 
     let btn = document.getElementById('btn-login');
-    
     if (!u || !s) { msg.innerText = "Preencha usuário e senha!"; msg.style.display = 'block'; return; }
     btn.innerText = "Autenticando..."; msg.style.display = 'none';
 
     try {
         let req1 = await fetch(`${API_URL}?acao=login&usuario=${u}&senha=${s}`);
         let res1 = await req1.json();
-        
         if (res1.sucesso) {
             btn.innerText = "Baixando Frota... ⏳";
             let req2 = await fetch(`${API_URL}?acao=buscar_inicial`);
             let res2 = await req2.json();
-            
             if (res2.sucesso) {
                 window.frota = res2.frota; 
                 window.estoqueDiesel = res2.estoque_diesel; 
                 window.estoqueArla = res2.estoque_arla; 
                 window.gastoMesGeral = res2.gasto_mes_geral;
-                
                 renderizarHistorico(res2.historico); 
                 esconderTodasTelas(); 
                 document.getElementById('tela-placas').style.display = 'flex';
@@ -95,7 +81,6 @@ async function fazerLogin() {
 
 function sairDaConta() { esconderTodasTelas(); document.getElementById('campo-senha').value = ''; document.getElementById('tela-login').style.display = 'flex'; }
 
-// 3. SELEÇÃO DA PLACA E NAVEGAÇÃO
 function selecionarPlaca(placa) {
     let btnMenu = document.querySelectorAll('#tela-menu .btn-principal');
     try {
@@ -120,6 +105,10 @@ function selecionarPlaca(placa) {
         let elG = document.getElementById('data-engraxada'); if(elG) elG.value = dados.data_graxa || "";
         let elCar = document.getElementById('qtd-carrinhos'); if(elCar) elCar.value = dados.qtd_carrinhos || 0;
         let elCon = document.getElementById('qtd-cones'); if(elCon) elCon.value = dados.qtd_cones || 0;
+        
+        // NOVO CAMPO: EXTINTOR
+        let elExt = document.getElementById('data-extintor-ficha'); if(elExt) elExt.value = dados.data_extintor || "";
+        
         urlDocAtual = dados.link_documento || "";
 
         if (dados.pneus) {
@@ -141,7 +130,7 @@ function selecionarPlaca(placa) {
         let aK = document.getElementById('aviso-ultimo-km'); if(aK) aK.innerText = dados.km_atual || 0;
         let aG = document.getElementById('abast-gasto-mes'); if(aG) aG.innerText = (dados.gasto_mes || 0) + " L";
 
-        atualizarKMGeral(); calcularTacografo(); calcularGraxa();
+        atualizarKMGeral(); calcularTacografo(); calcularGraxa(); calcularExtintor();
         esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex';
     } catch(err) { alert("Erro visual: " + err.message); } 
     finally { btnMenu.forEach(btn => { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }); }
@@ -158,16 +147,37 @@ function abrirPagina(nomeDaPagina) {
     if (secaoAtiva) { secaoAtiva.style.display = 'flex'; }
     esconderTodasTelas(); document.getElementById('tela-interna').style.display = 'flex';
 }
+
 function voltarParaMenu() { esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; }
 
-// 4. EDIÇÕES DA FICHA TÉCNICA
+// EDIÇÕES DA FICHA TÉCNICA
 function salvarFichaNaNuvemBackground() {
-    let payload = { acao: "salvar_ficha_tecnica", placa: document.getElementById('texto-placa-interna').innerText, tipo: document.getElementById('tipo-veiculo').value, motorista: document.getElementById('nome-motorista').value, km_atual: document.getElementById('km-master').value, km_oleo: document.getElementById('km-proxima-troca').value, data_tacografo: document.getElementById('data-proxima-afericao').value, data_graxa: document.getElementById('data-engraxada').value, qtd_carrinhos: document.getElementById('qtd-carrinhos').value, qtd_cones: document.getElementById('qtd-cones').value, pneus: {} };
+    let payload = {
+        acao: "salvar_ficha_tecnica",
+        placa: document.getElementById('texto-placa-interna').innerText,
+        tipo: document.getElementById('tipo-veiculo').value,          
+        motorista: document.getElementById('nome-motorista').value,   
+        km_atual: document.getElementById('km-master').value,
+        km_oleo: document.getElementById('km-proxima-troca').value,
+        data_tacografo: document.getElementById('data-proxima-afericao').value,
+        data_graxa: document.getElementById('data-engraxada').value,
+        qtd_carrinhos: document.getElementById('qtd-carrinhos').value,
+        qtd_cones: document.getElementById('qtd-cones').value,
+        data_extintor: document.getElementById('data-extintor-ficha').value, // <--- SALVA EXTINTOR
+        pneus: {}
+    };
+    
     let tIds = ['dd','de','tde','tdi','tee','tei','tkde','tkdi','tkee','tkei','1step','c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','2step'];
-    tIds.forEach(id => { let km = document.getElementById('km-troca-'+id); let dt = document.getElementById('data-troca-'+id); if(km && dt) { payload.pneus[id] = { km_ultima_troca: km.value, data_ultima_troca: dt.value }; } });
-    fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(res => res.json()).then(d => {
+    tIds.forEach(id => { 
+        let km = document.getElementById('km-troca-'+id); let dt = document.getElementById('data-troca-'+id); 
+        if(km && dt) { payload.pneus[id] = { km_ultima_troca: km.value, data_ultima_troca: dt.value }; } 
+    });
+
+    fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) })
+    .then(res => res.json())
+    .then(d => {
         if(d.sucesso) {
-            window.frota[payload.placa].tipo = payload.tipo; window.frota[payload.placa].motorista = payload.motorista; window.frota[payload.placa].km_atual = payload.km_atual; window.frota[payload.placa].km_oleo = payload.km_oleo; window.frota[payload.placa].data_tacografo = payload.data_tacografo; window.frota[payload.placa].data_graxa = payload.data_graxa; window.frota[payload.placa].qtd_carrinhos = payload.qtd_carrinhos; window.frota[payload.placa].qtd_cones = payload.qtd_cones;
+            window.frota[payload.placa].tipo = payload.tipo; window.frota[payload.placa].motorista = payload.motorista; window.frota[payload.placa].km_atual = payload.km_atual; window.frota[payload.placa].km_oleo = payload.km_oleo; window.frota[payload.placa].data_tacografo = payload.data_tacografo; window.frota[payload.placa].data_graxa = payload.data_graxa; window.frota[payload.placa].qtd_carrinhos = payload.qtd_carrinhos; window.frota[payload.placa].qtd_cones = payload.qtd_cones; window.frota[payload.placa].data_extintor = payload.data_extintor;
             for(let id in payload.pneus) { if(!window.frota[payload.placa].pneus[id]) window.frota[payload.placa].pneus[id] = {}; window.frota[payload.placa].pneus[id].km_ultima_troca = payload.pneus[id].km_ultima_troca; window.frota[payload.placa].pneus[id].data_ultima_troca = payload.pneus[id].data_ultima_troca; }
             let elAv = document.getElementById('aviso-ultimo-km'); if(elAv) elAv.innerText = payload.km_atual;
         }
@@ -175,20 +185,100 @@ function salvarFichaNaNuvemBackground() {
 }
 
 function atualizarKMGeral() { document.getElementById('km-atual-oleo').innerText = document.getElementById('km-master').value; calcularOleo(); calcularRodizioPneus(); }
-function alternarEdicaoHeader() { let c = [document.getElementById('tipo-veiculo'), document.getElementById('nome-motorista'), document.getElementById('km-master')]; let b = document.getElementById('btn-editar-header'); if (c[0].hasAttribute('readonly')) { c.forEach(x => { x.removeAttribute('readonly'); x.classList.remove('travado'); }); b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; c[0].focus(); } else { c.forEach(x => { x.setAttribute('readonly', 'true'); x.classList.add('travado'); }); b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; atualizarKMGeral(); salvarFichaNaNuvemBackground(); } }
-function alternarEdicaoOleo() { let c = document.getElementById('km-proxima-troca'); let b = document.getElementById('btn-editar-oleo'); if (c.hasAttribute('readonly')) { c.removeAttribute('readonly'); c.classList.remove('travado'); b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; } else { c.setAttribute('readonly', 'true'); c.classList.add('travado'); b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; calcularOleo(); salvarFichaNaNuvemBackground(); } }
-function calcularOleo() { let kmA = parseInt(document.getElementById('km-master').value) || 0; let kmP = parseInt(document.getElementById('km-proxima-troca').value) || 0; let kmF = kmP - kmA; let txt = document.getElementById('status-oleo'); if (kmF <= 0) { txt.innerHTML = `VENCIDO (${Math.abs(kmF)} KM) ❌`; txt.style.color = "red"; } else if (kmF <= 1500) { txt.innerHTML = `Faltam ${kmF} KM ⚠️`; txt.style.color = "#d4a017"; } else { txt.innerHTML = `Faltam ${kmF} KM ✅`; txt.style.color = "green"; } }
-function alternarEdicaoTacografo() { let c = document.getElementById('data-proxima-afericao'); let b = document.getElementById('btn-editar-tacografo'); if (c.hasAttribute('readonly')) { c.removeAttribute('readonly'); c.classList.remove('travado'); b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; } else { c.setAttribute('readonly', 'true'); c.classList.add('travado'); b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; calcularTacografo(); salvarFichaNaNuvemBackground(); } }
-function calcularTacografo() { let s = document.getElementById('data-proxima-afericao').value; let t = document.getElementById('status-tacografo'); if (!s || s.length < 8 || !s.includes('-')) { if(t) t.innerHTML = "---"; let dU = document.getElementById('data-ultima-afericao'); if(dU) dU.innerText = "--/--/----"; return; } let p = s.split('-'); let px = new Date(p[0], p[1] - 1, p[2]); let ul = new Date(px); ul.setFullYear(ul.getFullYear() - 2); document.getElementById('data-ultima-afericao').innerText = `${String(ul.getDate()).padStart(2,'0')}/${String(ul.getMonth()+1).padStart(2,'0')}/${ul.getFullYear()}`; let hj = new Date(); hj.setHours(0,0,0,0); let d = Math.ceil((px.getTime() - hj.getTime()) / (1000 * 3600 * 24)); if (d < 0) { t.innerHTML = `VENCIDO há ${Math.abs(d)} dias ❌`; t.style.color = "red"; } else if (d <= 30) { t.innerHTML = `Atenção: Faltam ${d} dias ⚠️`; t.style.color = "#d4a017"; } else { t.innerHTML = `Faltam ${d} dias ✅`; t.style.color = "green"; } }
-function alternarEdicaoPneus() { let i = document.querySelectorAll('#conteudo-Ficha\\ Técnica input[id^="km-troca-"], #conteudo-Ficha\\ Técnica input[id^="data-troca-"]'); let b = document.getElementById('btn-editar-pneus'); if (i[0].hasAttribute('readonly')) { i.forEach(c => { c.removeAttribute('readonly'); c.classList.remove('travado'); }); b.innerHTML = "💾 Salvar Pneus"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; } else { i.forEach(c => { c.setAttribute('readonly', 'true'); c.classList.add('travado'); }); b.innerHTML = "✏️ Editar Pneus"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; calcularRodizioPneus(); salvarFichaNaNuvemBackground(); } }
-function calcularRodizioPneus() { let pl = document.getElementById('texto-placa-interna').innerText; let kmM = parseInt(document.getElementById('km-master').value) || 0; let bN = ['FMR4I10', 'FQY6B30', 'TKR8I49', 'TLL8H30', 'TLY0G57', 'UDN0J81', 'UPS1J80', 'UPX9D25', 'URT4E79', 'URU3F36'].includes(pl) ? 10000 : 15000; let bR = ['FMR4I10', 'FQY6B30', 'TKR8I49', 'TLL8H30', 'TLY0G57', 'UDN0J81', 'UPS1J80', 'UPX9D25', 'URT4E79', 'URU3F36'].includes(pl) ? 25000 : 30000; let tIds = ['dd','de','tde','tdi','tee','tei','tkde','tkdi','tkee','tkei','1step','c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','2step']; tIds.forEach(p => { let sE = document.getElementById(`estado-${p}`); let tS = document.getElementById(`status-rod-${p}`); let iK = document.getElementById(`km-troca-${p}`); if(!sE || !tS || !iK) return; let eS = sE.innerText.toLowerCase(); let kT = parseInt(iK.value) || 0; if (eS === "---" || kT === 0) { tS.innerText = "Aguardando..."; tS.style.color = "gray"; return; } let int = eS.includes('novo') ? bN : bR; let kPR = kT + int; let ePR = document.getElementById(`prox-rod-${p}`); if(ePR) ePR.innerText = kPR + " KM"; let kF = kPR - kmM; if (kF <= 0) { tS.innerHTML = `VENCIDO (${Math.abs(kF)} KM) ❌`; tS.style.color = "red"; } else if (kF <= 1500) { tS.innerHTML = `Faltam ${kF} KM ⚠️`; tS.style.color = "#d4a017"; } else { tS.innerHTML = `Faltam ${kF} KM ✅`; tS.style.color = "green"; } }); }
-function alternarEdicaoEquip() { let c = [document.getElementById('qtd-carrinhos'), document.getElementById('qtd-cones')]; let b = document.getElementById('btn-editar-equip'); if (c[0].hasAttribute('readonly')) { c.forEach(x => { x.removeAttribute('readonly'); x.classList.remove('travado'); }); b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; } else { c.forEach(x => { x.setAttribute('readonly', 'true'); x.classList.add('travado'); }); b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; salvarFichaNaNuvemBackground(); } }
-function alternarEdicaoAbast() { let c = [document.getElementById('abast-km-ant'), document.getElementById('abast-km-atual'), document.getElementById('abast-litros'), document.getElementById('data-engraxada')]; let b = document.getElementById('btn-editar-abast'); if (c[0].hasAttribute('readonly')) { c.forEach(x => { x.removeAttribute('readonly'); x.classList.remove('travado'); }); b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; } else { c.forEach(x => { x.setAttribute('readonly', 'true'); x.classList.add('travado'); }); b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; calcularAbastecimento(); calcularGraxa(); salvarFichaNaNuvemBackground(); } }
-function calcularAbastecimento() { let kA = parseFloat(document.getElementById('abast-km-ant').value) || 0; let kU = parseFloat(document.getElementById('abast-km-atual').value) || 0; let l = parseFloat(document.getElementById('abast-litros').value) || 0; let t = document.getElementById('abast-media'); if (l > 0 && kU > kA) t.innerText = ((kU - kA) / l).toFixed(2) + " km/L"; else t.innerText = "0.00 km/L"; }
-function calcularGraxa() { let s = document.getElementById('data-engraxada').value; let t = document.getElementById('status-graxa'); if (!s || s.length < 8) { if(t) t.innerHTML = "---"; document.getElementById('data-prox-engraxada').innerText = "--/--/----"; return; } let p = s.split('-'); let ultima = new Date(p[0], p[1] - 1, p[2]); let proxima = new Date(ultima); proxima.setDate(proxima.getDate() + 30); document.getElementById('data-prox-engraxada').innerText = `${String(proxima.getDate()).padStart(2,'0')}/${String(proxima.getMonth()+1).padStart(2,'0')}/${proxima.getFullYear()}`; let h = new Date(); h.setHours(0,0,0,0); let d = Math.ceil((proxima.getTime() - h.getTime()) / (1000 * 3600 * 24)); if (d < 0) { t.innerHTML = `VENCIDO há ${Math.abs(d)} dias ❌`; t.style.color = "red"; } else if (d <= 5) { t.innerHTML = `Atenção: Faltam ${d} dias ⚠️`; t.style.color = "#d4a017"; } else { t.innerHTML = `Faltam ${d} dias ✅`; t.style.color = "green"; } }
+
+function alternarEdicaoHeader() { 
+    let c = [document.getElementById('tipo-veiculo'), document.getElementById('nome-motorista'), document.getElementById('km-master')]; let b = document.getElementById('btn-editar-header'); 
+    if (c[0].hasAttribute('readonly')) { c.forEach(x => { x.removeAttribute('readonly'); x.classList.remove('travado'); }); b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; c[0].focus(); } 
+    else { c.forEach(x => { x.setAttribute('readonly', 'true'); x.classList.add('travado'); }); b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; atualizarKMGeral(); salvarFichaNaNuvemBackground(); } 
+}
+
+function alternarEdicaoOleo() { 
+    let c = document.getElementById('km-proxima-troca'); let b = document.getElementById('btn-editar-oleo'); 
+    if (c.hasAttribute('readonly')) { c.removeAttribute('readonly'); c.classList.remove('travado'); b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; } 
+    else { c.setAttribute('readonly', 'true'); c.classList.add('travado'); b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; calcularOleo(); salvarFichaNaNuvemBackground(); } 
+}
+
+function calcularOleo() { 
+    let kmA = parseInt(document.getElementById('km-master').value) || 0; let kmP = parseInt(document.getElementById('km-proxima-troca').value) || 0; let kmF = kmP - kmA; let txt = document.getElementById('status-oleo'); 
+    if (kmF <= 0) { txt.innerHTML = `VENCIDO (${Math.abs(kmF)} KM) ❌`; txt.style.color = "red"; } else if (kmF <= 1500) { txt.innerHTML = `Faltam ${kmF} KM ⚠️`; txt.style.color = "#d4a017"; } else { txt.innerHTML = `Faltam ${kmF} KM ✅`; txt.style.color = "green"; } 
+}
+
+function alternarEdicaoTacografo() { 
+    let c = document.getElementById('data-proxima-afericao'); let b = document.getElementById('btn-editar-tacografo'); 
+    if (c.hasAttribute('readonly')) { c.removeAttribute('readonly'); c.classList.remove('travado'); b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; } 
+    else { c.setAttribute('readonly', 'true'); c.classList.add('travado'); b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; calcularTacografo(); salvarFichaNaNuvemBackground(); } 
+}
+
+function calcularTacografo() { 
+    let s = document.getElementById('data-proxima-afericao').value; let t = document.getElementById('status-tacografo'); 
+    if (!s || s.length < 8 || !s.includes('-')) { if(t) t.innerHTML = "---"; let dU = document.getElementById('data-ultima-afericao'); if(dU) dU.innerText = "--/--/----"; return; } 
+    let p = s.split('-'); let px = new Date(p[0], p[1] - 1, p[2]); let ul = new Date(px); ul.setFullYear(ul.getFullYear() - 2); document.getElementById('data-ultima-afericao').innerText = `${String(ul.getDate()).padStart(2,'0')}/${String(ul.getMonth()+1).padStart(2,'0')}/${ul.getFullYear()}`; 
+    let hj = new Date(); hj.setHours(0,0,0,0); let d = Math.ceil((px.getTime() - hj.getTime()) / (1000 * 3600 * 24)); 
+    if (d < 0) { t.innerHTML = `VENCIDO há ${Math.abs(d)} dias ❌`; t.style.color = "red"; } else if (d <= 30) { t.innerHTML = `Atenção: Faltam ${d} dias ⚠️`; t.style.color = "#d4a017"; } else { t.innerHTML = `Faltam ${d} dias ✅`; t.style.color = "green"; } 
+}
+
+function alternarEdicaoPneus() { 
+    let i = document.querySelectorAll('#conteudo-Ficha\\ Técnica input[id^="km-troca-"], #conteudo-Ficha\\ Técnica input[id^="data-troca-"]'); let b = document.getElementById('btn-editar-pneus'); 
+    if (i[0].hasAttribute('readonly')) { i.forEach(c => { c.removeAttribute('readonly'); c.classList.remove('travado'); }); b.innerHTML = "💾 Salvar Pneus"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; } 
+    else { i.forEach(c => { c.setAttribute('readonly', 'true'); c.classList.add('travado'); }); b.innerHTML = "✏️ Editar Pneus"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; calcularRodizioPneus(); salvarFichaNaNuvemBackground(); } 
+}
+
+function calcularRodizioPneus() { 
+    let pl = document.getElementById('texto-placa-interna').innerText; let kmM = parseInt(document.getElementById('km-master').value) || 0; 
+    let bN = ['FMR4I10', 'FQY6B30', 'TKR8I49', 'TLL8H30', 'TLY0G57', 'UDN0J81', 'UPS1J80', 'UPX9D25', 'URT4E79', 'URU3F36'].includes(pl) ? 10000 : 15000; 
+    let bR = ['FMR4I10', 'FQY6B30', 'TKR8I49', 'TLL8H30', 'TLY0G57', 'UDN0J81', 'UPS1J80', 'UPX9D25', 'URT4E79', 'URU3F36'].includes(pl) ? 25000 : 30000; 
+    let tIds = ['dd','de','tde','tdi','tee','tei','tkde','tkdi','tkee','tkei','1step','c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','2step']; 
+    tIds.forEach(p => { 
+        let sE = document.getElementById(`estado-${p}`); let tS = document.getElementById(`status-rod-${p}`); let iK = document.getElementById(`km-troca-${p}`); 
+        if(!sE || !tS || !iK) return; 
+        let eS = sE.innerText.toLowerCase(); let kT = parseInt(iK.value) || 0; 
+        if (eS === "---" || kT === 0) { tS.innerText = "Aguardando..."; tS.style.color = "gray"; return; } 
+        let int = eS.includes('novo') ? bN : bR; let kPR = kT + int; let ePR = document.getElementById(`prox-rod-${p}`); if(ePR) ePR.innerText = kPR + " KM"; 
+        let kF = kPR - kmM; 
+        if (kF <= 0) { tS.innerHTML = `VENCIDO (${Math.abs(kF)} KM) ❌`; tS.style.color = "red"; } else if (kF <= 1500) { tS.innerHTML = `Faltam ${kF} KM ⚠️`; tS.style.color = "#d4a017"; } else { tS.innerHTML = `Faltam ${kF} KM ✅`; tS.style.color = "green"; } 
+    }); 
+}
+
+function alternarEdicaoEquip() { 
+    let c = [document.getElementById('qtd-carrinhos'), document.getElementById('qtd-cones'), document.getElementById('data-extintor-ficha')]; 
+    let b = document.getElementById('btn-editar-equip'); 
+    if (c[0].hasAttribute('readonly')) { c.forEach(x => { x.removeAttribute('readonly'); x.classList.remove('travado'); }); b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; } 
+    else { c.forEach(x => { x.setAttribute('readonly', 'true'); x.classList.add('travado'); }); b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; calcularExtintor(); salvarFichaNaNuvemBackground(); } 
+}
+
+function calcularExtintor() { 
+    let s = document.getElementById('data-extintor-ficha').value; 
+    let t = document.getElementById('status-extintor'); 
+    if (!s || s.length < 8) { if(t) t.innerHTML = "---"; return; } 
+    let p = s.split('-'); let px = new Date(p[0], p[1] - 1, p[2]); 
+    let hj = new Date(); hj.setHours(0,0,0,0); 
+    let d = Math.ceil((px.getTime() - hj.getTime()) / (1000 * 3600 * 24)); 
+    if (d < 0) { t.innerHTML = `VENCIDO há ${Math.abs(d)} dias ❌`; t.style.color = "red"; } 
+    else if (d <= 30) { t.innerHTML = `Atenção: Vence em ${d} dias ⚠️`; t.style.color = "#d4a017"; } 
+    else { t.innerHTML = `Válido por ${d} dias ✅`; t.style.color = "green"; } 
+}
+
+function alternarEdicaoAbast() { 
+    let c = [document.getElementById('abast-km-ant'), document.getElementById('abast-km-atual'), document.getElementById('abast-litros'), document.getElementById('data-engraxada')]; let b = document.getElementById('btn-editar-abast'); 
+    if (c[0].hasAttribute('readonly')) { c.forEach(x => { x.removeAttribute('readonly'); x.classList.remove('travado'); }); b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; } 
+    else { c.forEach(x => { x.setAttribute('readonly', 'true'); x.classList.add('travado'); }); b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; calcularAbastecimento(); calcularGraxa(); salvarFichaNaNuvemBackground(); } 
+}
+
+function calcularAbastecimento() { 
+    let kA = parseFloat(document.getElementById('abast-km-ant').value) || 0; let kU = parseFloat(document.getElementById('abast-km-atual').value) || 0; let l = parseFloat(document.getElementById('abast-litros').value) || 0; let t = document.getElementById('abast-media'); 
+    if (l > 0 && kU > kA) t.innerText = ((kU - kA) / l).toFixed(2) + " km/L"; else t.innerText = "0.00 km/L"; 
+}
+
+function calcularGraxa() { 
+    let s = document.getElementById('data-engraxada').value; let t = document.getElementById('status-graxa'); 
+    if (!s || s.length < 8) { if(t) t.innerHTML = "---"; document.getElementById('data-prox-engraxada').innerText = "--/--/----"; return; } 
+    let p = s.split('-'); let ultima = new Date(p[0], p[1] - 1, p[2]); let proxima = new Date(ultima); proxima.setDate(proxima.getDate() + 30); document.getElementById('data-prox-engraxada').innerText = `${String(proxima.getDate()).padStart(2,'0')}/${String(proxima.getMonth()+1).padStart(2,'0')}/${proxima.getFullYear()}`; 
+    let h = new Date(); h.setHours(0,0,0,0); let d = Math.ceil((proxima.getTime() - h.getTime()) / (1000 * 3600 * 24)); 
+    if (d < 0) { t.innerHTML = `VENCIDO há ${Math.abs(d)} dias ❌`; t.style.color = "red"; } else if (d <= 5) { t.innerHTML = `Atenção: Faltam ${d} dias ⚠️`; t.style.color = "#d4a017"; } else { t.innerHTML = `Faltam ${d} dias ✅`; t.style.color = "green"; } 
+}
+
 function abrirDocPDF() { if (urlDocAtual && urlDocAtual.trim() !== "") window.open(urlDocAtual, '_blank'); else alert("Nenhum documento cadastrado para este veículo."); }
 
-// 5. ABASTECIMENTO
 function mudarFormAbast() { let t = document.getElementById('tipo-abast').value; if (t.includes("CHEGADA")) { document.getElementById('form-abast-veiculo').style.display = 'none'; document.getElementById('form-abast-chegada').style.display = 'block'; } else { document.getElementById('form-abast-veiculo').style.display = 'block'; document.getElementById('form-abast-chegada').style.display = 'none'; } }
 function preencherDataHoraAbast() { let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString().slice(0,16); let eA = document.getElementById('abast-data'); if(eA) eA.value = hL; let eC = document.getElementById('chegada-data'); if(eC) eC.value = hL; document.getElementById('estoque-diesel-geral').innerText = window.estoqueDiesel + " L"; document.getElementById('estoque-arla-geral').innerText = window.estoqueArla + " L"; document.getElementById('gasto-mes-geral').innerText = window.gastoMesGeral + " L"; }
 async function salvarAbastecimentoNuvem() {
@@ -254,17 +344,16 @@ function iniciarNovoChecklist() {
     let pL = document.getElementById('preview-lat'); if(pL) pL.style.display = "none"; 
     let pT = document.getElementById('preview-tras'); if(pT) pT.style.display = "none"; 
     
-    // GATILHO DAS FOTOS: Se for cavalo some a div inteira!
-    let sessaoFotos = document.getElementById('sessao-fotos-checklist');
+    let mA = new Date().toISOString().slice(0, 7); 
+    let ve = window.frota[pl]; 
     let cF = document.getElementById('container-inputs-fotos'); 
     let aF = document.getElementById('aviso-fotos-ok'); 
-
+    let sessaoFotos = document.getElementById('sessao-fotos-checklist');
+    
     if (window.isCavalo) {
         if (sessaoFotos) sessaoFotos.style.display = 'none'; 
     } else {
         if (sessaoFotos) sessaoFotos.style.display = 'block';
-        let mA = new Date().toISOString().slice(0, 7); 
-        let ve = window.frota[pl]; 
         if(cF && aF) { 
             if (ve && ve.mes_foto === mA) { cF.style.display = 'none'; aF.style.display = 'block'; } 
             else { cF.style.display = 'block'; aF.style.display = 'none'; } 
@@ -278,6 +367,9 @@ function iniciarNovoChecklist() {
     document.getElementById('chk-km-oleo').value = document.getElementById('km-proxima-troca').value; 
     document.getElementById('chk-data-taco').value = document.getElementById('data-proxima-afericao').value; 
     document.getElementById('chk-data-graxa').value = document.getElementById('data-engraxada').value; 
+    
+    // PUXA A DATA DO EXTINTOR AUTOMATICAMENTE!
+    document.getElementById('chk-extintor-data').value = document.getElementById('data-extintor-ficha').value; 
     
     mudarAbaChecklist(1); 
 }
@@ -347,6 +439,7 @@ async function enviarChecklist() {
         km_oleo: document.getElementById('chk-km-oleo').value, 
         data_tacografo: document.getElementById('chk-data-taco').value, 
         data_graxa: document.getElementById('chk-data-graxa').value, 
+        data_extintor: document.getElementById('chk-extintor-data').value, // SALVANDO EXTINTOR DO CHECKLIST!
         chk_motor: pegarMarcados('chk-motor', 'chk-motor-outro'), 
         chk_cambio: pegarMarcados('chk-cambio', 'chk-cambio-outro'), 
         chk_embreagem: pegarMarcados('chk-embreagem', 'chk-emb-outro'), 
@@ -384,6 +477,7 @@ async function enviarChecklist() {
             
             window.frota[pl.placa].km_atual = pl.km_atual; 
             window.frota[pl.placa].km_oleo = pl.km_oleo;
+            window.frota[pl.placa].data_extintor = pl.data_extintor; 
             if(d.mesAtual) window.frota[pl.placa].mes_foto = d.mesAtual; 
             if(d.linkLat) window.frota[pl.placa].foto_lateral = d.linkLat; 
             if(d.linkTras) window.frota[pl.placa].foto_traseira = d.linkTras;
@@ -401,10 +495,7 @@ async function enviarChecklist() {
             let dH = document.createElement('div'); dH.className = "historico-item"; 
             dH.innerHTML = `<span style="font-weight: bold; color: #1a4d2e;">${pl.placa}</span> <span style="color: #555; font-size: 12px;">${hS.split('T')[0]} ✅</span>`;
             document.getElementById('container-historico').prepend(dH);
-        } else { 
-            // Se der erro, ele avisa mas não trava o app!
-            alert("⚠️ Os dados do veículo foram salvos na planilha, mas o Google bloqueou a criação do PDF ou da Foto. Verifique se o e-mail tem permissão de EDITOR na pasta! (" + d.erro + ")"); 
-        }
+        } else { alert("⚠️ Salvo com pendência de permissão: " + d.erro); }
     } catch (e) { alert("❌ Falha na conexão com o Google."); }
 
     btn.innerText = "💾 Enviar Checklist e Gerar PDF"; btn.disabled = false;
