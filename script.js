@@ -16,7 +16,7 @@ const pneusCavalo = [ {id:'dd',n:'DD'}, {id:'de',n:'DE'}, {id:'tde',n:'TDE'}, {i
 const pneusCarreta = [ {id:'c1',n:'C1'}, {id:'c2',n:'C2'}, {id:'c3',n:'C3'}, {id:'c4',n:'C4'}, {id:'c5',n:'C5'}, {id:'c6',n:'C6'}, {id:'c7',n:'C7'}, {id:'c8',n:'C8'}, {id:'c9',n:'C9'}, {id:'c10',n:'C10'}, {id:'2step',n:'2º STEP'} ];
 
 // ----------------------------------------------------
-// 1. INJEÇÃO DOS PNEUS NO HTML ASSIM QUE A TELA CARREGA
+// 1. INJEÇÃO DOS PNEUS NO HTML
 // ----------------------------------------------------
 window.onload = function() {
     let construtorFicha = arr => arr.map(p => `
@@ -188,10 +188,9 @@ function selecionarPlaca(placa) {
 
 function voltarParaPlacas() { esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex'; }
 
-// CORREÇÃO MÁXIMA: FUNÇÃO DE NAVEGAÇÃO SEGURA
+// CORREÇÃO: Função de navegação simples e segura
 function abrirPagina(nomeDaPagina) {
-    // Se for abrir o abastecimento, já preenche a data atual
-    if (nomeDaPagina === 'Abastecimento' && typeof preencherDataHoraAbast === 'function') {
+    if(nomeDaPagina === 'Abastecimento') {
         preencherDataHoraAbast();
     }
     
@@ -649,6 +648,7 @@ function iniciarNovoChecklist() {
     
     // Puxa dados pro form
     document.getElementById('chk-placa').value = pl; 
+    document.getElementById('chk-modelo').value = document.getElementById('tipo-veiculo').value; 
     document.getElementById('chk-motorista').value = document.getElementById('nome-motorista').value; 
     document.getElementById('chk-km').value = document.getElementById('km-master').value; 
     document.getElementById('chk-km-oleo').value = document.getElementById('km-proxima-troca').value; 
@@ -680,7 +680,7 @@ function avancarPasso(px) {
     
     if (pA === 1) { 
         if(window.isCavalo && !document.getElementById('chk-placa-carreta').value) return alert("❌ Como você está com um CAVALO, selecione a Placa da Carreta!"); 
-        if(!document.getElementById('chk-modelo').value) return alert("❌ Selecione o Modelo!"); 
+        if(!document.getElementById('chk-modelo').value) return alert("❌ Digite o Modelo!"); 
         if(!document.getElementById('chk-motorista').value) return alert("❌ Digite o Motorista!"); 
         if(!document.getElementById('chk-km').value) return alert("❌ Digite o KM Atual!"); 
     }
@@ -726,7 +726,7 @@ async function enviarChecklist() {
         for (let id of cP) { if (!document.getElementById('chk-twi-' + id).value) return alert(`❌ Preencha o TWI do Pneu ${id.toUpperCase()} da Carreta!`); }
     }
 
-    if (document.getElementById('container-inputs-fotos') && document.getElementById('container-inputs-fotos').style.display !== 'none') {
+    if (!window.isCavalo && document.getElementById('container-inputs-fotos') && document.getElementById('container-inputs-fotos').style.display !== 'none') {
         if (!b64Lateral || !b64Traseira) return alert("❌ É obrigatório enviar a Foto Lateral e Traseira do caminhão!");
     }
 
