@@ -44,18 +44,24 @@ window.onload = function() {
 };
 
 // ==========================================
-// CONVERSOR MÁGICO DE FOTOS DO GOOGLE DRIVE
+// CONVERSOR MÁGICO DE FOTOS (ATUALIZADO)
+// O Google bloqueou o link uc?export. Agora usamos o servidor de fotos oficial!
 // ==========================================
 function forcarImagemDiretaDrive(url) {
     if (!url || typeof url !== 'string') return "";
+    
+    // Procura o ID do arquivo dentro do link do Google Drive
     let matchId = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
     if (matchId && matchId[1]) {
-        return "https://drive.google.com/uc?export=view&id=" + matchId[1];
+        // Redireciona para o servidor de conteúdo puro do Google
+        return "https://lh3.googleusercontent.com/d/" + matchId[1];
     }
+    
     let matchId2 = url.match(/id=([a-zA-Z0-9_-]+)/);
     if (matchId2 && matchId2[1]) {
-        return "https://drive.google.com/uc?export=view&id=" + matchId2[1];
+        return "https://lh3.googleusercontent.com/d/" + matchId2[1];
     }
+    
     return url;
 }
 
@@ -136,10 +142,10 @@ function selecionarPlaca(placa) {
             });
         }
 
-        // CARREGA AS FOTOS COM O TRADUTOR DE LINKS!
+        // FOTOS COM O TRADUTOR DE LINK SEGURO
         let iL = document.getElementById('ficha-img-lat'); let pL = document.getElementById('ficha-pl-lat');
         if (iL && pL) { 
-            if (dados.foto_lateral) { 
+            if (dados.foto_lateral && dados.foto_lateral !== "") { 
                 iL.src = forcarImagemDiretaDrive(dados.foto_lateral); 
                 iL.style.display = 'block'; pL.style.display = 'none'; 
             } else { iL.style.display = 'none'; pL.style.display = 'flex'; } 
@@ -147,7 +153,7 @@ function selecionarPlaca(placa) {
         
         let iT = document.getElementById('ficha-img-tras'); let pT = document.getElementById('ficha-pl-tras');
         if (iT && pT) { 
-            if (dados.foto_traseira) { 
+            if (dados.foto_traseira && dados.foto_traseira !== "") { 
                 iT.src = forcarImagemDiretaDrive(dados.foto_traseira); 
                 iT.style.display = 'block'; pT.style.display = 'none'; 
             } else { iT.style.display = 'none'; pT.style.display = 'flex'; } 
@@ -176,7 +182,6 @@ function abrirPagina(nomeDaPagina) {
 
 function voltarParaMenu() { esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; }
 
-// EDIÇÕES DA FICHA TÉCNICA
 function salvarFichaNaNuvemBackground() {
     let payload = {
         acao: "salvar_ficha_tecnica",
@@ -225,7 +230,6 @@ function calcularAbastecimento() { let kA = parseFloat(document.getElementById('
 function calcularGraxa() { let s = document.getElementById('data-engraxada').value; let t = document.getElementById('status-graxa'); if (!s || s.length < 8) { if(t) t.innerHTML = "---"; document.getElementById('data-prox-engraxada').innerText = "--/--/----"; return; } let p = s.split('-'); let ultima = new Date(p[0], p[1] - 1, p[2]); let proxima = new Date(ultima); proxima.setDate(proxima.getDate() + 30); document.getElementById('data-prox-engraxada').innerText = `${String(proxima.getDate()).padStart(2,'0')}/${String(proxima.getMonth()+1).padStart(2,'0')}/${proxima.getFullYear()}`; let h = new Date(); h.setHours(0,0,0,0); let d = Math.ceil((proxima.getTime() - h.getTime()) / (1000 * 3600 * 24)); if (d < 0) { t.innerHTML = `VENCIDO há ${Math.abs(d)} dias ❌`; t.style.color = "red"; } else if (d <= 5) { t.innerHTML = `Atenção: Faltam ${d} dias ⚠️`; t.style.color = "#d4a017"; } else { t.innerHTML = `Faltam ${d} dias ✅`; t.style.color = "green"; } }
 function abrirDocPDF() { if (urlDocAtual && urlDocAtual.trim() !== "") window.open(urlDocAtual, '_blank'); else alert("Nenhum documento cadastrado para este veículo."); }
 
-// 5. ABASTECIMENTO
 function mudarFormAbast() { let t = document.getElementById('tipo-abast').value; if (t.includes("CHEGADA")) { document.getElementById('form-abast-veiculo').style.display = 'none'; document.getElementById('form-abast-chegada').style.display = 'block'; } else { document.getElementById('form-abast-veiculo').style.display = 'block'; document.getElementById('form-abast-chegada').style.display = 'none'; } }
 function preencherDataHoraAbast() { let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString().slice(0,16); let eA = document.getElementById('abast-data'); if(eA) eA.value = hL; let eC = document.getElementById('chegada-data'); if(eC) eC.value = hL; document.getElementById('estoque-diesel-geral').innerText = window.estoqueDiesel + " L"; document.getElementById('estoque-arla-geral').innerText = window.estoqueArla + " L"; document.getElementById('gasto-mes-geral').innerText = window.gastoMesGeral + " L"; }
 async function salvarAbastecimentoNuvem() {
@@ -256,7 +260,6 @@ async function salvarAbastecimentoNuvem() {
     b.innerText = "💾 Salvar Lançamento"; b.disabled = false;
 }
 
-// 6. CHECKLIST E FOTOS
 let b64Lateral = ""; let b64Traseira = "";
 function processarFoto(input, idPreview) {
     if (!input.files || !input.files[0]) return; const r = new FileReader();
