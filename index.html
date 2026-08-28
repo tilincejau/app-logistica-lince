@@ -14,6 +14,8 @@
         .foto-preview { max-width: 100%; border-radius: 8px; border: 2px solid #1a4d2e; margin-top: 5px; display: none; }
         .foto-placeholder { background-color: #f0f0f0; height: 120px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px; border: 1px dashed #ccc; margin-top: 5px; }
         .is-carreta { display: none; } 
+        /* Trava a tela ao assinar */
+        canvas { touch-action: none; background-color: #fff; cursor: crosshair; }
     </style>
 </head>
 <body>
@@ -21,7 +23,6 @@
     <div id="tela-login" class="app-container">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logo Lince" class="logo">
         <div class="desenvolvedor">Desenvolvido por João Marcelo Magon Bonini</div>
-        
         <input type="text" id="campo-usuario" class="input-campo" placeholder="Usuário">
         <input type="password" id="campo-senha" class="input-campo" placeholder="Senha">
         <p id="mensagem-erro">Usuário ou senha incorretos!</p>
@@ -136,16 +137,13 @@
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">🛞 Pneus</h3>
                     <button id="btn-editar-pneus" onclick="alternarEdicaoPneus()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar Pneus</button>
                 </div>
-                <!-- CAMINHÕES/CAVALOS -->
                 <div class="esconder-carro">
                     <img src="https://i.postimg.cc/tT7bBkgb/24.png" style="width:100%; border-radius:8px; margin-bottom:10px;">
                     <div id="ficha-pneus-cavalo-container"></div>
                 </div>
-                <!-- CARROS -->
                 <div class="mostrar-carro" style="display:none;">
                     <div id="ficha-pneus-carro-container"></div>
                 </div>
-                <!-- CARRETA -->
                 <div class="is-carreta" style="margin-top:15px; padding-top:15px; border-top: 2px dashed #0056b3;">
                     <h3 class="card-titulo" style="border-bottom: 2px solid #0056b3; color: #0056b3;">🛞 Pneus da Carreta</h3>
                     <img src="https://i.postimg.cc/RF8Byt3x/25.png" style="width:100%; border-radius:8px; margin-bottom:10px;">
@@ -213,16 +211,29 @@
                     <button id="tab-chk-4" class="btn-tab-chk" onclick="mudarAbaChecklist(4)">4. Pneus/Fim</button>
                 </div>
 
-                <!-- Passos do Caminhão (Mantidos Iguais) -->
                 <div id="passo-chk-1" style="padding: 0 10px;">
                     <label class="info-label">Placa do Veículo:</label><input type="text" id="chk-placa" class="input-campo" style="background-color:#eee; font-weight:bold; color:#1a4d2e;" readonly>
                     <div class="is-carreta"><label class="info-label">Placa da Carreta Engatada: <span style="color:red">*</span></label><select id="chk-placa-carreta" class="input-campo" style="border:2px solid #0056b3;"><option value="">Selecione a Carreta...</option><option value="RFR5F62">RFR5F62</option><option value="RFY6I51">RFY6I51</option><option value="RFL1F19">RFL1F19</option></select></div>
                     <label class="info-label">Tipo / Modelo:</label><input type="text" id="chk-modelo" class="input-campo" style="background-color:#eee; font-weight:bold; color:#1a4d2e;" readonly>
                     <label class="info-label">Motorista: <span style="color:red">*</span></label><input type="text" id="chk-motorista" class="input-campo" placeholder="Nome do motorista">
-                    <label class="info-label">KM Atual: <span style="color:red">*</span></label><input type="number" id="chk-km" class="input-campo">
-                    <label class="info-label">Próx Troca Óleo:</label><input type="number" id="chk-km-oleo" class="input-campo">
-                    <label class="info-label">Tacógrafo:</label><input type="date" id="chk-data-taco" class="input-campo">
-                    <label class="info-label">Última Graxa:</label><input type="date" id="chk-data-graxa" class="input-campo">
+                    
+                    <div class="esconder-cavalo-chk">
+                        <div style="display: flex; gap: 10px;">
+                            <div style="flex:1;">
+                                <label class="info-label">Carrinhos: <span style="color:red">*</span></label>
+                                <input type="number" id="chk-qtd-carrinhos" class="input-campo">
+                            </div>
+                            <div style="flex:1;">
+                                <label class="info-label">Cones: <span style="color:red">*</span></label>
+                                <input type="number" id="chk-qtd-cones" class="input-campo">
+                            </div>
+                        </div>
+                    </div>
+
+                    <label class="info-label">KM Atual (Painel): <span style="color:red">*</span></label><input type="number" id="chk-km" class="input-campo">
+                    <label class="info-label">Próxima Troca Óleo (KM):</label><input type="number" id="chk-km-oleo" class="input-campo">
+                    <label class="info-label">Última Aferição Tacógrafo:</label><input type="date" id="chk-data-taco" class="input-campo">
+                    <label class="info-label">Última Engraxada:</label><input type="date" id="chk-data-graxa" class="input-campo">
                     <button class="btn-principal" onclick="avancarPasso(2)">Próximo Passo ➡️</button><button class="btn-secundario" onclick="cancelarChecklist()" style="margin-bottom:0;">Cancelar</button>
                 </div>
                 <div id="passo-chk-2" style="display:none; padding: 0 10px;">
@@ -239,8 +250,21 @@
                     <div class="grupo-checkbox"><div class="titulo-grupo-chk">13. MEDIDAS TWI DOS PNEUS <span style="color:red">*</span></div><img src="https://i.postimg.cc/tT7bBkgb/24.png" style="width:100%; border-radius:8px; margin-bottom:10px;"><div id="chk-pneus-cavalo-container" style="display: grid; grid-template-columns: 1fr; gap: 10px;"></div></div>
                     <div class="grupo-checkbox is-carreta" style="border: 2px solid #0056b3;"><div class="titulo-grupo-chk" style="color:#0056b3;">14. TWI DOS PNEUS DA CARRETA <span style="color:red">*</span></div><img src="https://i.postimg.cc/RF8Byt3x/25.png" style="width:100%; border-radius:8px; margin-bottom:10px;"><div id="chk-pneus-carreta-container" style="display: grid; grid-template-columns: 1fr; gap: 10px;"></div></div>
                     <div class="grupo-checkbox sessao-fotos-checklist"><div class="titulo-grupo-chk">15. FOTOS DO MÊS <span style="color:red">*</span></div><p id="aviso-fotos-ok" style="display:none; color:green; font-weight:bold; text-align:center;">✅ Fotos deste mês já foram enviadas!</p><div id="container-inputs-fotos"><label class="info-label" style="font-size:12px;">Foto Lateral:</label><input type="file" id="foto-lat-input" accept="image/*" class="input-campo" style="padding: 10px;" onchange="processarFoto(this, 'preview-lat')"><img id="preview-lat" class="foto-preview"><label class="info-label" style="font-size:12px; margin-top:10px;">Foto Traseira:</label><input type="file" id="foto-tras-input" accept="image/*" class="input-campo" style="padding: 10px;" onchange="processarFoto(this, 'preview-tras')"><img id="preview-tras" class="foto-preview"></div></div>
-                    <label class="info-label" style="border-top: 1px solid #ccc; padding-top: 15px;">Necessário Parada para Revisão?</label><select id="chk-parada" class="input-campo" style="border: 2px solid red;"><option value="Não">Não</option><option value="Sim">Sim, Urgente</option></select>
-                    <label class="info-label">Considerações Finais:</label><textarea id="chk-obs" class="input-campo" rows="3" placeholder="Digite alguma observação extra..."></textarea>
+                    
+                    <div class="grupo-checkbox">
+                        <div class="titulo-grupo-chk">16. ASSINATURAS E OBSERVAÇÕES <span style="color:red">*</span></div>
+                        <label class="info-label" style="border-top: 1px solid #ccc; padding-top: 15px;">Necessário Parada para Revisão?</label><select id="chk-parada" class="input-campo" style="border: 2px solid red;"><option value="Não">Não</option><option value="Sim">Sim, Urgente</option></select>
+                        <label class="info-label">Considerações Finais:</label><textarea id="chk-obs" class="input-campo" rows="3" placeholder="Digite alguma observação extra..."></textarea>
+                        
+                        <label class="info-label" style="font-size:12px; margin-top:10px;">Assinatura do Motorista:</label>
+                        <canvas id="ass-mot-cam" width="600" height="200" style="border:2px dashed #1a4d2e; border-radius:8px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas>
+                        <button type="button" class="btn-secundario" style="margin-top:5px; padding:5px; font-size:12px;" onclick="limparPad('ass-mot-cam')">🧹 Limpar Assinatura Motorista</button>
+                        
+                        <label class="info-label" style="font-size:12px; margin-top:15px;">Assinatura do Gerente (Antônio F. Gimenez):</label>
+                        <canvas id="ass-ger-cam" width="600" height="200" style="border:2px dashed #1a4d2e; border-radius:8px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas>
+                        <button type="button" class="btn-secundario" style="margin-top:5px; padding:5px; font-size:12px;" onclick="limparPad('ass-ger-cam')">🧹 Limpar Assinatura Gerente</button>
+                    </div>
+
                     <button class="btn-principal" id="btn-enviar-chk" style="background-color: #0056b3;" onclick="enviarChecklist()">💾 Enviar Checklist e Gerar PDF</button><button class="btn-secundario" onclick="mudarAbaChecklist(3)" style="margin-bottom:0;">⬅️ Voltar</button>
                 </div>
             </div>
@@ -297,9 +321,20 @@
                         </div>
                     </div>
 
-                    <label class="info-label" style="border-top: 1px solid #ccc; padding-top: 15px;">Necessário Parada Urgente?</label>
-                    <select id="chk-carro-parada" class="input-campo" style="border: 2px solid red;"><option value="Não">Não</option><option value="Sim">Sim, Urgente</option></select>
-                    <label class="info-label">Considerações Finais:</label><textarea id="chk-carro-obs" class="input-campo" rows="3" placeholder="Digite alguma observação..."></textarea>
+                    <div class="grupo-checkbox">
+                        <div class="titulo-grupo-chk">ASSINATURAS E OBSERVAÇÕES <span style="color:red">*</span></div>
+                        <label class="info-label" style="border-top: 1px solid #ccc; padding-top: 15px;">Necessário Parada Urgente?</label>
+                        <select id="chk-carro-parada" class="input-campo" style="border: 2px solid red;"><option value="Não">Não</option><option value="Sim">Sim, Urgente</option></select>
+                        <label class="info-label">Considerações Finais:</label><textarea id="chk-carro-obs" class="input-campo" rows="3" placeholder="Digite alguma observação..."></textarea>
+                        
+                        <label class="info-label" style="font-size:12px; margin-top:10px;">Assinatura do Motorista:</label>
+                        <canvas id="ass-mot-car" width="600" height="200" style="border:2px dashed #1a4d2e; border-radius:8px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas>
+                        <button type="button" class="btn-secundario" style="margin-top:5px; padding:5px; font-size:12px;" onclick="limparPad('ass-mot-car')">🧹 Limpar Assinatura Motorista</button>
+                        
+                        <label class="info-label" style="font-size:12px; margin-top:15px;">Assinatura do Gerente (Antônio F. Gimenez):</label>
+                        <canvas id="ass-ger-car" width="600" height="200" style="border:2px dashed #1a4d2e; border-radius:8px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas>
+                        <button type="button" class="btn-secundario" style="margin-top:5px; padding:5px; font-size:12px;" onclick="limparPad('ass-ger-car')">🧹 Limpar Assinatura Gerente</button>
+                    </div>
                     
                     <button class="btn-principal" id="btn-enviar-chk-carro" style="background-color: #0056b3;" onclick="enviarChecklistCarro()">💾 Enviar Inspeção e PDF</button>
                     <button class="btn-secundario" onclick="cancelarChecklist()" style="margin-bottom:0;">Cancelar</button>
@@ -378,7 +413,7 @@
         </div>
     </div>
 
-    <!-- v=95: LÓGICA DE CARROS ADICIONADA -->
-    <script src="script.js?v=95"></script>
+    <!-- v=105: ASSINATURAS E CARRINHOS ADICIONADOS -->
+    <script src="script.js?v=105"></script>
 </body>
 </html>
