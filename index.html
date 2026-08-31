@@ -123,7 +123,7 @@
         <button class="btn-principal" id="btn-menu-ficha" onclick="abrirPagina('Ficha Técnica')">📄 Ficha Técnica</button>
         <button class="btn-principal" onclick="abrirPagina('Checklist')">✅ Checklist</button>
         <button class="btn-principal" id="btn-menu-abastecimento" onclick="abrirPagina('Abastecimento')">⛽ Abastecimento e Estoque</button>
-        <button class="btn-principal" onclick="abrirPagina('Estoque')">📦 Estoque (Peças e Óleo)</button>
+        <button class="btn-principal" id="btn-menu-estoque" onclick="abrirPagina('Estoque')">📦 Estoque (Peças e Óleo)</button>
     </div>
 
     <div id="tela-interna" class="app-container" style="display: none;">
@@ -204,6 +204,7 @@
                 <div class="linha-info"><span class="info-label" style="margin:0;">KM Atual:</span> <input type="number" id="abast-km-atual" class="input-editavel travado" value="0" oninput="calcularAbastecimento()" readonly></div>
                 <div class="linha-info"><span class="info-label" style="margin:0;">Litros Abast.:</span> <input type="number" id="abast-litros" class="input-editavel travado" value="0" oninput="calcularAbastecimento()" readonly></div>
                 <div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;"><span class="info-label" style="margin:0;">Média do Veículo:</span><span id="abast-media" style="font-weight:bold; font-size: 17px; color: #1a4d2e;">0.00 km/L</span></div>
+                
                 <div class="esconder-carro">
                     <hr style="border: 0.5px solid #eee; margin: 15px 0;">
                     <div class="linha-info"><span class="info-label" style="margin:0;">Última Engraxada:</span> <input type="date" id="data-engraxada" class="input-editavel travado" oninput="calcularGraxa()" readonly></div>
@@ -281,11 +282,11 @@
                         <label class="info-label" style="border-top: 1px solid #ccc; padding-top: 15px;">Necessário Parada para Revisão?</label><select id="chk-parada" class="input-campo" style="border: 2px solid red;"><option value="Não">Não</option><option value="Sim">Sim, Urgente</option></select>
                         <label class="info-label">Considerações Finais:</label><textarea id="chk-obs" class="input-campo" rows="3" placeholder="Digite alguma observação extra..."></textarea>
                         
-                        <label class="info-label" style="font-size:12px; margin-top:10px;">Assinatura do Motorista:</label>
+                        <label class="info-label" style="font-size:12px; margin-top:10px;">Assinatura do Motorista: <span style="color:red">*</span></label>
                         <canvas id="ass-mot-cam" width="600" height="200" style="border:2px dashed #1a4d2e; border-radius:8px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas>
                         <button type="button" class="btn-secundario" style="margin-top:5px; padding:5px; font-size:12px;" onclick="limparPad('ass-mot-cam')">🧹 Limpar Assinatura Motorista</button>
                         
-                        <label class="info-label" style="font-size:12px; margin-top:15px;">Assinatura do Gerente (Antônio F. Gimenez):</label>
+                        <label class="info-label" style="font-size:12px; margin-top:15px;">Assinatura do Gerente (Antônio F. Gimenez): <span style="color:red">*</span></label>
                         <canvas id="ass-ger-cam" width="600" height="200" style="border:2px dashed #1a4d2e; border-radius:8px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas>
                         <button type="button" class="btn-secundario" style="margin-top:5px; padding:5px; font-size:12px;" onclick="limparPad('ass-ger-cam')">🧹 Limpar Assinatura Gerente</button>
                     </div>
@@ -355,11 +356,11 @@
                         <select id="chk-carro-parada" class="input-campo" style="border: 2px solid red;"><option value="Não">Não</option><option value="Sim">Sim, Urgente</option></select>
                         <label class="info-label">Considerações Finais:</label><textarea id="chk-carro-obs" class="input-campo" rows="3" placeholder="Digite alguma observação..."></textarea>
                         
-                        <label class="info-label" style="font-size:12px; margin-top:10px;">Assinatura do Motorista:</label>
+                        <label class="info-label" style="font-size:12px; margin-top:10px;">Assinatura do Motorista: <span style="color:red">*</span></label>
                         <canvas id="ass-mot-car" width="600" height="200" style="border:2px dashed #1a4d2e; border-radius:8px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas>
                         <button type="button" class="btn-secundario" style="margin-top:5px; padding:5px; font-size:12px;" onclick="limparPad('ass-mot-car')">🧹 Limpar Assinatura Motorista</button>
                         
-                        <label class="info-label" style="font-size:12px; margin-top:15px;">Assinatura do Gerente (Antônio F. Gimenez):</label>
+                        <label class="info-label" style="font-size:12px; margin-top:15px;">Assinatura do Gerente (Antônio F. Gimenez): <span style="color:red">*</span></label>
                         <canvas id="ass-ger-car" width="600" height="200" style="border:2px dashed #1a4d2e; border-radius:8px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas>
                         <button type="button" class="btn-secundario" style="margin-top:5px; padding:5px; font-size:12px;" onclick="limparPad('ass-ger-car')">🧹 Limpar Assinatura Gerente</button>
                     </div>
@@ -379,6 +380,9 @@
                     <label class="info-label">Empilhadeirista do Dia: <span style="color:red">*</span></label>
                     <select id="chk-emp-motorista" class="input-campo"><option value="">Selecione o Operador...</option></select>
                     
+                    <label class="info-label">Horímetro Atual (Horas): <span style="color:red">*</span></label>
+                    <input type="number" id="chk-emp-km" class="input-campo" placeholder="Ex: 1250">
+
                     <div class="grupo-checkbox">
                         <div class="titulo-grupo-chk">ITENS AUSENTES OU COM DEFEITO <span style="color:red">*</span></div>
                         <label class="linha-check"><input type="checkbox" name="chk-emp-itens" value="TODOS OS ITENS ESTÃO NA EMPILHADEIRA" onchange="verificarTudoOk(this, 'chk-emp-itens', 'chk-emp-outro')"> TODOS OS ITENS ESTÃO OK</label>
@@ -400,11 +404,11 @@
 
                     <div class="grupo-checkbox">
                         <div class="titulo-grupo-chk">ASSINATURAS <span style="color:red">*</span></div>
-                        <label class="info-label" style="font-size:12px; margin-top:10px;">Assinatura do Empilhadeirista:</label>
+                        <label class="info-label" style="font-size:12px; margin-top:10px;">Assinatura do Empilhadeirista: <span style="color:red">*</span></label>
                         <canvas id="ass-mot-emp" width="600" height="200" style="border:2px dashed #1a4d2e; border-radius:8px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas>
                         <button type="button" class="btn-secundario" style="margin-top:5px; padding:5px; font-size:12px;" onclick="limparPad('ass-mot-emp')">🧹 Limpar Assinatura</button>
                         
-                        <label class="info-label" style="font-size:12px; margin-top:15px;">Assinatura do Gerente (Antônio F. Gimenez):</label>
+                        <label class="info-label" style="font-size:12px; margin-top:15px;">Assinatura do Gerente (Antônio F. Gimenez): <span style="color:red">*</span></label>
                         <canvas id="ass-ger-emp" width="600" height="200" style="border:2px dashed #1a4d2e; border-radius:8px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas>
                         <button type="button" class="btn-secundario" style="margin-top:5px; padding:5px; font-size:12px;" onclick="limparPad('ass-ger-emp')">🧹 Limpar Assinatura</button>
                     </div>
@@ -488,7 +492,7 @@
     </div>
     
     <script>
-        // COLOQUE O LINK DA SUA API ABAIXO:
+        // COLOQUE O LINK NOVO DA SUA API ABAIXO (AQUELE QUE TERMINA COM /exec):
         const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
         
         async function fazerLogin() {
@@ -502,6 +506,10 @@
                 let res1 = await req1.json();
                 
                 if (res1.sucesso) {
+                    if(res1.versao_backend !== "v7") {
+                        alert("❌ ERRO CRÍTICO: Seu aplicativo está conectando na versão ANTIGA da nuvem! Certifique-se de colar o novo link e gerar a Nova Versão no Apps Script.");
+                        btn.innerText = "Entrar"; return;
+                    }
                     window.usuarioLogado = u; 
                     let req2 = await fetch(`${API_URL}?acao=buscar_inicial`); let res2 = await req2.json();
                     if (res2.sucesso) {
@@ -601,8 +609,10 @@
                 document.querySelectorAll('.mostrar-carro').forEach(el => { el.style.display = window.isCarro ? 'block' : 'none'; });
                 document.querySelectorAll('.esconder-cavalo-chk').forEach(el => { el.style.display = (window.isCavalo || window.isEmpilhadeira) ? 'none' : 'block'; });
 
+                // OCULTA BOTÕES INÚTEIS PARA A EMPILHADEIRA
                 document.getElementById('btn-menu-ficha').style.display = window.isEmpilhadeira ? 'none' : 'block';
                 document.getElementById('btn-menu-abastecimento').style.display = window.isEmpilhadeira ? 'none' : 'block';
+                document.getElementById('btn-menu-estoque').style.display = window.isEmpilhadeira ? 'none' : 'block';
 
                 let selAbast = document.getElementById('tipo-abast');
                 if (window.isCarro) { selAbast.innerHTML = `<option value="DIESEL">Abastecer COMBUSTÍVEL no Veículo</option><option value="CHEGADA DE DIESEL">📥 Receber COMBUSTÍVEL (Estoque)</option>`; } 
@@ -645,16 +655,23 @@
             } catch(err) { alert("Erro visual: " + err.message); } finally { btnMenu.forEach(btn => { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }); }
         }
 
+        function verificarTudoOk(ck, nG, idOutro) { 
+            if (ck.checked && (ck.value.includes("TODOS OS ITENS ESTÃO") || ck.value.includes("NÃO APRESENTA"))) { 
+                document.querySelectorAll(`input[name="${nG}"]`).forEach(c => { if (c !== ck) c.checked = false; }); 
+                let tO = document.getElementById(idOutro); if(tO) { tO.style.display = 'none'; tO.value = ''; } 
+            } else if (ck.checked) { 
+                document.querySelectorAll(`input[name="${nG}"]`).forEach(c => { if (c.value.includes("NÃO APRESENTA") || c.value.includes("TODOS OS ITENS ESTÃO")) c.checked = false; }); 
+            } 
+        }
+        function verificarOutro(ck, idC) { let cp = document.getElementById(idC); if (ck.value === "OUTRO" && ck.checked) { cp.style.display = 'block'; cp.focus(); } else if (ck.value === "OUTRO" && !ck.checked) { cp.style.display = 'none'; cp.value = ''; } }
+        function verificarOutroSelect(sl, idC) { let cp = document.getElementById(idC); if(sl.value === "OUTRO") { cp.style.display = 'block'; cp.focus(); } else { cp.style.display = 'none'; cp.value = ''; } }
+        function pegarMarcados(nG, idO) { let s = []; document.querySelectorAll(`input[name="${nG}"]:checked`).forEach(c => { if(c.value !== "OUTRO") s.push(c.value); }); let tO = document.getElementById(idO); if (tO && tO.value.trim() !== "") s.push("OUTROS: " + tO.value.trim()); return s.length > 0 ? s.join(" | ") : "Não avaliado"; }
+        function getSelOuOutro(idO) { let i = document.getElementById(idO); if(!i) return ""; let s = i.previousElementSibling; return s.value === "OUTRO" ? (i.value || "Outro não esp.") : s.value; }
+
         function voltarParaPlacas() { esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex'; }
         function abrirPagina(nomeDaPagina) { if(nomeDaPagina === 'Abastecimento' && typeof preencherDataHoraAbast === 'function') { preencherDataHoraAbast(); } document.getElementById('titulo-tela-interna').innerText = nomeDaPagina; let secoes = document.getElementsByClassName('secao-conteudo'); for (let i = 0; i < secoes.length; i++) { secoes[i].style.display = 'none'; } let secaoAtiva = document.getElementById('conteudo-' + nomeDaPagina); if (secaoAtiva) { secaoAtiva.style.display = 'flex'; } esconderTodasTelas(); document.getElementById('tela-interna').style.display = 'flex'; }
         function voltarParaMenu() { esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; }
-
-        function salvarFichaNaNuvemBackground() {
-            let payload = { acao: "salvar_ficha_tecnica", usuario: window.usuarioLogado, placa: document.getElementById('texto-placa-interna').innerText, tipo: document.getElementById('tipo-veiculo').value, motorista: document.getElementById('nome-motorista').value, km_atual: document.getElementById('km-master').value, km_oleo: document.getElementById('km-proxima-troca').value, data_tacografo: window.isCarro ? "" : document.getElementById('data-proxima-afericao').value, data_graxa: window.isCarro ? "" : document.getElementById('data-engraxada').value, qtd_carrinhos: window.isCarro ? "" : document.getElementById('qtd-carrinhos').value, qtd_cones: window.isCarro ? "" : document.getElementById('qtd-cones').value, data_extintor: document.getElementById('data-extintor-ficha').value, pneus: {} };
-            let tIds = window.isCarro ? ['dd','de','td','te'] : ['dd','de','tde','tdi','tee','tei','tkde','tkdi','tkee','tkei','1step','c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','2step']; let pref = window.isCarro ? 'carro-' : ''; tIds.forEach(id => { let km = document.getElementById(pref+'km-troca-'+id); let dt = document.getElementById(pref+'data-troca-'+id); if(km && dt) { payload.pneus[id] = { km_ultima_troca: km.value, data_ultima_troca: dt.value }; } });
-            fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(res => res.json()).then(d => { if(d.sucesso) { window.frota[payload.placa].tipo = payload.tipo; window.frota[payload.placa].motorista = payload.motorista; window.frota[payload.placa].km_atual = payload.km_atual; window.frota[payload.placa].km_oleo = payload.km_oleo; window.frota[payload.placa].data_tacografo = payload.data_tacografo; window.frota[payload.placa].data_graxa = payload.data_graxa; window.frota[payload.placa].qtd_carrinhos = payload.qtd_carrinhos; window.frota[payload.placa].qtd_cones = payload.qtd_cones; window.frota[payload.placa].data_extintor = payload.data_extintor; for(let id in payload.pneus) { if(!window.frota[payload.placa].pneus[id]) window.frota[payload.placa].pneus[id] = {}; window.frota[payload.placa].pneus[id].km_ultima_troca = payload.pneus[id].km_ultima_troca; window.frota[payload.placa].pneus[id].data_ultima_troca = payload.pneus[id].data_ultima_troca; } let elAv = document.getElementById('aviso-ultimo-km'); if(elAv) elAv.innerText = payload.km_atual; } });
-        }
-
+        function salvarFichaNaNuvemBackground() { let payload = { acao: "salvar_ficha_tecnica", usuario: window.usuarioLogado, placa: document.getElementById('texto-placa-interna').innerText, tipo: document.getElementById('tipo-veiculo').value, motorista: document.getElementById('nome-motorista').value, km_atual: document.getElementById('km-master').value, km_oleo: document.getElementById('km-proxima-troca').value, data_tacografo: window.isCarro ? "" : document.getElementById('data-proxima-afericao').value, data_graxa: window.isCarro ? "" : document.getElementById('data-engraxada').value, qtd_carrinhos: window.isCarro ? "" : document.getElementById('qtd-carrinhos').value, qtd_cones: window.isCarro ? "" : document.getElementById('qtd-cones').value, data_extintor: document.getElementById('data-extintor-ficha').value, pneus: {} }; let tIds = window.isCarro ? ['dd','de','td','te'] : ['dd','de','tde','tdi','tee','tei','tkde','tkdi','tkee','tkei','1step','c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','2step']; let pref = window.isCarro ? 'carro-' : ''; tIds.forEach(id => { let km = document.getElementById(pref+'km-troca-'+id); let dt = document.getElementById(pref+'data-troca-'+id); if(km && dt) { payload.pneus[id] = { km_ultima_troca: km.value, data_ultima_troca: dt.value }; } }); fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(res => res.json()).then(d => { if(d.sucesso) { window.frota[payload.placa].tipo = payload.tipo; window.frota[payload.placa].motorista = payload.motorista; window.frota[payload.placa].km_atual = payload.km_atual; window.frota[payload.placa].km_oleo = payload.km_oleo; window.frota[payload.placa].data_tacografo = payload.data_tacografo; window.frota[payload.placa].data_graxa = payload.data_graxa; window.frota[payload.placa].qtd_carrinhos = payload.qtd_carrinhos; window.frota[payload.placa].qtd_cones = payload.qtd_cones; window.frota[payload.placa].data_extintor = payload.data_extintor; for(let id in payload.pneus) { if(!window.frota[payload.placa].pneus[id]) window.frota[payload.placa].pneus[id] = {}; window.frota[payload.placa].pneus[id].km_ultima_troca = payload.pneus[id].km_ultima_troca; window.frota[payload.placa].pneus[id].data_ultima_troca = payload.pneus[id].data_ultima_troca; } let elAv = document.getElementById('aviso-ultimo-km'); if(elAv) elAv.innerText = payload.km_atual; } }); }
         function atualizarKMGeral() { document.getElementById('km-atual-oleo').innerText = document.getElementById('km-master').value; calcularOleo(); calcularRodizioPneus(); }
         function alternarEdicaoHeader() { let c = [document.getElementById('tipo-veiculo'), document.getElementById('nome-motorista'), document.getElementById('km-master')]; let b = document.getElementById('btn-editar-header'); if (c[0].hasAttribute('readonly')) { c.forEach(x => { x.removeAttribute('readonly'); x.removeAttribute('disabled'); x.classList.remove('travado'); }); b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; c[0].focus(); } else { c.forEach(x => { x.setAttribute('readonly', 'true'); if(x.tagName === 'SELECT') x.setAttribute('disabled', 'true'); x.classList.add('travado'); }); b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; atualizarKMGeral(); salvarFichaNaNuvemBackground(); } }
         function alternarEdicaoOleo() { let c = document.getElementById('km-proxima-troca'); let b = document.getElementById('btn-editar-oleo'); if (c.hasAttribute('readonly')) { c.removeAttribute('readonly'); c.classList.remove('travado'); b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; } else { c.setAttribute('readonly', 'true'); c.classList.add('travado'); b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; calcularOleo(); salvarFichaNaNuvemBackground(); } }
@@ -682,10 +699,6 @@
         async function salvarMovimentacaoEstoque() { let idItem = document.getElementById('est-item').value; let tipo = document.getElementById('est-tipo').value; let qtd = document.getElementById('est-qtd').value; let placa = document.getElementById('est-placa').value; let valor = document.getElementById('est-valor').value; let link = document.getElementById('est-link').value; let resp = document.getElementById('est-resp') ? document.getElementById('est-resp').value : window.usuarioLogado; if(!qtd) return alert("❌ Digite a quantidade!"); let peca = window.estoquePecas[idItem]; let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString().slice(0,16); let p = { acao: "salvar_estoque", usuario: window.usuarioLogado, data: hL.replace('T', ' '), item: peca.item, tipo: tipo, qtd: qtd, placa: tipo === "SAÍDA" ? placa : "", valor: tipo === "ENTRADA" ? valor : "", link: tipo === "ENTRADA" ? link : "", responsavel: resp }; let btn = document.getElementById('btn-salvar-mov-est'); btn.innerText = "Salvando... ⏳"; btn.disabled = true; try { let req = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); let res = await req.json(); if (res.sucesso) { alert("✅ Movimentação salva com sucesso!"); let q = parseFloat(qtd); if (tipo === "SAÍDA") { peca.qtd = parseFloat(peca.qtd) - q; } if (tipo === "ENTRADA") { peca.qtd = parseFloat(peca.qtd) + q; if(valor) peca.valor = valor; if(q) peca.qtd_compra = q; if(link) peca.link = link; peca.data_compra = p.data.substring(0,10); } renderizarEstoquePecas(); document.getElementById('est-qtd').value = ""; document.getElementById('est-placa').value = ""; document.getElementById('est-valor').value = ""; document.getElementById('est-link').value = ""; } else { alert("❌ Erro: " + res.erro); } } catch (e) { alert("❌ Erro de conexão."); } btn.innerText = "💾 Salvar Movimentação"; btn.disabled = false; }
         async function gerarSolicitacaoCompra() { let idItem = document.getElementById('compra-item').value; let qtd = document.getElementById('compra-qtd').value; let urgencia = document.getElementById('compra-urgencia').value; if(!qtd) return alert("❌ Digite a quantidade que precisa comprar!"); let peca = window.estoquePecas[idItem]; let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString(); let p = { acao: "solicitar_compra", usuario: window.usuarioLogado, data: hL, item: peca.item, qtd: qtd, urgencia: urgencia, qtd_ref: peca.qtd_compra, valor_ref: peca.valor, link_ref: peca.link }; let btn = document.getElementById('btn-gerar-compra'); btn.innerText = "Gerando PDF... ⏳"; btn.disabled = true; try { let req = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); let res = await req.json(); if (res.sucesso) { alert("✅ Pedido de Compra gerado com sucesso!"); window.open(res.link_pdf, '_blank'); document.getElementById('compra-qtd').value = ""; } else { alert("❌ Erro: " + res.erro); } } catch (e) { alert("❌ Erro de conexão."); } btn.innerText = "📄 Gerar Pedido de Compra (PDF)"; btn.disabled = false; }
 
-        function calcularStatusTwi(inE, bId) { let b = document.getElementById(bId); if(!b) return; let v = parseFloat(inE.value); if (isNaN(v)) { b.innerText = "Aguardando..."; b.style.backgroundColor = "#eee"; b.style.color = "#666"; return; } if (v >= 10) { b.innerText = "Pneu Novo"; b.style.backgroundColor = "#d4edda"; b.style.color = "#155724"; } else if (v >= 5) { b.innerText = "Meia-Vida"; b.style.backgroundColor = "#fff3cd"; b.style.color = "#856404"; } else { b.innerText = "No Limite"; b.style.backgroundColor = "#f8d7da"; b.style.color = "#721c24"; } }
-        function processarFoto(input, idPreview) { if (!input.files || !input.files[0]) return; const r = new FileReader(); r.onload = function(e) { const img = new Image(); img.src = e.target.result; img.onload = function() { const cv = document.createElement('canvas'); const MW = 800; let w = img.width; let h = img.height; if (w > MW) { h = Math.round((h * MW) / w); w = MW; } cv.width = w; cv.height = h; const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, w, h); const dU = cv.toDataURL('image/jpeg', 0.6); if(idPreview === 'preview-lat' || idPreview === 'preview-frente') b64Lateral = dU; if(idPreview === 'preview-tras' || idPreview === 'preview-verso') b64Traseira = dU; let pr = document.getElementById(idPreview); pr.src = dU; pr.style.display = 'block'; } }; r.readAsDataURL(input.files[0]); }
-        function renderizarHistorico(d) { let c = document.getElementById('container-historico'); c.innerHTML = ""; if (!d || d.length === 0) { c.innerHTML = "<p style='text-align:center; color:#666;'>Nenhum checklist registrado ainda.</p>"; return; } d.forEach(i => { let v = document.createElement('div'); v.className = "historico-item"; v.innerHTML = `<span style="font-weight: bold; color: #1a4d2e;">${i.placa}</span> <span style="color: #555; font-size: 12px;">${String(i.data).split('T')[0]} ✅</span>`; c.appendChild(v); }); }
-
         function iniciarNovoChecklist() { 
             let pl = document.getElementById('texto-placa-interna').innerText; document.getElementById('lista-historico-checklist').style.display = 'none'; 
             document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false); document.querySelectorAll('input[id$="-outro"]').forEach(c => { c.value = ""; c.style.display = 'none'; }); document.querySelectorAll('input[id^="chk-twi-"], input[id^="chk-carro-twi-"]').forEach(i => i.value = ""); document.querySelectorAll('.twi-estado-badge').forEach(b => { b.innerText = "Aguardando..."; b.style.backgroundColor = "#eee"; b.style.color = "#666"; }); 
@@ -696,6 +709,7 @@
             if (window.isEmpilhadeira) {
                 document.getElementById('form-novo-checklist').style.display = 'none'; document.getElementById('form-novo-checklist-carro').style.display = 'none'; document.getElementById('form-novo-checklist-empilhadeira').style.display = 'block'; 
                 document.getElementById('chk-emp-placa').value = pl;
+                document.getElementById('chk-emp-km').value = document.getElementById('km-master').value; // PUXA AS HORAS SALVAS
                 limparPad('ass-mot-emp'); limparPad('ass-ger-emp'); initPad('ass-mot-emp'); initPad('ass-ger-emp');
             } else if (window.isCarro) {
                 document.getElementById('form-novo-checklist').style.display = 'none'; document.getElementById('form-novo-checklist-carro').style.display = 'block'; document.getElementById('form-novo-checklist-empilhadeira').style.display = 'none';
@@ -714,7 +728,6 @@
 
         function cancelarChecklist() { document.getElementById('form-novo-checklist').style.display = 'none'; document.getElementById('form-novo-checklist-carro').style.display = 'none'; document.getElementById('form-novo-checklist-empilhadeira').style.display = 'none'; document.getElementById('lista-historico-checklist').style.display = 'block'; }
         function mudarAbaChecklist(ps) { for(let i=1; i<=4; i++) { let pt = document.getElementById('passo-chk-'+i); if(pt) pt.style.display = 'none'; let tb = document.getElementById('tab-chk-'+i); if(tb) tb.classList.remove('ativo'); } let pA = document.getElementById('passo-chk-'+ps); if(pA) pA.style.display = 'block'; let tA = document.getElementById('tab-chk-'+ps); if(tA) tA.classList.add('ativo'); }
-
         function avancarPasso(px) {
             let pA = px - 1; 
             if (pA === 1) { 
@@ -765,15 +778,19 @@
 
         async function enviarChecklistEmpilhadeira() {
             if (document.querySelectorAll(`input[name="chk-emp-itens"]:checked`).length === 0) return alert("❌ Informe a situação dos itens da empilhadeira!");
+            
+            let kmEmp = document.getElementById('chk-emp-km').value;
+            if(!kmEmp) return alert("❌ Informe o Horímetro (Horas) da empilhadeira!");
+
             let obs = document.getElementById('chk-emp-obs').value; let checks = pegarMarcados('chk-emp-itens', 'chk-emp-outro');
             if(!checks.includes("TODOS OS ITENS ESTÃO") && obs.trim() === "") return alert("❌ É obrigatório preencher o Plano de Ação para os itens faltantes/com defeito!");
             let assMot = getPadB64('ass-mot-emp'); let assGer = getPadB64('ass-ger-emp');
             if(!assMot || !assGer) return alert("❌ É obrigatório recolher a assinatura do Empilhadeirista e do Gerente!");
 
             let btn = document.getElementById('btn-enviar-chk-emp'); btn.innerText = "Salvando e Gerando PDF... ⏳"; btn.disabled = true;
-            let pl = { acao: "salvar_checklist", usuario: window.usuarioLogado, placa: document.getElementById('chk-emp-placa').value, modelo: "EMPILHADEIRA", motorista: document.getElementById('chk-emp-motorista').value, chk_faltantes: checks, chk_obs: obs, assinatura_motorista_b64: assMot, assinatura_gerente_b64: assGer, km_atual: "", km_oleo: "", data_tacografo: "", data_graxa: "", data_extintor: "", chk_motor: "N/A", chk_cambio: "N/A", chk_embreagem: "N/A", chk_direcao: "N/A", chk_freios: "N/A", chk_suspensao: "N/A", chk_pneus_geral: "N/A", chk_eletrica: "N/A", chk_indicadores: "N/A", chk_cabine: "N/A", chk_asa_delta: "", chk_freio_lona: "", chk_faixas: "", chk_extintores: "", chk_parada: "N/A", foto_lateral_b64: "", foto_traseira_b64: "", qtd_carrinhos: "", qtd_cones: "", pneus: {} };
+            let pl = { acao: "salvar_checklist", usuario: window.usuarioLogado, placa: document.getElementById('chk-emp-placa').value, modelo: "EMPILHADEIRA", motorista: document.getElementById('chk-emp-motorista').value, chk_faltantes: checks, chk_obs: obs, assinatura_motorista_b64: assMot, assinatura_gerente_b64: assGer, km_atual: kmEmp, km_oleo: "", data_tacografo: "", data_graxa: "", data_extintor: "", chk_motor: "N/A", chk_cambio: "N/A", chk_embreagem: "N/A", chk_direcao: "N/A", chk_freios: "N/A", chk_suspensao: "N/A", chk_pneus_geral: "N/A", chk_eletrica: "N/A", chk_indicadores: "N/A", chk_cabine: "N/A", chk_asa_delta: "", chk_freio_lona: "", chk_faixas: "", chk_extintores: "", chk_parada: "N/A", foto_lateral_b64: "", foto_traseira_b64: "", qtd_carrinhos: "", qtd_cones: "", pneus: {} };
 
-            try { let r = await fetch(API_URL, { method: 'POST', body: JSON.stringify(pl) }); let d = await r.json(); if (d.sucesso) { alert("✅ Inspeção de Empilhadeira finalizada com sucesso!"); let hS = new Date().toISOString(); cancelarChecklist(); selecionarPlaca(pl.placa); let dH = document.createElement('div'); dH.className = "historico-item"; dH.innerHTML = `<span style="font-weight: bold; color: #1a4d2e;">${pl.placa}</span> <span style="color: #555; font-size: 12px;">${hS.split('T')[0]} ✅</span>`; document.getElementById('container-historico').prepend(dH); } else { alert("⚠️ Pendência: " + d.erro); } } catch (e) { alert("❌ Falha na conexão."); } btn.innerText = "💾 Enviar Inspeção e PDF"; btn.disabled = false;
+            try { let r = await fetch(API_URL, { method: 'POST', body: JSON.stringify(pl) }); let d = await r.json(); if (d.sucesso) { alert("✅ Inspeção de Empilhadeira finalizada com sucesso!"); window.frota[pl.placa].km_atual = kmEmp; let hS = new Date().toISOString(); cancelarChecklist(); selecionarPlaca(pl.placa); let dH = document.createElement('div'); dH.className = "historico-item"; dH.innerHTML = `<span style="font-weight: bold; color: #1a4d2e;">${pl.placa}</span> <span style="color: #555; font-size: 12px;">${hS.split('T')[0]} ✅</span>`; document.getElementById('container-historico').prepend(dH); } else { alert("⚠️ Pendência: " + d.erro); } } catch (e) { alert("❌ Falha na conexão."); } btn.innerText = "💾 Enviar Inspeção e PDF"; btn.disabled = false;
         }
     </script>
 </body>
