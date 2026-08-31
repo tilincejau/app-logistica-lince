@@ -492,7 +492,7 @@
     </div>
     
     <script>
-        // COLOQUE O LINK NOVO DA SUA API ABAIXO (AQUELE QUE TERMINA COM /exec):
+        // O LINK NOVO JÁ ESTÁ AQUI, NÃO MEXA EM NADA!
         const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
         
         async function fazerLogin() {
@@ -515,16 +515,41 @@
                     if (res2.sucesso) {
                         window.frota = res2.frota; window.estoqueDiesel = res2.estoque_diesel; window.estoqueArla = res2.estoque_arla; window.gastoMesGeral = res2.gasto_mes_geral; window.histAbast = res2.hist_abast || window.histAbast; window.estoquePecas = res2.estoque_pecas || []; 
                         window.listaMotoristas = res2.motoristas || []; renderizarMotoristas();
-                        renderizarHistorico(res2.historico); renderizarHistoricoAbast(); renderizarEstoquePecas(); 
+                        
+                        renderizarHistorico(res2.historico); 
+                        renderizarHistoricoAbast(); 
+                        renderizarEstoquePecas(); 
+                        
                         esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex';
                     } else { msg.innerText = "Erro: " + res2.erro; msg.style.display = 'block'; }
                 } else { msg.innerText = "Credenciais incorretas!"; msg.style.display = 'block'; }
             } catch (e) { 
-                msg.innerText = "Falha de Conexão."; 
                 msg.style.display = 'block'; 
-                alert("O Google bloqueou o acesso.\n\nMotivo: " + e.message + "\n\n1. Verifique se colou o link novo na linha API_URL.\n2. Verifique se colocou 'Qualquer pessoa' no momento de Implantar.");
+                if (e.message.includes("Failed to fetch")) {
+                    msg.innerText = "Falha de Conexão."; 
+                    alert("O Google bloqueou o acesso (CORS).\n\nVerifique se colocou 'Qualquer pessoa' no momento de Implantar.");
+                } else {
+                    msg.innerText = "Erro interno."; 
+                    alert("Ocorreu um erro no código do aplicativo.\n\nMotivo: " + e.message);
+                }
             }
             btn.innerText = "Entrar";
+        }
+
+        // ====== TODAS AS FUNÇÕES OBRIGATÓRIAS DO APLICATIVO ======
+        function renderizarHistorico(d) { 
+            let c = document.getElementById('container-historico'); 
+            c.innerHTML = ""; 
+            if (!d || d.length === 0) { 
+                c.innerHTML = "<p style='text-align:center; color:#666;'>Nenhum checklist registrado ainda.</p>"; 
+                return; 
+            } 
+            d.forEach(i => { 
+                let v = document.createElement('div'); 
+                v.className = "historico-item"; 
+                v.innerHTML = `<span style="font-weight: bold; color: #1a4d2e;">${i.placa}</span> <span style="color: #555; font-size: 12px;">${String(i.data).split('T')[0]} ✅</span>`; 
+                c.appendChild(v); 
+            }); 
         }
         
         const CAVALOS = ['FEF7C02', 'GHE3C06', 'FYY7G32']; 
@@ -609,7 +634,6 @@
                 document.querySelectorAll('.mostrar-carro').forEach(el => { el.style.display = window.isCarro ? 'block' : 'none'; });
                 document.querySelectorAll('.esconder-cavalo-chk').forEach(el => { el.style.display = (window.isCavalo || window.isEmpilhadeira) ? 'none' : 'block'; });
 
-                // OCULTA BOTÕES INÚTEIS PARA A EMPILHADEIRA
                 document.getElementById('btn-menu-ficha').style.display = window.isEmpilhadeira ? 'none' : 'block';
                 document.getElementById('btn-menu-abastecimento').style.display = window.isEmpilhadeira ? 'none' : 'block';
                 document.getElementById('btn-menu-estoque').style.display = window.isEmpilhadeira ? 'none' : 'block';
