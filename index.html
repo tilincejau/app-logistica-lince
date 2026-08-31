@@ -14,7 +14,6 @@
         .foto-preview { max-width: 100%; border-radius: 8px; border: 2px solid #1a4d2e; margin-top: 5px; display: none; }
         .foto-placeholder { background-color: #f0f0f0; height: 120px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px; border: 1px dashed #ccc; margin-top: 5px; }
         .is-carreta { display: none; } 
-        /* Trava a tela ao assinar */
         canvas { touch-action: none; background-color: #fff; cursor: crosshair; }
     </style>
 </head>
@@ -108,7 +107,7 @@
                     <button id="btn-editar-header" onclick="alternarEdicaoHeader()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar</button>
                 </div>
                 <div class="linha-info"><span class="info-label" style="margin:0;">Tipo/Modelo:</span> <input type="text" id="tipo-veiculo" class="input-editavel travado" value="" readonly style="width: 150px;"></div>
-                <div class="linha-info" style="margin-top: 10px;"><span class="info-label" style="margin:0;">Motorista:</span> <input type="text" id="nome-motorista" class="input-editavel travado" value="" readonly style="width: 150px;"></div>
+                <div class="linha-info" style="margin-top: 10px;"><span class="info-label" style="margin:0;">Motorista:</span> <select id="nome-motorista" class="input-editavel travado" disabled style="width: 150px; background-color: transparent;"></select></div>
                 <div class="linha-info" style="align-items: center; margin-top: 10px;"><span class="info-label" style="margin:0;">KM Atual (Geral):</span> <input type="number" id="km-master" class="input-editavel travado" value="0" oninput="atualizarKMGeral()" style="width: 120px;" readonly></div>
             </div>
 
@@ -137,13 +136,8 @@
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">🛞 Pneus</h3>
                     <button id="btn-editar-pneus" onclick="alternarEdicaoPneus()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar Pneus</button>
                 </div>
-                <div class="esconder-carro">
-                    <img src="https://i.postimg.cc/tT7bBkgb/24.png" style="width:100%; border-radius:8px; margin-bottom:10px;">
-                    <div id="ficha-pneus-cavalo-container"></div>
-                </div>
-                <div class="mostrar-carro" style="display:none;">
-                    <div id="ficha-pneus-carro-container"></div>
-                </div>
+                <div class="esconder-carro"><img src="https://i.postimg.cc/tT7bBkgb/24.png" style="width:100%; border-radius:8px; margin-bottom:10px;"><div id="ficha-pneus-cavalo-container"></div></div>
+                <div class="mostrar-carro" style="display:none;"><div id="ficha-pneus-carro-container"></div></div>
                 <div class="is-carreta" style="margin-top:15px; padding-top:15px; border-top: 2px dashed #0056b3;">
                     <h3 class="card-titulo" style="border-bottom: 2px solid #0056b3; color: #0056b3;">🛞 Pneus da Carreta</h3>
                     <img src="https://i.postimg.cc/RF8Byt3x/25.png" style="width:100%; border-radius:8px; margin-bottom:10px;">
@@ -189,7 +183,6 @@
                     <div style="flex: 1; text-align: center;"><span id="ficha-label-foto-2" style="font-size: 13px; font-weight: bold; color: #1a4d2e;">Traseira</span><div id="ficha-pl-tras" class="foto-placeholder">Aguardando Foto...</div><img id="ficha-img-tras" class="foto-preview"></div>
                 </div>
             </div>
-
             <div class="card"><h3 class="card-titulo">📄 Documentação</h3><button class="btn-principal" style="background-color: #0056b3; margin-bottom: 0;" onclick="abrirDocPDF()">⬇️ Abrir PDF do Documento</button></div>
         </div>
 
@@ -215,7 +208,9 @@
                     <label class="info-label">Placa do Veículo:</label><input type="text" id="chk-placa" class="input-campo" style="background-color:#eee; font-weight:bold; color:#1a4d2e;" readonly>
                     <div class="is-carreta"><label class="info-label">Placa da Carreta Engatada: <span style="color:red">*</span></label><select id="chk-placa-carreta" class="input-campo" style="border:2px solid #0056b3;"><option value="">Selecione a Carreta...</option><option value="RFR5F62">RFR5F62</option><option value="RFY6I51">RFY6I51</option><option value="RFL1F19">RFL1F19</option></select></div>
                     <label class="info-label">Tipo / Modelo:</label><input type="text" id="chk-modelo" class="input-campo" style="background-color:#eee; font-weight:bold; color:#1a4d2e;" readonly>
-                    <label class="info-label">Motorista: <span style="color:red">*</span></label><input type="text" id="chk-motorista" class="input-campo" placeholder="Nome do motorista">
+                    
+                    <label class="info-label">Motorista: <span style="color:red">*</span></label>
+                    <select id="chk-motorista" class="input-campo"><option value="">Selecione o Motorista...</option></select>
                     
                     <div class="esconder-cavalo-chk">
                         <div style="display: flex; gap: 10px;">
@@ -276,7 +271,10 @@
                 <div style="padding: 0 10px;">
                     <label class="info-label">Placa do Veículo:</label><input type="text" id="chk-carro-placa" class="input-campo" style="background-color:#eee; font-weight:bold; color:#1a4d2e;" readonly>
                     <label class="info-label">Modelo:</label><input type="text" id="chk-carro-modelo" class="input-campo" style="background-color:#eee; font-weight:bold; color:#1a4d2e;" readonly>
-                    <label class="info-label">Motorista: <span style="color:red">*</span></label><input type="text" id="chk-carro-motorista" class="input-campo" placeholder="Nome do motorista">
+                    
+                    <label class="info-label">Motorista: <span style="color:red">*</span></label>
+                    <select id="chk-carro-motorista" class="input-campo"><option value="">Selecione o Motorista...</option></select>
+                    
                     <label class="info-label">KM Atual (Painel): <span style="color:red">*</span></label><input type="number" id="chk-carro-km" class="input-campo">
                     <label class="info-label">Próxima Troca Óleo (KM):</label><input type="number" id="chk-carro-oleo" class="input-campo">
 
@@ -358,7 +356,8 @@
                     <label class="info-label">Data e Hora:</label><input type="datetime-local" id="abast-data" class="input-campo">
                     <label class="info-label">KM Atual da Bomba: <span style="color:red">*</span></label><p style="font-size: 11px; color: #b30000; margin-top: -10px;">Último KM cadastrado: <span id="aviso-ultimo-km" style="font-weight:bold;">0</span></p><input type="number" id="abast-km-novo" class="input-campo" placeholder="Não pode ser menor que o Último KM">
                     <label class="info-label">Litros Abastecidos: <span style="color:red">*</span></label><input type="number" id="abast-litros-bomba" class="input-campo" placeholder="Ex: 150">
-                    <label class="info-label">Motorista: <span style="color:red">*</span></label><input type="text" id="abast-motorista" class="input-campo" placeholder="Nome do motorista">
+                    <label class="info-label">Motorista: <span style="color:red">*</span></label>
+                    <select id="abast-motorista" class="input-campo"><option value="">Selecione o Motorista...</option></select>
                     <label class="info-label">Responsável (Frentista): <span style="color:red">*</span></label><input type="text" id="abast-resp" class="input-campo" placeholder="Seu nome">
                 </div>
                 <div id="form-abast-chegada" style="display:none; padding: 10px; border: 2px dashed #0056b3; border-radius: 8px;">
@@ -412,8 +411,57 @@
             </div>
         </div>
     </div>
+    
+    <!-- POPULADOR DOS MOTORISTAS -->
+    <script>
+        function renderizarMotoristas() {
+            let options = `<option value="">Selecione o Motorista...</option>`;
+            if (window.listaMotoristas && window.listaMotoristas.length > 0) {
+                window.listaMotoristas.forEach(m => { options += `<option value="${m}">${m}</option>`; });
+            }
+            let combos = ['chk-motorista', 'chk-carro-motorista', 'abast-motorista', 'nome-motorista'];
+            combos.forEach(id => { let el = document.getElementById(id); if(el) el.innerHTML = options; });
+        }
+        
+        // Atualiza a injeção do Fetch para chamar os motoristas
+        let oldFazerLogin = fazerLogin;
+        fazerLogin = async function() {
+            let u = document.getElementById('campo-usuario').value; let s = document.getElementById('campo-senha').value;
+            let msg = document.getElementById('mensagem-erro'); let btn = document.getElementById('btn-login');
+            if (!u || !s) { msg.innerText = "Preencha usuário e senha!"; msg.style.display = 'block'; return; }
+            btn.innerText = "Baixando Dados... ⏳"; msg.style.display = 'none';
 
-    <!-- v=105: ASSINATURAS E CARRINHOS ADICIONADOS -->
-    <script src="script.js?v=200"></script>
+            try {
+                let req1 = await fetch(`${API_URL}?acao=login&usuario=${u}&senha=${s}`); let res1 = await req1.json();
+                if (res1.sucesso) {
+                    window.usuarioLogado = u; 
+                    let req2 = await fetch(`${API_URL}?acao=buscar_inicial`); let res2 = await req2.json();
+                    if (res2.sucesso) {
+                        window.frota = res2.frota; window.estoqueDiesel = res2.estoque_diesel; window.estoqueArla = res2.estoque_arla; window.gastoMesGeral = res2.gasto_mes_geral; window.histAbast = res2.hist_abast || window.histAbast; window.estoquePecas = res2.estoque_pecas || []; 
+                        
+                        // NOVA LINHA PARA MOTORISTAS
+                        window.listaMotoristas = res2.motoristas || [];
+                        renderizarMotoristas();
+                        
+                        renderizarHistorico(res2.historico); renderizarHistoricoAbast(); renderizarEstoquePecas(); 
+                        esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex';
+                    } else { msg.innerText = "Erro: " + res2.erro; msg.style.display = 'block'; }
+                } else { msg.innerText = "Credenciais incorretas!"; msg.style.display = 'block'; }
+            } catch (e) { msg.innerText = "Sem internet."; msg.style.display = 'block'; }
+            btn.innerText = "Entrar";
+        };
+        
+        let oldAlternarEdicaoHeader = alternarEdicaoHeader;
+        alternarEdicaoHeader = function() {
+            let c = [document.getElementById('tipo-veiculo'), document.getElementById('nome-motorista'), document.getElementById('km-master')]; let b = document.getElementById('btn-editar-header'); 
+            if (c[0].hasAttribute('readonly')) { 
+                c.forEach(x => { x.removeAttribute('readonly'); x.removeAttribute('disabled'); x.classList.remove('travado'); }); 
+                b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; c[0].focus(); 
+            } else { 
+                c.forEach(x => { x.setAttribute('readonly', 'true'); if(x.tagName === 'SELECT') x.setAttribute('disabled', 'true'); x.classList.add('travado'); }); 
+                b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; atualizarKMGeral(); salvarFichaNaNuvemBackground(); 
+            } 
+        };
+    </script>
 </body>
 </html>
