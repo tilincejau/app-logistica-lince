@@ -1,5 +1,5 @@
 /* =========================================================
-   SISTEMA LINCE - CÉREBRO JAVASCRIPT LOCAL (OTIMIZADO E BLINDADO)
+   SISTEMA LINCE - CÉREBRO JAVASCRIPT LOCAL (ANTI-BUGS / V200)
    ========================================================= */
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
@@ -69,15 +69,8 @@ function initPad(canvasId) {
     cvs.onmousemove = move; cvs.ontouchmove = move;
     cvs.onmouseup = end; cvs.ontouchend = end; cvs.onmouseout = end;
 }
-function limparPad(canvasId) {
-    let cvs = document.getElementById(canvasId); if(!cvs) return;
-    let ctx = cvs.getContext('2d'); ctx.fillStyle = "#fff"; ctx.fillRect(0,0,cvs.width,cvs.height); cvs.removeAttribute('data-t');
-}
-function getPadB64(canvasId) {
-    let cvs = document.getElementById(canvasId);
-    if(!cvs || !cvs.getAttribute('data-t')) return "";
-    return cvs.toDataURL('image/png');
-}
+function limparPad(canvasId) { let cvs = document.getElementById(canvasId); if(!cvs) return; let ctx = cvs.getContext('2d'); ctx.fillStyle = "#fff"; ctx.fillRect(0,0,cvs.width,cvs.height); cvs.removeAttribute('data-t'); }
+function getPadB64(canvasId) { let cvs = document.getElementById(canvasId); if(!cvs || !cvs.getAttribute('data-t')) return ""; return cvs.toDataURL('image/png'); }
 
 function forcarImagemDiretaDrive(url) {
     if (!url || typeof url !== 'string') return "";
@@ -108,6 +101,7 @@ async function fazerLogin() {
                 window.frota = res2.frota; window.estoqueDiesel = res2.estoque_diesel; window.estoqueArla = res2.estoque_arla; window.gastoMesGeral = res2.gasto_mes_geral; window.histAbast = res2.hist_abast || window.histAbast; window.estoquePecas = res2.estoque_pecas || []; 
                 renderizarHistorico(res2.historico); renderizarHistoricoAbast(); renderizarEstoquePecas(); 
                 esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex';
+                alert("✅ Sistema Atualizado (v200). Pronto para uso!");
             } else { msg.innerText = "Erro: " + res2.erro; msg.style.display = 'block'; }
         } else { msg.innerText = "Credenciais incorretas!"; msg.style.display = 'block'; }
     } catch (e) { msg.innerText = "Sem internet."; msg.style.display = 'block'; }
@@ -153,15 +147,9 @@ function selecionarPlaca(placa) {
         let elTipo = document.getElementById('tipo-veiculo'); if(elTipo) elTipo.value = dados.tipo || "";
         let elMotorista = document.getElementById('nome-motorista'); if(elMotorista) elMotorista.value = dados.motorista || "";
         
-        let formatNum = v => v ? String(v).replace(/\./g, '').replace(',', '.') : "";
+        let formatNum = v => v ? String(v).replace(/[^0-9]/g, '') : "";
         let elKm = document.getElementById('km-master'); if(elKm) elKm.value = formatNum(dados.km_atual);
-        
-        let kTroca = "";
-        if (dados.km_oleo !== undefined && String(dados.km_oleo).trim() !== "") {
-            let nOleo = parseInt(String(dados.km_oleo).replace(/\./g, ''));
-            if (!isNaN(nOleo)) kTroca = nOleo;
-        }
-        let elO = document.getElementById('km-proxima-troca'); if(elO) elO.value = kTroca;
+        let elO = document.getElementById('km-proxima-troca'); if(elO) elO.value = formatNum(dados.km_oleo);
         
         let elT = document.getElementById('data-proxima-afericao'); if(elT) elT.value = dados.data_tacografo || "";
         let elG = document.getElementById('data-engraxada'); if(elG) elG.value = dados.data_graxa || "";
@@ -269,7 +257,6 @@ function calcularAbastecimento() { let kA = parseFloat(document.getElementById('
 function calcularGraxa() { let s = document.getElementById('data-engraxada').value; let t = document.getElementById('status-graxa'); if (!s || s.length < 8) { if(t) t.innerHTML = "---"; document.getElementById('data-prox-engraxada').innerText = "--/--/----"; return; } let p = s.split('-'); let ultima = new Date(p[0], p[1] - 1, p[2]); let proxima = new Date(ultima); proxima.setDate(proxima.getDate() + 30); document.getElementById('data-prox-engraxada').innerText = `${String(proxima.getDate()).padStart(2,'0')}/${String(proxima.getMonth()+1).padStart(2,'0')}/${proxima.getFullYear()}`; let h = new Date(); h.setHours(0,0,0,0); let d = Math.ceil((proxima.getTime() - h.getTime()) / (1000 * 3600 * 24)); if (d < 0) { t.innerHTML = `VENCIDO há ${Math.abs(d)} dias ❌`; t.style.color = "red"; } else if (d <= 5) { t.innerHTML = `Atenção: Faltam ${d} dias ⚠️`; t.style.color = "#d4a017"; } else { t.innerHTML = `Faltam ${d} dias ✅`; t.style.color = "green"; } }
 function abrirDocPDF() { if (urlDocAtual && urlDocAtual.trim() !== "") window.open(urlDocAtual, '_blank'); else alert("Nenhum documento cadastrado para este veículo."); }
 
-// ABASTECIMENTO E ESTOQUE 
 function renderizarHistoricoAbast() { let construtorHTML = (lista, isChegada) => { if (!lista || lista.length === 0) return "<p style='color:#666; font-size:12px; margin:0;'>Nenhum registro encontrado.</p>"; return lista.map(i => `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #eee; font-size:12px;"><span>📅 ${i.data} ${isChegada ? '' : `- <b>${i.placa}</b>`}</span><span style="font-weight:bold; color:${isChegada ? '#1a4d2e' : '#b30000'};">${isChegada ? '+' : '-'} ${i.litros} L</span></div>`).join(''); }; let eD = document.getElementById('hist-abast-diesel'); if(eD) eD.innerHTML = construtorHTML(window.histAbast.diesel, false); let eA = document.getElementById('hist-abast-arla'); if(eA) eA.innerHTML = construtorHTML(window.histAbast.arla, false); let eCD = document.getElementById('hist-cheg-diesel'); if(eCD) eCD.innerHTML = construtorHTML(window.histAbast.cheg_diesel, true); let eCA = document.getElementById('hist-cheg-arla'); if(eCA) eCA.innerHTML = construtorHTML(window.histAbast.cheg_arla, true); }
 function mudarFormAbast() { let t = document.getElementById('tipo-abast').value; if (t.includes("CHEGADA")) { document.getElementById('form-abast-veiculo').style.display = 'none'; document.getElementById('form-abast-chegada').style.display = 'block'; } else { document.getElementById('form-abast-veiculo').style.display = 'block'; document.getElementById('form-abast-chegada').style.display = 'none'; } }
 function preencherDataHoraAbast() { let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString().slice(0,16); let eA = document.getElementById('abast-data'); if(eA) eA.value = hL; let eC = document.getElementById('chegada-data'); if(eC) eC.value = hL; document.getElementById('estoque-diesel-geral').innerText = window.estoqueDiesel + " L"; document.getElementById('estoque-arla-geral').innerText = window.estoqueArla + " L"; document.getElementById('gasto-mes-geral').innerText = window.gastoMesGeral + " L"; }
@@ -282,10 +269,9 @@ function mudarFormEstoque() { let t = document.getElementById('est-tipo').value;
 async function salvarMovimentacaoEstoque() { let idItem = document.getElementById('est-item').value; let tipo = document.getElementById('est-tipo').value; let qtd = document.getElementById('est-qtd').value; let placa = document.getElementById('est-placa').value; let valor = document.getElementById('est-valor').value; let link = document.getElementById('est-link').value; let resp = document.getElementById('est-resp') ? document.getElementById('est-resp').value : window.usuarioLogado; if(!qtd) return alert("❌ Digite a quantidade!"); let peca = window.estoquePecas[idItem]; let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString().slice(0,16); let p = { acao: "salvar_estoque", usuario: window.usuarioLogado, data: hL.replace('T', ' '), item: peca.item, tipo: tipo, qtd: qtd, placa: tipo === "SAÍDA" ? placa : "", valor: tipo === "ENTRADA" ? valor : "", link: tipo === "ENTRADA" ? link : "", responsavel: resp }; let btn = document.getElementById('btn-salvar-mov-est'); btn.innerText = "Salvando... ⏳"; btn.disabled = true; try { let req = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); let res = await req.json(); if (res.sucesso) { alert("✅ Movimentação salva com sucesso!"); let q = parseFloat(qtd); if (tipo === "SAÍDA") { peca.qtd = parseFloat(peca.qtd) - q; } if (tipo === "ENTRADA") { peca.qtd = parseFloat(peca.qtd) + q; if(valor) peca.valor = valor; if(q) peca.qtd_compra = q; if(link) peca.link = link; peca.data_compra = p.data.substring(0,10); } renderizarEstoquePecas(); document.getElementById('est-qtd').value = ""; document.getElementById('est-placa').value = ""; document.getElementById('est-valor').value = ""; document.getElementById('est-link').value = ""; } else { alert("❌ Erro: " + res.erro); } } catch (e) { alert("❌ Erro de conexão."); } btn.innerText = "💾 Salvar Movimentação"; btn.disabled = false; }
 async function gerarSolicitacaoCompra() { let idItem = document.getElementById('compra-item').value; let qtd = document.getElementById('compra-qtd').value; let urgencia = document.getElementById('compra-urgencia').value; if(!qtd) return alert("❌ Digite a quantidade que precisa comprar!"); let peca = window.estoquePecas[idItem]; let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString(); let p = { acao: "solicitar_compra", usuario: window.usuarioLogado, data: hL, item: peca.item, qtd: qtd, urgencia: urgencia, qtd_ref: peca.qtd_compra, valor_ref: peca.valor, link_ref: peca.link }; let btn = document.getElementById('btn-gerar-compra'); btn.innerText = "Gerando PDF... ⏳"; btn.disabled = true; try { let req = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); let res = await req.json(); if (res.sucesso) { alert("✅ Pedido de Compra gerado com sucesso!"); window.open(res.link_pdf, '_blank'); document.getElementById('compra-qtd').value = ""; } else { alert("❌ Erro: " + res.erro); } } catch (e) { alert("❌ Erro de conexão."); } btn.innerText = "📄 Gerar Pedido de Compra (PDF)"; btn.disabled = false; }
 
-// CHECKLIST & FOTOS CORE
+// CHECKLIST E FOTOS
 function calcularStatusTwi(inE, bId) { 
-    let b = document.getElementById(bId); 
-    if(!b) return; // TRAVA ADICIONADA: Ignora se o ID não existir na tela
+    let b = document.getElementById(bId); if(!b) return;
     let v = parseFloat(inE.value); 
     if (isNaN(v)) { b.innerText = "Aguardando..."; b.style.backgroundColor = "#eee"; b.style.color = "#666"; return; } 
     if (v >= 10) { b.innerText = "Pneu Novo"; b.style.backgroundColor = "#d4edda"; b.style.color = "#155724"; } 
@@ -302,7 +288,6 @@ function processarFoto(input, idPreview) {
             if (w > MW) { h = Math.round((h * MW) / w); w = MW; } cv.width = w; cv.height = h;
             const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, w, h);
             const dU = cv.toDataURL('image/jpeg', 0.6); 
-            // TRAVA ADICIONADA: Aceita as fotos com nome de Caminhão ou Carro
             if(idPreview === 'preview-lat' || idPreview === 'preview-frente') b64Lateral = dU; 
             if(idPreview === 'preview-tras' || idPreview === 'preview-verso') b64Traseira = dU;
             let pr = document.getElementById(idPreview); pr.src = dU; pr.style.display = 'block';
