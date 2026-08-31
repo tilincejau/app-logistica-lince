@@ -136,8 +136,13 @@
                     <h3 class="card-titulo" style="border: none; margin: 0; padding: 0;">🛞 Pneus</h3>
                     <button id="btn-editar-pneus" onclick="alternarEdicaoPneus()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;">✏️ Editar Pneus</button>
                 </div>
-                <div class="esconder-carro"><img src="https://i.postimg.cc/tT7bBkgb/24.png" style="width:100%; border-radius:8px; margin-bottom:10px;"><div id="ficha-pneus-cavalo-container"></div></div>
-                <div class="mostrar-carro" style="display:none;"><div id="ficha-pneus-carro-container"></div></div>
+                <div class="esconder-carro">
+                    <img src="https://i.postimg.cc/tT7bBkgb/24.png" style="width:100%; border-radius:8px; margin-bottom:10px;">
+                    <div id="ficha-pneus-cavalo-container"></div>
+                </div>
+                <div class="mostrar-carro" style="display:none;">
+                    <div id="ficha-pneus-carro-container"></div>
+                </div>
                 <div class="is-carreta" style="margin-top:15px; padding-top:15px; border-top: 2px dashed #0056b3;">
                     <h3 class="card-titulo" style="border-bottom: 2px solid #0056b3; color: #0056b3;">🛞 Pneus da Carreta</h3>
                     <img src="https://i.postimg.cc/RF8Byt3x/25.png" style="width:100%; border-radius:8px; margin-bottom:10px;">
@@ -412,8 +417,8 @@
         </div>
     </div>
     
-    <!-- POPULADOR DOS MOTORISTAS -->
     <script>
+        // Função Global de Inicialização dos Motoristas
         function renderizarMotoristas() {
             let options = `<option value="">Selecione o Motorista...</option>`;
             if (window.listaMotoristas && window.listaMotoristas.length > 0) {
@@ -423,7 +428,7 @@
             combos.forEach(id => { let el = document.getElementById(id); if(el) el.innerHTML = options; });
         }
         
-        // Atualiza a injeção do Fetch para chamar os motoristas
+        // Sobrescrevendo o Login para incluir a aba de motoristas dinamicamente
         let oldFazerLogin = fazerLogin;
         fazerLogin = async function() {
             let u = document.getElementById('campo-usuario').value; let s = document.getElementById('campo-senha').value;
@@ -439,7 +444,6 @@
                     if (res2.sucesso) {
                         window.frota = res2.frota; window.estoqueDiesel = res2.estoque_diesel; window.estoqueArla = res2.estoque_arla; window.gastoMesGeral = res2.gasto_mes_geral; window.histAbast = res2.hist_abast || window.histAbast; window.estoquePecas = res2.estoque_pecas || []; 
                         
-                        // NOVA LINHA PARA MOTORISTAS
                         window.listaMotoristas = res2.motoristas || [];
                         renderizarMotoristas();
                         
@@ -463,5 +467,6 @@
             } 
         };
     </script>
+    <script src="script.js?v=205"></script>
 </body>
 </html>
