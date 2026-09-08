@@ -1,3 +1,8 @@
+/* =========================================================
+   SISTEMA LINCE - ESTILOS (CSS)
+   Apresentação Mobile, Cores, Classes Utilitárias, etc.
+   ========================================================= */
+
 body {
     margin: 0; padding: 0;
     font-family: Arial, sans-serif;
@@ -12,7 +17,6 @@ body {
 
 .logo { width: 100%; max-width: 250px; display: block; margin: 0 auto 10px auto; }
 
-/* Adicionado: Desenvolvido Por João Marcelo Magon Bonini*/
 .desenvolvedor {
     text-align: center;
     font-size: 11px;
@@ -45,6 +49,7 @@ body {
 #mensagem-erro { color: red; text-align: center; margin-bottom: 15px; display: none; }
 .titulo-tela { text-align: center; color: #1a4d2e; font-size: 20px; margin-bottom: 15px; }
 
+/* Grid para as imagens dos caminhões/carros. O Botão OUTROS foi programado para assumir 1 coluna 100% via inline */
 .grid-placas { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
 .img-placa { width: 100%; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.1s; }
 .img-placa:active { transform: scale(0.95); }
@@ -74,16 +79,21 @@ summary { font-weight: bold; cursor: pointer; color: #1a4d2e; outline: none; }
 .input-editavel.travado { background-color: #f0f0f0; border: 1px solid #e0e0e0; color: #888; pointer-events: none; }
 .input-editavel:not(.travado):focus { outline: none; border-color: #1a4d2e; background-color: #e8f5e9; }
 
+/* Checklist Tabs e Botões */
 .abas-checklist { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
 .btn-tab-chk { background-color: #e0e0e0; color: #555; border: none; border-radius: 4px; padding: 8px 12px; font-size: 13px; font-weight: bold; white-space: nowrap; }
 .btn-tab-chk.ativo { background-color: #1a4d2e; color: white; }
+
 .grupo-checkbox { background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 15px; }
 .linha-check { display: flex; align-items: flex-start; margin-bottom: 8px; font-size: 13px; color: #333; cursor: pointer; }
 .linha-check input { margin-right: 8px; margin-top: 2px; width: 16px; height: 16px; }
 .titulo-grupo-chk { font-weight: bold; color: #1a4d2e; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+
 .twi-estado-badge { font-weight: bold; font-size: 11px; padding: 4px 8px; border-radius: 12px; background-color: #eee; color: #666; text-align: center; }
 
 .foto-preview { max-width: 100%; border-radius: 8px; border: 2px solid #1a4d2e; margin-top: 5px; display: none; }
 .foto-placeholder { background-color: #f0f0f0; height: 120px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px; border: 1px dashed #ccc; margin-top: 5px; }
 .historico-item { display: flex; justify-content: space-between; padding: 12px 10px; border-bottom: 1px solid #eee; font-size: 14px; }
 .historico-item:last-child { border-bottom: none; }
+
+.is-carreta { display: none; }
