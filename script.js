@@ -4,7 +4,7 @@
    ========================================================= */
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
-const CAVALOS = ['FEF7C02', 'GHE3C06', 'FYY7G32']; 
+const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
 const EMPILHADEIRAS = ['05025DR3290', '05025DR8824'];
 const TRUCKS = ['FMR4I10', 'FQY6B30', 'TKR8I49', 'TLL8H30', 'TLY0G57', 'UDN0J81', 'UPS1J80', 'UPX9D25', 'URT4E79', 'URU3F36'];
