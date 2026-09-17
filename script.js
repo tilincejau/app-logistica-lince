@@ -232,16 +232,22 @@ function selecionarPlaca(placa, bypassTrava = false) {
 
 function abrirPagina(nomeDaPagina) { 
     if(nomeDaPagina === 'Abastecimento' && typeof preencherDataHoraAbast === 'function') { preencherDataHoraAbast(); } 
+    
     document.getElementById('titulo-tela-interna').innerText = nomeDaPagina; 
     let secoes = document.getElementsByClassName('secao-conteudo'); 
     for (let i = 0; i < secoes.length; i++) { secoes[i].style.display = 'none'; } 
+    
     let secaoAtiva = document.getElementById('conteudo-' + nomeDaPagina); 
     if (secaoAtiva) { secaoAtiva.style.display = 'flex'; } 
-    document.getElementById('alerta-veiculo-interna').style.display = 'block'; document.getElementById('btn-trocar-veiculo').style.display = 'block'; document.getElementById('btn-voltar-menu').onclick = voltarParaMenu; 
-    esconderTodasTelas(); document.getElementById('tela-interna').style.display = 'flex'; 
+    
+    document.getElementById('alerta-veiculo-interna').style.display = 'block'; 
+    document.getElementById('btn-trocar-veiculo').style.display = 'block'; 
+    document.getElementById('btn-voltar-menu').onclick = voltarParaMenu; 
+    esconderTodasTelas(); 
+    document.getElementById('tela-interna').style.display = 'flex'; 
 
-    // BYPASS: Abre o checklist direto, omitindo o histórico de tela
-    if(nomeDaPagina === 'Checklist') {
+    // O GATILHO ESTÁ AQUI: Se for o módulo Checklist, pula o histórico e inicia direto
+    if (nomeDaPagina === 'Checklist') {
         iniciarNovoChecklist();
     }
 }
