@@ -4,7 +4,7 @@
    ========================================================= */
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
-const APP_VERSAO = "1.0"; // QUANDO VOCÊ MUDAR ESTE NÚMERO, OS CELULARES VÃO APAGAR O CACHE ANTIGO SOZINHOS
+const APP_VERSAO = "1.1"; // Versão atualizada para Sincronização Contínua
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
@@ -30,6 +30,85 @@ let htmlFichaCarreta = ""; let htmlChkCarreta = "";
 let htmlFichaCarro = ""; let htmlChkCarro = "";
 let b64Lateral = ""; let b64Traseira = "";
 
+// =======================================================
+// LÓGICA DA FILA (OFFLINE-FIRST)
+// =======================================================
+let isSyncing = false;
+
+function mostrarToast(msg, cor = "#1f2937") {
+    let toast = document.getElementById("toast-lince");
+    if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "toast-lince";
+        document.body.appendChild(toast);
+    }
+    toast.style.cssText = `visibility: visible; min-width: 250px; background-color: ${cor}; color: #fff; text-align: center; border-radius: 30px; padding: 14px; position: fixed; z-index: 10000; left: 50%; bottom: 80px; transform: translateX(-50%); font-size: 14px; font-weight: 600; box-shadow: 0px 8px 20px rgba(0,0,0,0.3); transition: opacity 0.3s, bottom 0.3s; opacity: 1;`;
+    toast.innerText = msg;
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.style.visibility='hidden', 300); }, 3000);
+}
+
+function salvarCacheLocal() {
+    localStorage.setItem('lince_logistica_bd', JSON.stringify({
+        frota: window.frota, estoque_diesel: window.estoqueDiesel, estoque_arla: window.estoqueArla,
+        gasto_mes_geral: window.gastoMesGeral, hist_abast: window.histAbast,
+        estoque_pecas: window.estoquePecas, motoristas: window.listaMotoristas, historico: window.historicoChecklist
+    }));
+}
+
+function adicionarNaFila(payload) {
+    let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
+    payload._localId = Date.now() + Math.random().toString(36).substr(2, 5);
+    fila.push(payload);
+    localStorage.setItem('lince_fila_requisicoes', JSON.stringify(fila));
+    sincronizarSegundoPlano(); 
+}
+
+async function sincronizarSegundoPlano() {
+    if (!navigator.onLine || isSyncing) return;
+    let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
+    if (fila.length === 0) return;
+
+    isSyncing = true;
+    let filaRestante = [...fila];
+    let processouAlgo = false;
+
+    mostrarToast(`🔄 Sincronizando ${fila.length} pendências...`, "#d97706");
+
+    for (let i = 0; i < fila.length; i++) {
+        let reqPayload = fila[i];
+        try {
+            let p = {...reqPayload}; delete p._localId;
+            let resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) });
+            let dados = await resp.json();
+            
+            filaRestante = filaRestante.filter(item => item._localId !== reqPayload._localId);
+            processouAlgo = true;
+        } catch (e) {
+            console.warn("Sem internet para o pedido, parando fila.");
+            break; 
+        }
+    }
+
+    localStorage.setItem('lince_fila_requisicoes', JSON.stringify(filaRestante));
+    
+    if (processouAlgo) {
+        if (filaRestante.length === 0) {
+            mostrarToast("✅ Tudo sincronizado!", "#059669");
+        } else {
+            mostrarToast(`⚠️ Sobraram ${filaRestante.length} itens (Sem rede)`, "#dc2626");
+        }
+        recarregarDadosSilenciosamente();
+    }
+    isSyncing = false;
+}
+
+// Disparos Automáticos de Sincronização
+setInterval(sincronizarSegundoPlano, 180000); // Tenta a cada 3 Minutos
+document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState === 'visible') sincronizarSegundoPlano();
+});
+// =======================================================
+
 function atualizarVariaveisGlobais(res) {
     window.frota = res.frota || window.frota;
     window.estoqueDiesel = res.estoque_diesel || 0;
@@ -51,31 +130,33 @@ async function recarregarDadosSilenciosamente() {
         let req = await fetch(`${API_URL}?acao=buscar_inicial`);
         let res = await req.json();
         
+        let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
+        if (fila.length > 0) {
+            // PROTEÇÃO: Se temos fila para enviar, não sobrescrevemos a tela do celular 
+            // com dados velhos do servidor. Deixamos a fila acabar primeiro!
+            return;
+        }
+
         if (res.sucesso) {
             atualizarVariaveisGlobais(res);
             localStorage.setItem('lince_logistica_bd', JSON.stringify(res));
 
             let telaInterna = document.getElementById('tela-interna');
             let placaAtual = document.getElementById('texto-placa-interna').innerText;
-            
             if (telaInterna.style.display === 'flex' && placaAtual) {
                 selecionarPlaca(placaAtual, true); 
             }
         }
-    } catch(e) { console.error("Erro no recarregamento em 2º plano:", e); }
+    } catch(e) {}
 }
 
 window.onload = function() {
-    // -------------------------------------------------------------
-    // DESTRUIDOR DE CACHE PARA CELULARES
-    // -------------------------------------------------------------
     let versaoLocal = localStorage.getItem('lince_versao');
     if (versaoLocal !== APP_VERSAO) {
         localStorage.removeItem('lince_logistica_user');
         localStorage.removeItem('lince_logistica_bd');
         localStorage.setItem('lince_versao', APP_VERSAO);
     }
-    // -------------------------------------------------------------
 
     let construtorFicha = (arr, isCar) => arr.map(p => `<details><summary>${p.n}</summary><div class="pneu-detalhes"><div class="linha-info"><span class="info-label" style="margin:0;">Estado:</span> <span class="info-valor" id="${isCar?'carro-':''}estado-${p.id}" style="font-weight:bold;">---</span></div><div class="linha-info"><span class="info-label" style="margin:0;">TWI:</span> <span class="info-valor" id="${isCar?'carro-':''}twi-${p.id}">---</span></div><div class="linha-info" style="margin-top:10px;"><span class="info-label" style="margin:0;">KM Troca:</span> <input type="number" id="${isCar?'carro-':''}km-troca-${p.id}" class="input-editavel travado" value="0" readonly></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Data Troca:</span> <input type="date" id="${isCar?'carro-':''}data-troca-${p.id}" class="input-editavel travado" readonly></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Pneu Colocado:</span> <select id="${isCar?'carro-':''}pneu-colocado-${p.id}" class="input-editavel travado" disabled style="background-color: transparent;"><option value="NOVO">NOVO</option><option value="1 RESSOLAGEM">1 RESSOLAGEM</option><option value="2 RESSOLAGEM">2 RESSOLAGEM</option><option value="3 RESSOLAGEM">3 RESSOLAGEM</option></select></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Últ. Rodízio:</span> <input type="date" id="${isCar?'carro-':''}data-rodizio-${p.id}" class="input-editavel travado" readonly></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Próx Rodízio (KM):</span> <input type="number" id="${isCar?'carro-':''}prox-rodizio-${p.id}" class="input-editavel travado" value="0" readonly oninput="calcularRodizioPneus()"></div><div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label" style="margin:0;">Status Rodízio:</span> <span id="${isCar?'carro-':''}status-rod-${p.id}" style="font-weight:bold;">---</span></div></div></details>`).join('');
     let construtorChk = (arr, isCar) => arr.map(p => `<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;"><span style="font-weight: bold; width: 50px; color:${arr===pneusCarreta?'#0056b3':'#333'};">${p.n}</span><input type="number" id="${isCar?'chk-carro-twi-':'chk-twi-'}${p.id}" placeholder="mm" class="input-campo" style="margin:0; width: 80px; padding: 10px; text-align:center;" oninput="calcularStatusTwi(this, '${isCar?'badge-carro-estado-':'badge-estado-'}${p.id}')"><span id="${isCar?'badge-carro-estado-':'badge-estado-'}${p.id}" class="twi-estado-badge" style="flex: 1;">Aguardando...</span></div>`).join('');
@@ -98,10 +179,8 @@ window.onload = function() {
     if (userSalvo) {
         let userObj = JSON.parse(userSalvo);
         window.usuarioLogado = userObj.u;
-        
         esconderTodasTelas();
         document.getElementById('tela-menu').style.display = 'flex';
-        
         recarregarDadosSilenciosamente();
     }
 };
@@ -257,7 +336,38 @@ let isDrawingPad = false; function initPad(canvasId) { let cvs = document.getEle
 function renderizarMotoristas() { let options = `<option value="">Selecione o Motorista...</option>`; if (window.listaMotoristas && window.listaMotoristas.length > 0) { window.listaMotoristas.forEach(m => { options += `<option value="${m}">${m}</option>`; }); } options += `<option value="NOVO" style="font-weight:bold; color:#1a4d2e;">➕ OUTRO (Adicionar Novo)</option>`; ['chk-motorista', 'chk-carro-motorista', 'chk-emp-motorista', 'abast-motorista', 'nome-motorista'].forEach(id => { let el = document.getElementById(id); if(el) el.innerHTML = options; }); }
 function verificarNovoMotoristaAbast(sel) { let inputNovo = document.getElementById('abast-motorista-novo'); if(sel.value === "NOVO") { inputNovo.style.display = 'block'; inputNovo.focus(); } else { inputNovo.style.display = 'none'; inputNovo.value = ''; } }
 function atualizarKMGeral() { document.getElementById('km-atual-oleo').innerText = document.getElementById('km-master').value; calcularOleo(); calcularRodizioPneus(); } 
-function salvarFichaNaNuvemBackground() { let payload = { acao: "salvar_ficha_tecnica", usuario: window.usuarioLogado, placa: document.getElementById('texto-placa-interna').innerText, tipo: document.getElementById('tipo-veiculo').value, motorista: document.getElementById('nome-motorista').value, km_atual: document.getElementById('km-master').value, km_oleo: document.getElementById('km-proxima-troca').value, data_tacografo: window.isCarro ? "" : document.getElementById('data-proxima-afericao').value, data_graxa: window.isCarro ? "" : document.getElementById('data-engraxada').value, qtd_carrinhos: window.isCarro ? "" : document.getElementById('qtd-carrinhos').value, qtd_cones: window.isCarro ? "" : document.getElementById('qtd-cones').value, qtd_calcos: window.isCarro ? "" : document.getElementById('qtd-calcos').value, data_extintor: document.getElementById('data-extintor-ficha').value, pneus: {} }; let tIds = window.isCarro ? ['dd','de','td','te'] : (window.isToco ? ['dd','de','tde','tdi','tee','tei','1step'] : ['dd','de','tde','tdi','tee','tei','tkde','tkdi','tkee','tkei','1step','c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','c11','c12','2step']); let pref = window.isCarro ? 'carro-' : ''; tIds.forEach(id => { let km = document.getElementById(pref+'km-troca-'+id); if(km) { payload.pneus[id] = { km_ultima_troca: km.value, data_ultima_troca: document.getElementById(pref+'data-troca-'+id).value, data_ultimo_rodizio: document.getElementById(pref+'data-rodizio-'+id).value, pneu_colocado: document.getElementById(pref+'pneu-colocado-'+id).value, km_proximo_rodizio: document.getElementById(pref+'prox-rodizio-'+id).value }; } }); fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }).then(res => res.json()).then(d => { if(d.sucesso) { window.frota[payload.placa].tipo = payload.tipo; window.frota[payload.placa].motorista = payload.motorista; window.frota[payload.placa].km_atual = payload.km_atual; window.frota[payload.placa].km_oleo = payload.km_oleo; window.frota[payload.placa].data_tacografo = payload.data_tacografo; window.frota[payload.placa].data_graxa = payload.data_graxa; window.frota[payload.placa].qtd_carrinhos = payload.qtd_carrinhos; window.frota[payload.placa].qtd_cones = payload.qtd_cones; window.frota[payload.placa].qtd_calcos = payload.qtd_calcos; window.frota[payload.placa].data_extintor = payload.data_extintor; for(let id in payload.pneus) { if(!window.frota[payload.placa].pneus[id]) window.frota[payload.placa].pneus[id] = {}; window.frota[payload.placa].pneus[id].km_ultima_troca = payload.pneus[id].km_ultima_troca; window.frota[payload.placa].pneus[id].data_ultima_troca = payload.pneus[id].data_ultima_troca; window.frota[payload.placa].pneus[id].data_ultimo_rodizio = payload.pneus[id].data_ultimo_rodizio; window.frota[payload.placa].pneus[id].pneu_colocado = payload.pneus[id].pneu_colocado; window.frota[payload.placa].pneus[id].km_proximo_rodizio = payload.pneus[id].km_proximo_rodizio; } let elAv = document.getElementById('aviso-ultimo-km'); if(elAv) elAv.innerText = payload.km_atual; } }); } 
+
+function salvarFichaNaNuvemBackground() { 
+    let payload = { acao: "salvar_ficha_tecnica", usuario: window.usuarioLogado, placa: document.getElementById('texto-placa-interna').innerText, tipo: document.getElementById('tipo-veiculo').value, motorista: document.getElementById('nome-motorista').value, km_atual: document.getElementById('km-master').value, km_oleo: document.getElementById('km-proxima-troca').value, data_tacografo: window.isCarro ? "" : document.getElementById('data-proxima-afericao').value, data_graxa: window.isCarro ? "" : document.getElementById('data-engraxada').value, qtd_carrinhos: window.isCarro ? "" : document.getElementById('qtd-carrinhos').value, qtd_cones: window.isCarro ? "" : document.getElementById('qtd-cones').value, qtd_calcos: window.isCarro ? "" : document.getElementById('qtd-calcos').value, data_extintor: document.getElementById('data-extintor-ficha').value, pneus: {} }; 
+    let tIds = window.isCarro ? ['dd','de','td','te'] : (window.isToco ? ['dd','de','tde','tdi','tee','tei','1step'] : ['dd','de','tde','tdi','tee','tei','tkde','tkdi','tkee','tkei','1step','c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','c11','c12','2step']); let pref = window.isCarro ? 'carro-' : ''; 
+    tIds.forEach(id => { let km = document.getElementById(pref+'km-troca-'+id); if(km) { payload.pneus[id] = { km_ultima_troca: km.value, data_ultima_troca: document.getElementById(pref+'data-troca-'+id).value, data_ultimo_rodizio: document.getElementById(pref+'data-rodizio-'+id).value, pneu_colocado: document.getElementById(pref+'pneu-colocado-'+id).value, km_proximo_rodizio: document.getElementById(pref+'prox-rodizio-'+id).value }; } }); 
+    
+    // Atualização otimista
+    window.frota[payload.placa].tipo = payload.tipo;
+    window.frota[payload.placa].motorista = payload.motorista;
+    window.frota[payload.placa].km_atual = payload.km_atual;
+    window.frota[payload.placa].km_oleo = payload.km_oleo;
+    window.frota[payload.placa].data_tacografo = payload.data_tacografo;
+    window.frota[payload.placa].data_graxa = payload.data_graxa;
+    window.frota[payload.placa].qtd_carrinhos = payload.qtd_carrinhos;
+    window.frota[payload.placa].qtd_cones = payload.qtd_cones;
+    window.frota[payload.placa].qtd_calcos = payload.qtd_calcos;
+    window.frota[payload.placa].data_extintor = payload.data_extintor;
+    for(let id in payload.pneus) {
+        if(!window.frota[payload.placa].pneus[id]) window.frota[payload.placa].pneus[id] = {};
+        window.frota[payload.placa].pneus[id].km_ultima_troca = payload.pneus[id].km_ultima_troca;
+        window.frota[payload.placa].pneus[id].data_ultima_troca = payload.pneus[id].data_ultima_troca;
+        window.frota[payload.placa].pneus[id].data_ultimo_rodizio = payload.pneus[id].data_ultimo_rodizio;
+        window.frota[payload.placa].pneus[id].pneu_colocado = payload.pneus[id].pneu_colocado;
+        window.frota[payload.placa].pneus[id].km_proximo_rodizio = payload.pneus[id].km_proximo_rodizio;
+    }
+    let elAv = document.getElementById('aviso-ultimo-km'); if(elAv) elAv.innerText = payload.km_atual;
+
+    adicionarNaFila(payload);
+    salvarCacheLocal();
+    mostrarToast("💾 Ficha salva localmente (Sincronizando no fundo)");
+} 
+
 function alternarEdicaoHeader() { let c = [document.getElementById('tipo-veiculo'), document.getElementById('nome-motorista'), document.getElementById('km-master')]; let b = document.getElementById('btn-editar-header'); if (c[0].hasAttribute('readonly')) { c.forEach(x => { x.removeAttribute('readonly'); x.removeAttribute('disabled'); x.classList.remove('travado'); }); b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; c[0].focus(); } else { c.forEach(x => { x.setAttribute('readonly', 'true'); if(x.tagName === 'SELECT') x.setAttribute('disabled', 'true'); x.classList.add('travado'); }); b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; atualizarKMGeral(); salvarFichaNaNuvemBackground(); } } 
 function alternarEdicaoOleo() { let c = document.getElementById('km-proxima-troca'); let b = document.getElementById('btn-editar-oleo'); if (c.hasAttribute('readonly')) { c.removeAttribute('readonly'); c.classList.remove('travado'); b.innerHTML = "💾 Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; } else { c.setAttribute('readonly', 'true'); c.classList.add('travado'); b.innerHTML = "✏️ Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; calcularOleo(); salvarFichaNaNuvemBackground(); } } 
 function calcularOleo() { let kmA = parseFloat(document.getElementById('km-master').value) || 0; let kmP = parseFloat(document.getElementById('km-proxima-troca').value) || 0; let kmF = kmP - kmA; let txt = document.getElementById('status-oleo'); if (kmP === 0) { txt.innerHTML = "---"; return; } if (kmF <= 0) { txt.innerHTML = `VENCIDO (${Math.abs(kmF)} KM) ❌`; txt.style.color = "red"; } else if (kmF <= 1500) { txt.innerHTML = `Faltam ${kmF} KM ⚠️`; txt.style.color = "#d4a017"; } else { txt.innerHTML = `Faltam ${kmF} KM ✅`; txt.style.color = "green"; } } 
@@ -310,13 +420,10 @@ async function salvarAbastecimentoNuvem() {
     btn.innerText = "Enviando... ⏳"; 
     btn.disabled = true; 
 
-    // Disparo em segundo plano
-    fetch(API_URL, { method: 'POST', body: JSON.stringify(p) })
-        .then(() => recarregarDadosSilenciosamente())
-        .catch(e => console.error("Processo em segundo plano finalizado:", e));
+    // Envia para a Fila Offline
+    adicionarNaFila(p);
     
-    // Atualização otimista e liberação imediata da tela
-    alert("✅ Salvo com sucesso!\n\nO lançamento foi enviado para a nuvem."); 
+    alert("✅ Salvo no celular!\n\nO lançamento foi para a fila e será enviado automaticamente em 2º plano."); 
     
     document.getElementById('abast-km-novo').value = ""; 
     document.getElementById('abast-litros-bomba').value = ""; 
@@ -369,52 +476,65 @@ async function salvarAbastecimentoNuvem() {
     } 
     preencherDataHoraAbast(); 
     renderizarHistoricoAbast(); 
+    salvarCacheLocal(); // Protege os dados localmente
     
     btn.innerText = "💾 Salvar Lançamento"; 
     btn.disabled = false;
 }
 
-function renderizarEstoquePecas() { let container = document.getElementById('lista-estoque-atual'); let comboMov = document.getElementById('est-item'); let comboCompra = document.getElementById('lista-pecas'); if(!container || !comboMov) return; if (!window.estoquePecas || window.estoquePecas.length === 0) { container.innerHTML = "<p style='text-align:center; color:#666;'>Nenhuma peça cadastrada no estoque.</p>"; return; } let htmlStr = ""; let comboStrMov = ""; let comboStrCompra = ""; window.estoquePecas.forEach((peca, index) => { htmlStr += `<div style="border-bottom: 1px dashed #ccc; padding: 10px 0; margin-bottom: 5px;"><div style="font-weight:bold; color:#1a4d2e; margin-bottom:5px; font-size:14px;">${peca.item}</div><div style="display:flex; justify-content:space-between; gap:5px;"><div style="flex:1;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Qtd Estoque:</span><input type="number" id="est-edit-qtd-${index}" class="input-editavel travado est-edit-input" value="${peca.qtd || 0}" readonly style="width:100%;"></div><div style="flex:1;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Vlr Pago (R$):</span><input type="number" id="est-edit-valor-${index}" class="input-editavel travado est-edit-input" value="${peca.valor || 0}" readonly style="width:100%;"></div></div><div style="margin-top:5px;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Data Últ. Compra:</span><input type="date" id="est-edit-data-${index}" class="input-editavel travado est-edit-input" value="${peca.data_compra || ''}" readonly style="width:100%;"></div></div>`; comboStrMov += `<option value="${index}">${peca.item}</option>`; comboStrCompra += `<option value="${peca.item}"></option>`; }); comboMov.innerHTML = comboStrMov; if(comboCompra) comboCompra.innerHTML = comboStrCompra; container.innerHTML = htmlStr; } function alternarEdicaoEstoque() { let inputs = document.querySelectorAll('.est-edit-input'); let btn = document.getElementById('btn-editar-estoque'); if (!inputs || inputs.length === 0) return; if (inputs[0].hasAttribute('readonly')) { inputs.forEach(x => { x.removeAttribute('readonly'); x.classList.remove('travado'); }); btn.innerHTML = "💾 Salvar"; btn.style.backgroundColor = "#1a4d2e"; btn.style.color = "white"; } else { inputs.forEach(x => { x.setAttribute('readonly', 'true'); x.classList.add('travado'); }); btn.innerHTML = "✏️ Editar"; btn.style.backgroundColor = "transparent"; btn.style.color = "#1a4d2e"; salvarEdicaoEstoqueNuvem(); } } async function salvarEdicaoEstoqueNuvem() { let pecasEditadas = {}; window.estoquePecas.forEach((peca, index) => { let nQtd = document.getElementById(`est-edit-qtd-${index}`).value; let nData = document.getElementById(`est-edit-data-${index}`).value; let nValor = document.getElementById(`est-edit-valor-${index}`).value; peca.qtd = nQtd; peca.data_compra = nData; peca.valor = nValor; pecasEditadas[peca.item] = { qtd: nQtd, data_compra: nData, valor: nValor }; }); let payload = { acao: "editar_estoque", usuario: window.usuarioLogado, pecas: pecasEditadas }; fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); } function mudarFormEstoque() { let t = document.getElementById('est-tipo').value; document.getElementById('div-est-placa').style.display = t === "SAÍDA" ? "block" : "none"; document.getElementById('div-est-compra').style.display = t === "ENTRADA" ? "block" : "none"; } 
+function renderizarEstoquePecas() { let container = document.getElementById('lista-estoque-atual'); let comboMov = document.getElementById('est-item'); let comboCompra = document.getElementById('lista-pecas'); if(!container || !comboMov) return; if (!window.estoquePecas || window.estoquePecas.length === 0) { container.innerHTML = "<p style='text-align:center; color:#666;'>Nenhuma peça cadastrada no estoque.</p>"; return; } let htmlStr = ""; let comboStrMov = ""; let comboStrCompra = ""; window.estoquePecas.forEach((peca, index) => { htmlStr += `<div style="border-bottom: 1px dashed #ccc; padding: 10px 0; margin-bottom: 5px;"><div style="font-weight:bold; color:#1a4d2e; margin-bottom:5px; font-size:14px;">${peca.item}</div><div style="display:flex; justify-content:space-between; gap:5px;"><div style="flex:1;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Qtd Estoque:</span><input type="number" id="est-edit-qtd-${index}" class="input-editavel travado est-edit-input" value="${peca.qtd || 0}" readonly style="width:100%;"></div><div style="flex:1;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Vlr Pago (R$):</span><input type="number" id="est-edit-valor-${index}" class="input-editavel travado est-edit-input" value="${peca.valor || 0}" readonly style="width:100%;"></div></div><div style="margin-top:5px;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Data Últ. Compra:</span><input type="date" id="est-edit-data-${index}" class="input-editavel travado est-edit-input" value="${peca.data_compra || ''}" readonly style="width:100%;"></div></div>`; comboStrMov += `<option value="${index}">${peca.item}</option>`; comboStrCompra += `<option value="${peca.item}"></option>`; }); comboMov.innerHTML = comboStrMov; if(comboCompra) comboCompra.innerHTML = comboStrCompra; container.innerHTML = htmlStr; } function alternarEdicaoEstoque() { let inputs = document.querySelectorAll('.est-edit-input'); let btn = document.getElementById('btn-editar-estoque'); if (!inputs || inputs.length === 0) return; if (inputs[0].hasAttribute('readonly')) { inputs.forEach(x => { x.removeAttribute('readonly'); x.classList.remove('travado'); }); btn.innerHTML = "💾 Salvar"; btn.style.backgroundColor = "#1a4d2e"; btn.style.color = "white"; } else { inputs.forEach(x => { x.setAttribute('readonly', 'true'); x.classList.add('travado'); }); btn.innerHTML = "✏️ Editar"; btn.style.backgroundColor = "transparent"; btn.style.color = "#1a4d2e"; salvarEdicaoEstoqueNuvem(); } } 
+async function salvarEdicaoEstoqueNuvem() { 
+    let pecasEditadas = {}; 
+    window.estoquePecas.forEach((peca, index) => { let nQtd = document.getElementById(`est-edit-qtd-${index}`).value; let nData = document.getElementById(`est-edit-data-${index}`).value; let nValor = document.getElementById(`est-edit-valor-${index}`).value; peca.qtd = nQtd; peca.data_compra = nData; peca.valor = nValor; pecasEditadas[peca.item] = { qtd: nQtd, data_compra: nData, valor: nValor }; }); 
+    let payload = { acao: "editar_estoque", usuario: window.usuarioLogado, pecas: pecasEditadas }; 
+    adicionarNaFila(payload);
+    salvarCacheLocal();
+    mostrarToast("💾 Edições salvas localmente (Enviando em fundo)");
+} 
+function mudarFormEstoque() { let t = document.getElementById('est-tipo').value; document.getElementById('div-est-placa').style.display = t === "SAÍDA" ? "block" : "none"; document.getElementById('div-est-compra').style.display = t === "ENTRADA" ? "block" : "none"; } 
 
 async function salvarMovimentacaoEstoque() { 
-          let idItem = document.getElementById('est-item').value; let tipo = document.getElementById('est-tipo').value; let qtd = document.getElementById('est-qtd').value; let placa = document.getElementById('est-placa').value; let valor = document.getElementById('est-valor').value; let link = document.getElementById('est-link').value; let resp = document.getElementById('est-resp') ? document.getElementById('est-resp').value : window.usuarioLogado; 
-          if(!qtd) return alert("❌ Digite a quantidade!"); 
-          let peca = window.estoquePecas[idItem]; let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString().slice(0,16); 
-          let p = { acao: "salvar_estoque", usuario: window.usuarioLogado, data: hL.replace('T', ' '), item: peca.item, tipo: tipo, qtd: qtd, placa: tipo === "SAÍDA" ? placa : "", valor: tipo === "ENTRADA" ? valor : "", link: tipo === "ENTRADA" ? link : "", responsavel: resp }; 
-          let btn = document.getElementById('btn-salvar-mov-est'); btn.innerText = "Salvando... ⏳"; btn.disabled = true; 
-          try { 
-              let req = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); let res = await req.json(); 
-              if (res.sucesso) { 
-                  alert("✅ Movimentação salva com sucesso!"); let q = parseFloat(qtd); 
-                  if (tipo === "SAÍDA") { peca.qtd = parseFloat(peca.qtd) - q; } 
-                  if (tipo === "ENTRADA") { peca.qtd = parseFloat(peca.qtd) + q; if(valor) peca.valor = valor; if(q) peca.qtd_compra = q; if(link) peca.link = link; peca.data_compra = p.data.substring(0,10); } 
-                  renderizarEstoquePecas(); document.getElementById('est-qtd').value = ""; document.getElementById('est-placa').value = ""; document.getElementById('est-valor').value = ""; document.getElementById('est-link').value = ""; 
-                  btn.innerText = "💾 Salvar Movimentação"; btn.disabled = false;
-              } else { alert("❌ Erro: " + res.erro); btn.innerText = "💾 Salvar Movimentação"; btn.disabled = false; } 
-          } catch (e) { 
-              alert("⚠️ Instabilidade na rede detectada.\n\nA movimentação pode já ter sido salva. Verifique antes de tentar novamente."); 
-              setTimeout(() => { btn.innerText = "💾 Tentar Novamente"; btn.disabled = false; }, 5000);
-          } 
-      }
+    let idItem = document.getElementById('est-item').value; let tipo = document.getElementById('est-tipo').value; let qtd = document.getElementById('est-qtd').value; let placa = document.getElementById('est-placa').value; let valor = document.getElementById('est-valor').value; let link = document.getElementById('est-link').value; let resp = document.getElementById('est-resp') ? document.getElementById('est-resp').value : window.usuarioLogado; 
+    if(!qtd) return alert("❌ Digite a quantidade!"); 
+    let peca = window.estoquePecas[idItem]; let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString().slice(0,16); 
+    let p = { acao: "salvar_estoque", usuario: window.usuarioLogado, data: hL.replace('T', ' '), item: peca.item, tipo: tipo, qtd: qtd, placa: tipo === "SAÍDA" ? placa : "", valor: tipo === "ENTRADA" ? valor : "", link: tipo === "ENTRADA" ? link : "", responsavel: resp }; 
+    
+    let btn = document.getElementById('btn-salvar-mov-est'); btn.innerText = "Salvando... ⏳"; btn.disabled = true; 
+    
+    adicionarNaFila(p);
+    
+    let q = parseFloat(qtd); 
+    if (tipo === "SAÍDA") { peca.qtd = parseFloat(peca.qtd) - q; } 
+    if (tipo === "ENTRADA") { peca.qtd = parseFloat(peca.qtd) + q; if(valor) peca.valor = valor; if(q) peca.qtd_compra = q; if(link) peca.link = link; peca.data_compra = p.data.substring(0,10); } 
+    
+    salvarCacheLocal();
+    renderizarEstoquePecas(); 
+    document.getElementById('est-qtd').value = ""; document.getElementById('est-placa').value = ""; document.getElementById('est-valor').value = ""; document.getElementById('est-link').value = ""; 
+    
+    alert("✅ Movimentação salva no celular!\nSerá sincronizada na nuvem."); 
+    btn.innerText = "💾 Salvar Movimentação"; btn.disabled = false; 
+}
       
-      async function gerarSolicitacaoCompra() { 
-          let nomeItem = document.getElementById('compra-item').value; if(!nomeItem) return alert("❌ Selecione ou digite o item que deseja comprar!"); let qtd = document.getElementById('compra-qtd').value; let urgencia = document.getElementById('compra-urgencia').value; if(!qtd) return alert("❌ Digite a quantidade que precisa comprar!"); 
-          let peca = window.estoquePecas.find(p => p.item === nomeItem) || { item: nomeItem, qtd_compra: "---", valor: "---", link: "---" }; 
-          let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString(); 
-          let p = { acao: "solicitar_compra", usuario: window.usuarioLogado, data: hL, item: peca.item, qtd: qtd, urgencia: urgencia, qtd_ref: peca.qtd_compra, valor_ref: peca.valor, link_ref: peca.link }; 
-          let btn = document.getElementById('btn-gerar-compra'); btn.innerText = "Gerando PDF... ⏳"; btn.disabled = true; 
-          try { 
-              let req = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); let res = await req.json(); 
-              if (res.sucesso) { 
-                  alert("✅ Pedido de Compra gerado com sucesso!"); window.open(res.link_pdf, '_blank'); 
-                  document.getElementById('compra-qtd').value = ""; document.getElementById('compra-item').value = ""; 
-                  btn.innerText = "📄 Gerar Pedido de Compra (PDF)"; btn.disabled = false;
-              } else { alert("❌ Erro: " + res.erro); btn.innerText = "📄 Gerar Pedido de Compra (PDF)"; btn.disabled = false; } 
-          } catch (e) { 
-              alert("⚠️ Instabilidade na rede detectada.\n\nO PDF da compra pode já ter sido gerado. Aguarde e verifique."); 
-              setTimeout(() => { btn.innerText = "📄 Tentar Novamente"; btn.disabled = false; }, 5000);
-          } 
-      }
+async function gerarSolicitacaoCompra() { 
+    if (!navigator.onLine) return alert("❌ Você precisa estar conectado à internet para gerar o PDF de Compra!");
+
+    let nomeItem = document.getElementById('compra-item').value; if(!nomeItem) return alert("❌ Selecione ou digite o item que deseja comprar!"); let qtd = document.getElementById('compra-qtd').value; let urgencia = document.getElementById('compra-urgencia').value; if(!qtd) return alert("❌ Digite a quantidade que precisa comprar!"); 
+    let peca = window.estoquePecas.find(p => p.item === nomeItem) || { item: nomeItem, qtd_compra: "---", valor: "---", link: "---" }; 
+    let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString(); 
+    let p = { acao: "solicitar_compra", usuario: window.usuarioLogado, data: hL, item: peca.item, qtd: qtd, urgencia: urgencia, qtd_ref: peca.qtd_compra, valor_ref: peca.valor, link_ref: peca.link }; 
+    let btn = document.getElementById('btn-gerar-compra'); btn.innerText = "Gerando PDF... ⏳"; btn.disabled = true; 
+    try { 
+        let req = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); let res = await req.json(); 
+        if (res.sucesso) { 
+            alert("✅ Pedido de Compra gerado com sucesso!"); window.open(res.link_pdf, '_blank'); 
+            document.getElementById('compra-qtd').value = ""; document.getElementById('compra-item').value = ""; 
+            btn.innerText = "📄 Gerar Pedido de Compra (PDF)"; btn.disabled = false;
+        } else { alert("❌ Erro: " + res.erro); btn.innerText = "📄 Gerar Pedido de Compra (PDF)"; btn.disabled = false; } 
+    } catch (e) { 
+        alert("⚠️ Instabilidade na rede detectada.\n\nO PDF da compra pode já ter sido gerado. Aguarde e verifique."); 
+        setTimeout(() => { btn.innerText = "📄 Tentar Novamente"; btn.disabled = false; }, 5000);
+    } 
+}
 
 function calcularStatusTwi(inE, bId) { let b = document.getElementById(bId); if(!b) return; let v = parseFloat(inE.value); if (isNaN(v)) { b.innerText = "Aguardando..."; b.style.backgroundColor = "#eee"; b.style.color = "#666"; return; } if (v >= 10) { b.innerText = "Pneu Novo"; b.style.backgroundColor = "#d4edda"; b.style.color = "#155724"; } else if (v >= 5) { b.innerText = "Meia-Vida"; b.style.backgroundColor = "#fff3cd"; b.style.color = "#856404"; } else { b.innerText = "No Limite"; b.style.backgroundColor = "#f8d7da"; b.style.color = "#721c24"; } } function processarFoto(input, idPreview) { if (!input.files || !input.files[0]) return; const r = new FileReader(); r.onload = function(e) { const img = new Image(); img.src = e.target.result; img.onload = function() { const cv = document.createElement('canvas'); const MW = 800; let w = img.width; let h = img.height; if (w > MW) { h = Math.round((h * MW) / w); w = MW; } cv.width = w; cv.height = h; const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, w, h); const dU = cv.toDataURL('image/jpeg', 0.6); if(idPreview === 'preview-lat' || idPreview === 'preview-frente') b64Lateral = dU; if(idPreview === 'preview-tras' || idPreview === 'preview-verso') b64Traseira = dU; let pr = document.getElementById(idPreview); pr.src = dU; pr.style.display = 'block'; } }; r.readAsDataURL(input.files[0]); } 
 
@@ -452,98 +572,88 @@ function getSelOuOutro(idO) { let i = document.getElementById(idO); if(!i) retur
 
 async function enviarChecklistCarro() { 
     if (document.querySelectorAll(`input[name="chk-carro-itens"]:checked`).length === 0) return alert("❌ Informe a situação dos itens do veículo!"); if (!document.getElementById('chk-carro-extintor-data').value) return alert("❌ Informe a Data de Validade do Extintor!"); for (let id of ['dd', 'de', 'td', 'te']) { if (!document.getElementById('chk-carro-twi-' + id).value) return alert(`❌ Preencha o TWI do Pneu ${id.toUpperCase()}!`); } if (document.getElementById('container-inputs-fotos-carro').style.display !== 'none') { if (!b64Lateral || !b64Traseira) return alert("❌ É obrigatório enviar a Foto Frente e Verso do veículo!"); } let assMot = getPadB64('ass-mot-car'); let assGer = getPadB64('ass-ger-car'); if(!assMot || !assGer) return alert("❌ É obrigatório recolher a assinatura do Motorista e do Gerente!"); 
-    let btn = document.getElementById('btn-enviar-chk-carro'); btn.innerText = "Salvando e Gerando PDF... ⏳"; btn.disabled = true; 
+    let btn = document.getElementById('btn-enviar-chk-carro'); btn.innerText = "Preparando... ⏳"; btn.disabled = true; 
     let dE = document.getElementById('chk-carro-extintor-data').value; let pE = document.getElementById('chk-carro-extintor-pressao').value; let pl = { acao: "salvar_checklist", usuario: window.usuarioLogado, placa: document.getElementById('chk-carro-placa').value, categoria: "CARRO", placa_carreta: "", modelo: document.getElementById('chk-carro-modelo').value, motorista: document.getElementById('chk-carro-motorista').value, km_atual: document.getElementById('chk-carro-km').value, km_oleo: document.getElementById('chk-carro-oleo').value, data_tacografo: "", data_graxa: "", data_extintor: dE, chk_motor: "N/A", chk_cambio: "N/A", chk_embreagem: "N/A", chk_direcao: "N/A", chk_freios: "N/A", chk_suspensao: "N/A", chk_pneus_geral: "N/A", chk_eletrica: "N/A", chk_indicadores: "N/A", chk_cabine: "N/A", chk_faltantes: pegarMarcados('chk-carro-itens', 'chk-carro-outro'), chk_asa_delta: "", chk_freio_lona: "", chk_faixas: "", chk_extintores: `Val: ${dE} - ${pE}`, chk_parada: document.getElementById('chk-carro-parada').value, chk_obs: document.getElementById('chk-carro-obs').value, foto_lateral_b64: b64Lateral, foto_traseira_b64: b64Traseira, assinatura_motorista_b64: assMot, assinatura_gerente_b64: assGer, qtd_carrinhos: "", qtd_cones: "", qtd_calcos: "", pneus: {} }; ['dd','de','td','te'].forEach(id => { let eT = document.getElementById('chk-carro-twi-' + id); if(eT && eT.value) pl.pneus[id] = { milimetros: eT.value, estado: document.getElementById('badge-carro-estado-' + id).innerText }; }); 
-    try { 
-        let r = await fetch(API_URL, { method: 'POST', body: JSON.stringify(pl) }); let d = await r.json(); 
-        if (d.sucesso) { 
-            alert("✅ Inspeção finalizada com sucesso!"); 
-            window.frota[pl.placa].km_atual = pl.km_atual; window.frota[pl.placa].km_oleo = pl.km_oleo; window.frota[pl.placa].data_extintor = pl.data_extintor; 
-            if(d.mesAtual) window.frota[pl.placa].mes_foto = d.mesAtual; if(d.linkLat) window.frota[pl.placa].foto_lateral = d.linkLat; if(d.linkTras) window.frota[pl.placa].foto_traseira = d.linkTras; 
-            for(let i in pl.pneus) { if(!window.frota[pl.placa].pneus[i]) window.frota[pl.placa].pneus[i] = {}; window.frota[pl.placa].pneus[i].milimetros = pl.pneus[i].milimetros; window.frota[pl.placa].pneus[i].estado = pl.pneus[i].estado; } 
-            let hS = new Date().toISOString(); window.historicoChecklist.unshift({data: hS, placa: pl.placa}); 
-            escolherModulo('Checklist');
-            btn.innerText = "💾 Enviar Inspeção e PDF"; btn.disabled = false;
-        } else { alert("⚠️ Pendência: " + d.erro); btn.innerText = "💾 Enviar Inspeção e PDF"; btn.disabled = false; } 
-    } catch (e) { 
-        alert("⚠️ Instabilidade na rede detectada.\n\nO envio pode já ter sido concluído no servidor em 2º plano. Volte ao Menu > Checklist e veja se o ✅ já aparece!"); 
-        setTimeout(() => { btn.innerText = "💾 Tentar Novamente"; btn.disabled = false; }, 5000);
-    } 
+    
+    window.frota[pl.placa].km_atual = pl.km_atual; window.frota[pl.placa].km_oleo = pl.km_oleo; window.frota[pl.placa].data_extintor = pl.data_extintor; 
+    for(let i in pl.pneus) { if(!window.frota[pl.placa].pneus[i]) window.frota[pl.placa].pneus[i] = {}; window.frota[pl.placa].pneus[i].milimetros = pl.pneus[i].milimetros; window.frota[pl.placa].pneus[i].estado = pl.pneus[i].estado; } 
+    let hS = new Date().toISOString(); window.historicoChecklist.unshift({data: hS, placa: pl.placa}); 
+    
+    adicionarNaFila(pl);
+    salvarCacheLocal();
+
+    alert("✅ Inspeção finalizada localmente!\n\nO PDF será gerado na nuvem na próxima sincronização em 2º plano."); 
+    escolherModulo('Checklist');
+    btn.innerText = "💾 Enviar Inspeção e PDF"; btn.disabled = false; 
 }
 
 async function enviarChecklist() { 
-          let dE = document.getElementById('chk-extintor-data').value; 
-          let pE = document.getElementById('chk-extintor-pressao').value; 
-          let assMot = getPadB64('ass-mot-cam'); 
-          let assGer = getPadB64('ass-ger-cam'); 
-          
-          if(!assMot || !assGer) return alert("❌ Assinaturas obrigatórias!"); 
-          
-          let catStr = window.isCavalo ? "CAVALO" : "CAMINHAO"; 
-          let pl = { 
-              acao: "salvar_checklist", usuario: window.usuarioLogado, placa: document.getElementById('chk-placa').value, 
-              categoria: catStr, placa_carreta: window.isCavalo ? document.getElementById('chk-placa-carreta').value : "", 
-              modelo: document.getElementById('chk-modelo').value, motorista: document.getElementById('chk-motorista').value, 
-              km_atual: document.getElementById('chk-km').value, km_oleo: document.getElementById('chk-km-oleo').value, 
-              data_tacografo: document.getElementById('chk-data-taco').value, data_graxa: document.getElementById('chk-data-graxa').value, 
-              data_extintor: dE, chk_motor: pegarMarcados('chk-motor', 'chk-motor-outro'), chk_cambio: pegarMarcados('chk-cambio', 'chk-cambio-outro'), 
-              chk_embreagem: pegarMarcados('chk-embreagem', 'chk-emb-outro'), chk_direcao: pegarMarcados('chk-direcao', 'chk-dir-outro'), 
-              chk_freios: pegarMarcados('chk-freios', 'chk-freio-outro'), chk_suspensao: pegarMarcados('chk-suspensao', 'chk-susp-outro'), 
-              chk_pneus_geral: pegarMarcados('chk-pneus_geral', 'chk-pneu-outro'), chk_eletrica: pegarMarcados('chk-eletrica', 'chk-elet-outro'), 
-              chk_indicadores: pegarMarcados('chk-indicadores', 'chk-ind-outro'), chk_cabine: pegarMarcados('chk-cabine', 'chk-cab-outro'), 
-              chk_faltantes: pegarMarcados('chk-faltantes', 'chk-falta-outro'), 
-              chk_asa_delta: window.isCavalo ? getSelOuOutro('chk-asa-outro') : "", 
-              chk_freio_lona: window.isCavalo ? getSelOuOutro('chk-freio-lona-outro') : "", 
-              chk_faixas: window.isCavalo ? getSelOuOutro('chk-faixas-outro') : "", 
-              chk_extintores: `Val: ${dE} - ${pE}`, chk_parada: document.getElementById('chk-parada').value, 
-              chk_obs: document.getElementById('chk-obs').value, foto_lateral_b64: b64Lateral, foto_traseira_b64: b64Traseira, 
-              assinatura_motorista_b64: assMot, assinatura_gerente_b64: assGer, 
-              qtd_carrinhos: window.isCavalo ? "0" : document.getElementById('chk-qtd-carrinhos').value, 
-              qtd_cones: window.isCavalo ? "0" : document.getElementById('chk-qtd-cones').value, 
-              qtd_calcos: window.isCavalo ? "0" : document.getElementById('chk-qtd-calcos').value, 
-              pneus: {} 
-          }; 
-          
-          let tIds = window.isToco ? ['dd','de','tde','tdi','tee','tei','1step'] : ['dd','de','tde','tdi','tee','tei','tkde','tkdi','tkee','tkei','1step']; 
-          if(window.isCavalo) tIds = tIds.concat(['c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','c11','c12','2step']); 
-          
-          tIds.forEach(id => { 
-              let eT = document.getElementById('chk-twi-' + id); 
-              if(eT && eT.value) { 
-                  pl.pneus[id] = { milimetros: eT.value, estado: document.getElementById('badge-estado-' + id).innerText }; 
-              } 
-          }); 
-          
-          let btn = document.getElementById('btn-enviar-chk'); 
-          btn.innerText = "Enviando... ⏳"; 
-          btn.disabled = true; 
-      
-          // Disparo em segundo plano
-          fetch(API_URL, { method: 'POST', body: JSON.stringify(pl) })
-              .then(() => recarregarDadosSilenciosamente())
-              .catch(e => console.error("Processo em segundo plano finalizado:", e));
-          
-          // Liberação imediata
-          alert("✅ Sucesso!\n\nO checklist foi enviado e o PDF está sendo gerado na nuvem."); 
-          window.historicoChecklist.unshift({data: new Date().toISOString(), placa: pl.placa}); 
-          escolherModulo('Checklist');
-          
-          btn.innerText = "💾 Enviar Checklist e Gerar PDF"; 
-          btn.disabled = false;
-      }
+    let dE = document.getElementById('chk-extintor-data').value; 
+    let pE = document.getElementById('chk-extintor-pressao').value; 
+    let assMot = getPadB64('ass-mot-cam'); 
+    let assGer = getPadB64('ass-ger-cam'); 
+    
+    if(!assMot || !assGer) return alert("❌ Assinaturas obrigatórias!"); 
+    
+    let catStr = window.isCavalo ? "CAVALO" : "CAMINHAO"; 
+    let pl = { 
+        acao: "salvar_checklist", usuario: window.usuarioLogado, placa: document.getElementById('chk-placa').value, 
+        categoria: catStr, placa_carreta: window.isCavalo ? document.getElementById('chk-placa-carreta').value : "", 
+        modelo: document.getElementById('chk-modelo').value, motorista: document.getElementById('chk-motorista').value, 
+        km_atual: document.getElementById('chk-km').value, km_oleo: document.getElementById('chk-km-oleo').value, 
+        data_tacografo: document.getElementById('chk-data-taco').value, data_graxa: document.getElementById('chk-data-graxa').value, 
+        data_extintor: dE, chk_motor: pegarMarcados('chk-motor', 'chk-motor-outro'), chk_cambio: pegarMarcados('chk-cambio', 'chk-cambio-outro'), 
+        chk_embreagem: pegarMarcados('chk-embreagem', 'chk-emb-outro'), chk_direcao: pegarMarcados('chk-direcao', 'chk-dir-outro'), 
+        chk_freios: pegarMarcados('chk-freios', 'chk-freio-outro'), chk_suspensao: pegarMarcados('chk-suspensao', 'chk-susp-outro'), 
+        chk_pneus_geral: pegarMarcados('chk-pneus_geral', 'chk-pneu-outro'), chk_eletrica: pegarMarcados('chk-eletrica', 'chk-elet-outro'), 
+        chk_indicadores: pegarMarcados('chk-indicadores', 'chk-ind-outro'), chk_cabine: pegarMarcados('chk-cabine', 'chk-cab-outro'), 
+        chk_faltantes: pegarMarcados('chk-faltantes', 'chk-falta-outro'), 
+        chk_asa_delta: window.isCavalo ? getSelOuOutro('chk-asa-outro') : "", 
+        chk_freio_lona: window.isCavalo ? getSelOuOutro('chk-freio-lona-outro') : "", 
+        chk_faixas: window.isCavalo ? getSelOuOutro('chk-faixas-outro') : "", 
+        chk_extintores: `Val: ${dE} - ${pE}`, chk_parada: document.getElementById('chk-parada').value, 
+        chk_obs: document.getElementById('chk-obs').value, foto_lateral_b64: b64Lateral, foto_traseira_b64: b64Traseira, 
+        assinatura_motorista_b64: assMot, assinatura_gerente_b64: assGer, 
+        qtd_carrinhos: window.isCavalo ? "0" : document.getElementById('chk-qtd-carrinhos').value, 
+        qtd_cones: window.isCavalo ? "0" : document.getElementById('chk-qtd-cones').value, 
+        qtd_calcos: window.isCavalo ? "0" : document.getElementById('chk-qtd-calcos').value, 
+        pneus: {} 
+    }; 
+    
+    let tIds = window.isToco ? ['dd','de','tde','tdi','tee','tei','1step'] : ['dd','de','tde','tdi','tee','tei','tkde','tkdi','tkee','tkei','1step']; 
+    if(window.isCavalo) tIds = tIds.concat(['c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','c11','c12','2step']); 
+    
+    tIds.forEach(id => { 
+        let eT = document.getElementById('chk-twi-' + id); 
+        if(eT && eT.value) { 
+            pl.pneus[id] = { milimetros: eT.value, estado: document.getElementById('badge-estado-' + id).innerText }; 
+        } 
+    }); 
+    
+    let btn = document.getElementById('btn-enviar-chk'); 
+    btn.innerText = "Preparando... ⏳"; 
+    btn.disabled = true; 
+
+    adicionarNaFila(pl);
+    window.historicoChecklist.unshift({data: new Date().toISOString(), placa: pl.placa}); 
+    salvarCacheLocal();
+
+    alert("✅ Sucesso!\n\nO checklist foi salvo no celular e o PDF será gerado na nuvem durante a sincronização."); 
+    escolherModulo('Checklist');
+    
+    btn.innerText = "💾 Enviar Checklist e Gerar PDF"; 
+    btn.disabled = false;
+}
 
 async function enviarChecklistEmpilhadeira() { 
     let obs = document.getElementById('chk-emp-obs').value; let checks = pegarMarcados('chk-emp-itens', 'chk-emp-outro'); let assMot = getPadB64('ass-mot-emp'); let assGer = getPadB64('ass-ger-emp'); if(!assMot || !assGer) return alert("❌ Assinaturas obrigatórias!"); let pl = { acao: "salvar_checklist", usuario: window.usuarioLogado, placa: document.getElementById('chk-emp-placa').value, categoria: "EMPILHADEIRA", modelo: "EMPILHADEIRA", motorista: document.getElementById('chk-emp-motorista').value, chk_faltantes: checks, chk_obs: obs, assinatura_motorista_b64: assMot, assinatura_gerente_b64: assGer, km_atual: document.getElementById('chk-emp-km').value, km_oleo: "", data_tacografo: "", data_graxa: "", data_extintor: "", chk_motor: "N/A", chk_cambio: "N/A", chk_embreagem: "N/A", chk_direcao: "N/A", chk_freios: "N/A", chk_suspensao: "N/A", chk_pneus_geral: "N/A", chk_eletrica: "N/A", chk_indicadores: "N/A", chk_cabine: "N/A", chk_asa_delta: "", chk_freio_lona: "", chk_faixas: "", chk_extintores: "", chk_parada: "N/A", foto_lateral_b64: "", foto_traseira_b64: "", qtd_carrinhos: "", qtd_cones: "", qtd_calcos: "", pneus: {} }; 
-    let btn = document.getElementById('btn-enviar-chk-emp'); btn.innerText = "Salvando... ⏳"; btn.disabled = true; 
-    try { 
-        let r = await fetch(API_URL, { method: 'POST', body: JSON.stringify(pl) }); let d = await r.json(); 
-        if (d.sucesso) { 
-            alert("✅ Sucesso!"); window.historicoChecklist.unshift({data: new Date().toISOString(), placa: pl.placa}); 
-            escolherModulo('Checklist');
-            btn.innerText = "💾 Enviar Inspeção e PDF"; btn.disabled = false;
-        } 
-    } catch (e) { 
-        alert("⚠️ Instabilidade na rede detectada.\n\nO envio pode já ter sido concluído no servidor em 2º plano. Volte ao Menu > Checklist e veja se o ✅ já aparece!"); 
-        setTimeout(() => { btn.innerText = "💾 Tentar Novamente"; btn.disabled = false; }, 5000);
-    } 
+    let btn = document.getElementById('btn-enviar-chk-emp'); btn.innerText = "Preparando... ⏳"; btn.disabled = true; 
+    
+    adicionarNaFila(pl);
+    window.historicoChecklist.unshift({data: new Date().toISOString(), placa: pl.placa}); 
+    salvarCacheLocal();
+
+    alert("✅ Inspeção salva localmente!\nSerá sincronizada em 2º plano automaticamente."); 
+    escolherModulo('Checklist');
+    btn.innerText = "💾 Enviar Inspeção e PDF"; btn.disabled = false;
 }
