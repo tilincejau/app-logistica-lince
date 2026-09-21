@@ -4,7 +4,7 @@
    ========================================================= */
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
-const APP_VERSAO = "1.1"; // Versão atualizada para Sincronização Contínua
+const APP_VERSAO = "1.2"; // Atualizado com Botão de Sincronia Manual e Fix Visual
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
@@ -31,7 +31,7 @@ let htmlFichaCarro = ""; let htmlChkCarro = "";
 let b64Lateral = ""; let b64Traseira = "";
 
 // =======================================================
-// LÓGICA DA FILA (OFFLINE-FIRST)
+// LÓGICA DA FILA E BOTÃO MANUAL (OFFLINE-FIRST)
 // =======================================================
 let isSyncing = false;
 
@@ -60,13 +60,27 @@ function adicionarNaFila(payload) {
     payload._localId = Date.now() + Math.random().toString(36).substr(2, 5);
     fila.push(payload);
     localStorage.setItem('lince_fila_requisicoes', JSON.stringify(fila));
-    sincronizarSegundoPlano(); 
+    sincronizarSegundoPlano(false); 
 }
 
-async function sincronizarSegundoPlano() {
-    if (!navigator.onLine || isSyncing) return;
+async function sincronizarSegundoPlano(manual = false) {
+    if (!navigator.onLine) {
+        if(manual) mostrarToast("❌ Sem conexão à internet", "#dc2626");
+        return;
+    }
+    if (isSyncing) {
+        if(manual) mostrarToast("⏳ Sincronização já em andamento...", "#d97706");
+        return;
+    }
+
     let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
-    if (fila.length === 0) return;
+    if (fila.length === 0) {
+        if (manual) {
+            mostrarToast("✅ Tudo já está atualizado!", "#059669");
+            recarregarDadosSilenciosamente();
+        }
+        return;
+    }
 
     isSyncing = true;
     let filaRestante = [...fila];
@@ -79,7 +93,7 @@ async function sincronizarSegundoPlano() {
         try {
             let p = {...reqPayload}; delete p._localId;
             let resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) });
-            let dados = await resp.json();
+            await resp.json();
             
             filaRestante = filaRestante.filter(item => item._localId !== reqPayload._localId);
             processouAlgo = true;
@@ -93,7 +107,7 @@ async function sincronizarSegundoPlano() {
     
     if (processouAlgo) {
         if (filaRestante.length === 0) {
-            mostrarToast("✅ Tudo sincronizado!", "#059669");
+            mostrarToast("✅ Tudo sincronizado com sucesso!", "#059669");
         } else {
             mostrarToast(`⚠️ Sobraram ${filaRestante.length} itens (Sem rede)`, "#dc2626");
         }
@@ -102,10 +116,24 @@ async function sincronizarSegundoPlano() {
     isSyncing = false;
 }
 
+// BOTÃO MANUAL DE SINCRONIZAÇÃO
+async function forcarSincronizacaoManual() {
+    let btn = document.getElementById('btn-sync-manual');
+    if(!btn) return;
+    let originalText = btn.innerText;
+    btn.innerText = "Sincronizando... ⏳";
+    btn.disabled = true;
+
+    await sincronizarSegundoPlano(true);
+
+    btn.innerText = originalText;
+    btn.disabled = false;
+}
+
 // Disparos Automáticos de Sincronização
-setInterval(sincronizarSegundoPlano, 180000); // Tenta a cada 3 Minutos
+setInterval(() => sincronizarSegundoPlano(false), 180000); // Tenta a cada 3 Minutos
 document.addEventListener("visibilitychange", function() {
-    if (document.visibilityState === 'visible') sincronizarSegundoPlano();
+    if (document.visibilityState === 'visible') sincronizarSegundoPlano(false);
 });
 // =======================================================
 
@@ -123,6 +151,22 @@ function atualizarVariaveisGlobais(res) {
     renderizarHistorico(window.historicoChecklist);
     renderizarHistoricoAbast();
     renderizarEstoquePecas();
+
+    // GARANTE QUE AS PLACAS VÃO ACENDER O ✅ ASSIM QUE OS DADOS CHEGAREM
+    if (window.moduloAtual === 'Checklist' && window.historicoChecklist) {
+        let agora = new Date(); 
+        let inicioSemana = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() - agora.getDay()); 
+        inicioSemana.setHours(0,0,0,0); 
+        window.historicoChecklist.forEach(h => { 
+            let dataStr = String(h.data); let dataObj; 
+            if (dataStr.includes('/')) { let partes = dataStr.split(' ')[0].split('/'); dataObj = new Date(partes[2], partes[1] - 1, partes[0]); } else { dataObj = new Date(dataStr); } 
+            if (dataObj >= inicioSemana) { 
+                let placaLimpa = String(h.placa).trim().toUpperCase(); 
+                let badge = document.getElementById('check-' + placaLimpa); 
+                if (badge) badge.style.display = 'block'; 
+            } 
+        }); 
+    }
 }
 
 async function recarregarDadosSilenciosamente() {
@@ -131,11 +175,7 @@ async function recarregarDadosSilenciosamente() {
         let res = await req.json();
         
         let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
-        if (fila.length > 0) {
-            // PROTEÇÃO: Se temos fila para enviar, não sobrescrevemos a tela do celular 
-            // com dados velhos do servidor. Deixamos a fila acabar primeiro!
-            return;
-        }
+        if (fila.length > 0) return;
 
         if (res.sucesso) {
             atualizarVariaveisGlobais(res);
@@ -342,7 +382,6 @@ function salvarFichaNaNuvemBackground() {
     let tIds = window.isCarro ? ['dd','de','td','te'] : (window.isToco ? ['dd','de','tde','tdi','tee','tei','1step'] : ['dd','de','tde','tdi','tee','tei','tkde','tkdi','tkee','tkei','1step','c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','c11','c12','2step']); let pref = window.isCarro ? 'carro-' : ''; 
     tIds.forEach(id => { let km = document.getElementById(pref+'km-troca-'+id); if(km) { payload.pneus[id] = { km_ultima_troca: km.value, data_ultima_troca: document.getElementById(pref+'data-troca-'+id).value, data_ultimo_rodizio: document.getElementById(pref+'data-rodizio-'+id).value, pneu_colocado: document.getElementById(pref+'pneu-colocado-'+id).value, km_proximo_rodizio: document.getElementById(pref+'prox-rodizio-'+id).value }; } }); 
     
-    // Atualização otimista
     window.frota[payload.placa].tipo = payload.tipo;
     window.frota[payload.placa].motorista = payload.motorista;
     window.frota[payload.placa].km_atual = payload.km_atual;
@@ -420,7 +459,6 @@ async function salvarAbastecimentoNuvem() {
     btn.innerText = "Enviando... ⏳"; 
     btn.disabled = true; 
 
-    // Envia para a Fila Offline
     adicionarNaFila(p);
     
     alert("✅ Salvo no celular!\n\nO lançamento foi para a fila e será enviado automaticamente em 2º plano."); 
@@ -476,7 +514,7 @@ async function salvarAbastecimentoNuvem() {
     } 
     preencherDataHoraAbast(); 
     renderizarHistoricoAbast(); 
-    salvarCacheLocal(); // Protege os dados localmente
+    salvarCacheLocal();
     
     btn.innerText = "💾 Salvar Lançamento"; 
     btn.disabled = false;
