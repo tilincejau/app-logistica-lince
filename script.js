@@ -3,7 +3,7 @@
    Gerencia a inversão do Menu -> Placa, Validações, Fotos, PDF, etc.
    ========================================================= */
 
-const API_URL = "COLE_AQUI_SEU_LINK_DO_APPS_SCRIPT";
+const API_URL = "https://script.google.com/macros/s/AKfycbxq1Ap2LEJp1IrQXtvlBa2XPjTKy2Iz24POlCEJhgv_lPLijE0TPXFzepr6D1qbcNRU/exec";
 const APP_VERSAO = "1.8"; // Forçando atualização de cache
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
