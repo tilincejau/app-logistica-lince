@@ -3,7 +3,7 @@
    Gerencia a inversão do Menu -> Placa, Validações, Fotos, PDF, etc.
    ========================================================= */
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxq1Ap2LEJp1IrQXtvlBa2XPjTKy2Iz24POlCEJhgv_lPLijE0TPXFzepr6D1qbcNRU/exec";
 const APP_VERSAO = "1.4"; // Atualizado com Botão de Sincronia Manual e Fix Visual
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
