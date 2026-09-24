@@ -4,13 +4,13 @@
    ========================================================= */
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxvxiDr82rljfQtwcIVAxVKgBb09QRnS5cdIl2j15m9BjZ3PSaH7olg2RpDzIM2smf5tA/exec";
-const APP_VERSAO = "1.2"; // Atualizado com Botão de Sincronia Manual e Fix Visual
+const APP_VERSAO = "1.4"; // Atualizado com Botão de Sincronia Manual e Fix Visual
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
 const EMPILHADEIRAS = ['05025DR3290', '05025DR8824'];
-const TRUCKS = ['FMR4I10', 'FQY6B30', 'TKR8I49', 'TLL8H30', 'TLY0G57', 'UDN0J81', 'UPS1J80', 'UPX9D25', 'URT4E79', 'URU3F36', 'FEE9E40'];
-const TOCOS = ['AXZ1D53', 'FCT1J98', 'FIF9A30', 'FMQ8H77', 'FPJ1B16', 'FUH9H91', 'IVE8J03', 'NTP4G17'];
+const TRUCKS = ['FEE9E40'];
+const TOCOS = ['AXZ1D53', 'FCT1J98', 'FIF9A30', 'FMQ8H77', 'FPJ1B16', 'FUH9H91', 'IVE8J03', 'NTP4G17', 'FMR4I10', 'FQY6B30', 'TKR8I49', 'TLL8H30', 'TLY0G57', 'UDN0J81', 'UPS1J80', 'UPX9D25', 'URT4E79', 'URU3F36', ];
 
 window.isCavalo = false; window.isTruck = false; window.isToco = false; window.isCarro = false; window.isEmpilhadeira = false;
 let urlDocAtual = ""; 
@@ -79,7 +79,7 @@ async function sincronizarSegundoPlano(manual = false) {
         let reqPayload = fila[i];
         try {
             let p = {...reqPayload}; delete p._localId;
-            let resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) });
+            let resp = await fetch(API_, { method: 'POST', body: JSON.stringify(p) });
             await resp.json();
             
             let filaAtual = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
@@ -156,7 +156,7 @@ function atualizarVariaveisGlobais(res) {
 
 async function recarregarDadosSilenciosamente() {
     try {
-        let req = await fetch(`${API_URL}?acao=buscar_inicial`);
+        let req = await fetch(`${API_}?acao=buscar_inicial`);
         let res = await req.json();
         
         let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
