@@ -9,8 +9,8 @@ const APP_VERSAO = "1.2"; // Atualizado com Botão de Sincronia Manual e Fix Vis
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
 const EMPILHADEIRAS = ['05025DR3290', '05025DR8824'];
-const TRUCKS = ['FMR4I10', 'FQY6B30', 'TKR8I49', 'TLL8H30', 'TLY0G57', 'UDN0J81', 'UPS1J80', 'UPX9D25', 'URT4E79', 'URU3F36'];
-const TOCOS = ['AXZ1D53', 'FCT1J98', 'FEE9E40', 'FIF9A30', 'FMQ8H77', 'FPJ1B16', 'FUH9H91', 'IVE8J03', 'NTP4G17'];
+const TRUCKS = ['FMR4I10', 'FQY6B30', 'TKR8I49', 'TLL8H30', 'TLY0G57', 'UDN0J81', 'UPS1J80', 'UPX9D25', 'URT4E79', 'URU3F36', 'FEE9E40'];
+const TOCOS = ['AXZ1D53', 'FCT1J98', 'FIF9A30', 'FMQ8H77', 'FPJ1B16', 'FUH9H91', 'IVE8J03', 'NTP4G17'];
 
 window.isCavalo = false; window.isTruck = false; window.isToco = false; window.isCarro = false; window.isEmpilhadeira = false;
 let urlDocAtual = ""; 
@@ -58,35 +58,22 @@ function salvarCacheLocal() {
 function adicionarNaFila(payload) {
     let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
     payload._localId = Date.now() + Math.random().toString(36).substr(2, 5);
+    payload.id_transacao = payload._localId; // Trava contra duplicação no Backend
     fila.push(payload);
     localStorage.setItem('lince_fila_requisicoes', JSON.stringify(fila));
     sincronizarSegundoPlano(false); 
 }
 
 async function sincronizarSegundoPlano(manual = false) {
-    if (!navigator.onLine) {
-        if(manual) mostrarToast("❌ Sem conexão à internet", "#dc2626");
-        return;
-    }
-    if (isSyncing) {
-        if(manual) mostrarToast("⏳ Sincronização já em andamento...", "#d97706");
-        return;
-    }
+    if (!navigator.onLine) { if(manual) mostrarToast("❌ Sem conexão à internet", "#dc2626"); return; }
+    if (isSyncing) { if(manual) mostrarToast("⏳ Sincronização em andamento...", "#d97706"); return; }
 
     let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
-    if (fila.length === 0) {
-        if (manual) {
-            mostrarToast("✅ Tudo já está atualizado!", "#059669");
-            recarregarDadosSilenciosamente();
-        }
-        return;
-    }
+    if (fila.length === 0) { if (manual) { mostrarToast("✅ Tudo já está atualizado!", "#059669"); recarregarDadosSilenciosamente(); } return; }
 
     isSyncing = true;
-    let filaRestante = [...fila];
     let processouAlgo = false;
-
-    mostrarToast(`🔄 Sincronizando ${fila.length} pendências...`, "#d97706");
+    if(manual) mostrarToast(`🔄 Sincronizando ${fila.length} pendências...`, "#d97706");
 
     for (let i = 0; i < fila.length; i++) {
         let reqPayload = fila[i];
@@ -95,22 +82,20 @@ async function sincronizarSegundoPlano(manual = false) {
             let resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) });
             await resp.json();
             
-            filaRestante = filaRestante.filter(item => item._localId !== reqPayload._localId);
+            let filaAtual = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
+            filaAtual = filaAtual.filter(item => item._localId !== reqPayload._localId);
+            localStorage.setItem('lince_fila_requisicoes', JSON.stringify(filaAtual));
             processouAlgo = true;
         } catch (e) {
             console.warn("Sem internet para o pedido, parando fila.");
             break; 
         }
     }
-
-    localStorage.setItem('lince_fila_requisicoes', JSON.stringify(filaRestante));
     
     if (processouAlgo) {
-        if (filaRestante.length === 0) {
-            mostrarToast("✅ Tudo sincronizado com sucesso!", "#059669");
-        } else {
-            mostrarToast(`⚠️ Sobraram ${filaRestante.length} itens (Sem rede)`, "#dc2626");
-        }
+        let filaFinal = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
+        if (filaFinal.length === 0) { mostrarToast("✅ Tudo sincronizado com sucesso!", "#059669"); } 
+        else { mostrarToast(`⚠️ Sobraram ${filaFinal.length} itens (Sem rede)`, "#dc2626"); }
         recarregarDadosSilenciosamente();
     }
     isSyncing = false;
@@ -420,9 +405,11 @@ function alternarEdicaoAbast() { let c = [document.getElementById('abast-km-ant'
 function calcularAbastecimento() { let kA = parseFloat(document.getElementById('abast-km-ant').value) || 0; let kU = parseFloat(document.getElementById('abast-km-atual').value) || 0; let l = parseFloat(document.getElementById('abast-litros').value) || 0; let t = document.getElementById('abast-media'); if (l > 0 && kU > kA) t.innerText = ((kU - kA) / l).toFixed(2) + " km/L"; else t.innerText = "0.00 km/L"; } 
 function calcularGraxa() { let s = document.getElementById('data-engraxada').value; let t = document.getElementById('status-graxa'); if (!s || s.length < 8) { if(t) t.innerHTML = "---"; document.getElementById('data-prox-engraxada').innerText = "--/--/----"; return; } let p = s.split('-'); let ultima = new Date(p[0], p[1] - 1, p[2]); let proxima = new Date(ultima); proxima.setDate(proxima.getDate() + 30); document.getElementById('data-prox-engraxada').innerText = `${String(proxima.getDate()).padStart(2,'0')}/${String(proxima.getMonth()+1).padStart(2,'0')}/${proxima.getFullYear()}`; let h = new Date(); h.setHours(0,0,0,0); let d = Math.ceil((proxima.getTime() - h.getTime()) / (1000 * 3600 * 24)); if (d < 0) { t.innerHTML = `VENCIDO há ${Math.abs(d)} dias ❌`; t.style.color = "red"; } else if (d <= 5) { t.innerHTML = `Atenção: Faltam ${d} dias ⚠️`; t.style.color = "#d4a017"; } else { t.innerHTML = `Faltam ${d} dias ✅`; t.style.color = "green"; } } 
 function abrirDocPDF() { if (urlDocAtual && urlDocAtual.trim() !== "") window.open(urlDocAtual, '_blank'); else alert("Nenhum documento cadastrado para este veículo."); }
-function renderizarHistoricoAbast() { let construtorHTML = (lista, isChegada) => { if (!lista || lista.length === 0) return "<p style='color:#666; font-size:12px; margin:0;'>Nenhum registro encontrado.</p>"; return lista.map(i => `<div style="display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #eee; font-size:12px;"><span>📅 ${i.data} ${isChegada ? '' : `- <b>${i.placa}</b>`}</span><span style="font-weight:bold; color:${isChegada ? '#1a4d2e' : '#b30000'};">${isChegada ? '+' : '-'} ${i.litros} L</span></div>`).join(''); }; let eD = document.getElementById('hist-abast-diesel'); if(eD) eD.innerHTML = construtorHTML(window.histAbast.diesel, false); let eA = document.getElementById('hist-abast-arla'); if(eA) eA.innerHTML = construtorHTML(window.histAbast.arla, false); let eCD = document.getElementById('hist-cheg-diesel'); if(eCD) eCD.innerHTML = construtorHTML(window.histAbast.cheg_diesel, true); let eCA = document.getElementById('hist-cheg-arla'); if(eCA) eCA.innerHTML = construtorHTML(window.histAbast.cheg_arla, true); } 
+
 function mudarFormAbast() { let t = document.getElementById('tipo-abast').value; if (t.includes("CHEGADA")) { document.getElementById('form-abast-veiculo').style.display = 'none'; document.getElementById('form-abast-chegada').style.display = 'block'; } else { document.getElementById('form-abast-veiculo').style.display = 'block'; document.getElementById('form-abast-chegada').style.display = 'none'; } } 
 function preencherDataHoraAbast() { let n = new Date(); let hL = new Date(n.getTime() - (n.getTimezoneOffset() * 60000)).toISOString().slice(0,16); let eA = document.getElementById('abast-data'); if(eA) eA.value = hL; let eC = document.getElementById('chegada-data'); if(eC) eC.value = hL; document.getElementById('estoque-diesel-geral').innerText = window.estoqueDiesel + " L"; document.getElementById('estoque-arla-geral').innerText = window.estoqueArla + " L"; document.getElementById('gasto-mes-geral').innerText = window.gastoMesGeral + " L"; }
+
+let abastPendente = null;
 
 async function salvarAbastecimentoNuvem() { 
     let t = document.getElementById('tipo-abast').value; 
@@ -440,84 +427,98 @@ async function salvarAbastecimentoNuvem() {
         p.km = parseFloat(document.getElementById('abast-km-novo').value) || 0; 
         p.litros = parseFloat(document.getElementById('abast-litros-bomba').value) || 0; 
         let motSel = document.getElementById('abast-motorista').value; 
-        
-        if (motSel === "NOVO") { 
-            motSel = document.getElementById('abast-motorista-novo').value.trim().toUpperCase(); 
-            if (!motSel) return alert("❌ Digite o nome do novo motorista!"); 
-        } 
-        
+        if (motSel === "NOVO") { motSel = document.getElementById('abast-motorista-novo').value.trim().toUpperCase(); if (!motSel) return alert("❌ Digite o nome do motorista!"); } 
         p.motorista = motSel; 
         p.responsavel = document.getElementById('abast-resp').value; 
         p.nf = ""; 
         let kU = parseFloat(document.getElementById('aviso-ultimo-km').innerText) || 0; 
-        
         if (!p.data || !p.km || !p.litros || !p.motorista || !p.responsavel) return alert("❌ Preencha todos os campos do Abastecimento!"); 
         if (p.km < kU) return alert(`❌ O KM digitado (${p.km}) não pode ser MENOR que o último (${kU})!`); 
     } 
     
-    let btn = document.getElementById('btn-salvar-abast-nuvem'); 
-    btn.innerText = "Enviando... ⏳"; 
-    btn.disabled = true; 
+    // Mostra o Modal ao invés de salvar direto
+    abastPendente = p;
+    document.getElementById('conf-abast-placa').innerText = p.placa;
+    document.getElementById('conf-abast-tipo').innerText = p.tipo;
+    document.getElementById('conf-abast-litros').innerText = p.litros + " L";
+    document.getElementById('conf-abast-km').innerText = p.km ? p.km : "N/A";
+    document.getElementById('conf-abast-mot').innerText = p.motorista ? p.motorista : "N/A";
+    document.getElementById('conf-abast-resp').innerText = p.responsavel ? p.responsavel : "N/A";
+    document.getElementById('modal-confirmar-abast').style.display = 'flex';
+}
 
+function fecharModalAbast() { document.getElementById('modal-confirmar-abast').style.display = 'none'; abastPendente = null; }
+
+function confirmarEEnviarAbastecimento() {
+    if (!abastPendente) return;
+    let p = abastPendente; let t = p.tipo; let pl = p.placa;
+    
     adicionarNaFila(p);
+    alert("✅ Salvo no celular!\n\nO lançamento foi para a fila e será enviado automaticamente."); 
     
-    alert("✅ Salvo no celular!\n\nO lançamento foi para a fila e será enviado automaticamente em 2º plano."); 
+    document.getElementById('abast-km-novo').value = ""; document.getElementById('abast-litros-bomba').value = ""; 
+    document.getElementById('chegada-litros').value = ""; document.getElementById('chegada-nf').value = ""; 
     
-    document.getElementById('abast-km-novo').value = ""; 
-    document.getElementById('abast-litros-bomba').value = ""; 
-    document.getElementById('chegada-litros').value = ""; 
-    document.getElementById('chegada-nf').value = ""; 
-    
-    let hj = new Date(); 
-    let hjStr = String(hj.getDate()).padStart(2,'0') + '/' + String(hj.getMonth()+1).padStart(2,'0') + '/' + hj.getFullYear(); 
-    let newItem = { data: hjStr, placa: pl, litros: p.litros }; 
+    let hj = new Date(); let hjStr = String(hj.getDate()).padStart(2,'0') + '/' + String(hj.getMonth()+1).padStart(2,'0') + '/' + hj.getFullYear(); 
+    let newItem = { data: hjStr, placa: pl, litros: p.litros, usuario: window.usuarioLogado, id_transacao: p.id_transacao, km: p.km }; 
     
     if (!t.includes("CHEGADA")) { 
-        window.frota[pl].km_atual = p.km; 
-        document.getElementById('km-master').value = p.km; 
-        document.getElementById('aviso-ultimo-km').innerText = p.km; 
+        window.frota[pl].km_atual = p.km; document.getElementById('km-master').value = p.km; document.getElementById('aviso-ultimo-km').innerText = p.km; 
         if(t === "DIESEL" || t === "COMBUSTÍVEL") { 
-            window.frota[pl].abast_atual.km_ant = window.frota[pl].abast_atual.km_atual; 
-            window.frota[pl].abast_atual.km_atual = p.km; 
-            window.frota[pl].abast_atual.litros = p.litros; 
-            
-            document.getElementById('abast-km-ant').value = window.frota[pl].abast_atual.km_ant; 
-            document.getElementById('abast-km-atual').value = window.frota[pl].abast_atual.km_atual; 
-            document.getElementById('abast-litros').value = window.frota[pl].abast_atual.litros; 
-            
-            calcularAbastecimento(); 
-            atualizarKMGeral(); 
-            
-            window.frota[pl].gasto_mes = (window.frota[pl].gasto_mes || 0) + p.litros; 
-            document.getElementById('abast-gasto-mes').innerText = window.frota[pl].gasto_mes + " L"; 
-            window.estoqueDiesel -= p.litros; 
-            window.gastoMesGeral += p.litros; 
-            window.histAbast.diesel.unshift(newItem); 
-            window.histAbast.diesel = window.histAbast.diesel.slice(0, 24); 
+            window.frota[pl].abast_atual.km_ant = window.frota[pl].abast_atual.km_atual; window.frota[pl].abast_atual.km_atual = p.km; window.frota[pl].abast_atual.litros = p.litros; 
+            document.getElementById('abast-km-ant').value = window.frota[pl].abast_atual.km_ant; document.getElementById('abast-km-atual').value = window.frota[pl].abast_atual.km_atual; document.getElementById('abast-litros').value = window.frota[pl].abast_atual.litros; 
+            calcularAbastecimento(); atualizarKMGeral(); 
+            window.frota[pl].gasto_mes = (window.frota[pl].gasto_mes || 0) + p.litros; document.getElementById('abast-gasto-mes').innerText = window.frota[pl].gasto_mes + " L"; 
+            window.estoqueDiesel -= p.litros; window.gastoMesGeral += p.litros; 
+            window.histAbast.diesel.unshift(newItem); window.histAbast.diesel = window.histAbast.diesel.slice(0, 24); 
         } 
-        if(t === "ARLA") { 
-            window.estoqueArla -= p.litros; 
-            window.histAbast.arla.unshift(newItem); 
-            window.histAbast.arla = window.histAbast.arla.slice(0, 24); 
-        } 
+        if(t === "ARLA") { window.estoqueArla -= p.litros; window.histAbast.arla.unshift(newItem); window.histAbast.arla = window.histAbast.arla.slice(0, 24); } 
     } else { 
-        if(t === "CHEGADA DE DIESEL") { 
-            window.estoqueDiesel += p.litros; 
-            window.histAbast.cheg_diesel.unshift(newItem); 
-            window.histAbast.cheg_diesel = window.histAbast.cheg_diesel.slice(0, 3); 
-        } 
-        if(t === "CHEGADA DE ARLA") { 
-            window.estoqueArla += p.litros; 
-            window.histAbast.cheg_arla.unshift(newItem); 
-            window.histAbast.cheg_arla = window.histAbast.cheg_arla.slice(0, 3); 
-        } 
+        if(t === "CHEGADA DE DIESEL") { window.estoqueDiesel += p.litros; window.histAbast.cheg_diesel.unshift(newItem); window.histAbast.cheg_diesel = window.histAbast.cheg_diesel.slice(0, 3); } 
+        if(t === "CHEGADA DE ARLA") { window.estoqueArla += p.litros; window.histAbast.cheg_arla.unshift(newItem); window.histAbast.cheg_arla = window.histAbast.cheg_arla.slice(0, 3); } 
     } 
-    preencherDataHoraAbast(); 
-    renderizarHistoricoAbast(); 
-    salvarCacheLocal();
+    preencherDataHoraAbast(); renderizarHistoricoAbast(); salvarCacheLocal();
+    fecharModalAbast();
+    voltarParaPlacas();
+}
+
+function renderizarHistoricoAbast() { 
+    let construtorHTML = (lista, isChegada) => { 
+        if (!lista || lista.length === 0) return "<p style='color:#666; font-size:12px; margin:0;'>Nenhum registro encontrado.</p>"; 
+        return lista.map(i => {
+            let btnEdit = (i.usuario === window.usuarioLogado && i.id_transacao && !isChegada) ? 
+                `<span style="cursor:pointer; font-size:14px; margin-left:8px; background:#e5e7eb; padding:2px 5px; border-radius:5px;" onclick="abrirModalEditAbast('${i.id_transacao}', '${i.placa}', '${i.litros}', '${i.km}')">✏️ Edit</span>` : "";
+            return `<div style="display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid #eee; font-size:12px;"><span>📅 ${i.data} ${isChegada ? '' : `- <b>${i.placa}</b>`} ${btnEdit}</span><span style="font-weight:bold; color:${isChegada ? '#1a4d2e' : '#b30000'};">${isChegada ? '+' : '-'} ${i.litros} L</span></div>`;
+        }).join(''); 
+    }; 
+    let eD = document.getElementById('hist-abast-diesel'); if(eD) eD.innerHTML = construtorHTML(window.histAbast.diesel, false); 
+    let eA = document.getElementById('hist-abast-arla'); if(eA) eA.innerHTML = construtorHTML(window.histAbast.arla, false); 
+    let eCD = document.getElementById('hist-cheg-diesel'); if(eCD) eCD.innerHTML = construtorHTML(window.histAbast.cheg_diesel, true); 
+    let eCA = document.getElementById('hist-cheg-arla'); if(eCA) eCA.innerHTML = construtorHTML(window.histAbast.cheg_arla, true); 
+} 
+
+let editAbastId = "";
+function abrirModalEditAbast(id, placa, litros, km) {
+    editAbastId = id;
+    document.getElementById('edit-abast-placa').innerText = placa;
+    document.getElementById('edit-abast-litros').value = litros;
+    document.getElementById('edit-abast-km').value = km;
+    document.getElementById('modal-editar-abast').style.display = 'flex';
+}
+function fecharModalEditAbast() { document.getElementById('modal-editar-abast').style.display = 'none'; editAbastId = ""; }
+
+function salvarEdicaoAbast() {
+    let nLitros = parseFloat(document.getElementById('edit-abast-litros').value);
+    let nKm = parseFloat(document.getElementById('edit-abast-km').value);
+    if(!nLitros || !nKm) return alert("Preencha KM e Litros corretamente.");
     
-    btn.innerText = "💾 Salvar Lançamento"; 
-    btn.disabled = false;
+    let p = { acao: "editar_abastecimento", id_transacao: editAbastId, litros: nLitros, km: nKm, usuario: window.usuarioLogado };
+    adicionarNaFila(p);
+    
+    window.histAbast.diesel.forEach(h => { if(h.id_transacao === editAbastId) { h.litros = nLitros; h.km = nKm; } });
+    renderizarHistoricoAbast(); salvarCacheLocal();
+    alert("✅ Edição salva! Será enviada na próxima sincronização.");
+    fecharModalEditAbast();
 }
 
 function renderizarEstoquePecas() { let container = document.getElementById('lista-estoque-atual'); let comboMov = document.getElementById('est-item'); let comboCompra = document.getElementById('lista-pecas'); if(!container || !comboMov) return; if (!window.estoquePecas || window.estoquePecas.length === 0) { container.innerHTML = "<p style='text-align:center; color:#666;'>Nenhuma peça cadastrada no estoque.</p>"; return; } let htmlStr = ""; let comboStrMov = ""; let comboStrCompra = ""; window.estoquePecas.forEach((peca, index) => { htmlStr += `<div style="border-bottom: 1px dashed #ccc; padding: 10px 0; margin-bottom: 5px;"><div style="font-weight:bold; color:#1a4d2e; margin-bottom:5px; font-size:14px;">${peca.item}</div><div style="display:flex; justify-content:space-between; gap:5px;"><div style="flex:1;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Qtd Estoque:</span><input type="number" id="est-edit-qtd-${index}" class="input-editavel travado est-edit-input" value="${peca.qtd || 0}" readonly style="width:100%;"></div><div style="flex:1;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Vlr Pago (R$):</span><input type="number" id="est-edit-valor-${index}" class="input-editavel travado est-edit-input" value="${peca.valor || 0}" readonly style="width:100%;"></div></div><div style="margin-top:5px;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Data Últ. Compra:</span><input type="date" id="est-edit-data-${index}" class="input-editavel travado est-edit-input" value="${peca.data_compra || ''}" readonly style="width:100%;"></div></div>`; comboStrMov += `<option value="${index}">${peca.item}</option>`; comboStrCompra += `<option value="${peca.item}"></option>`; }); comboMov.innerHTML = comboStrMov; if(comboCompra) comboCompra.innerHTML = comboStrCompra; container.innerHTML = htmlStr; } function alternarEdicaoEstoque() { let inputs = document.querySelectorAll('.est-edit-input'); let btn = document.getElementById('btn-editar-estoque'); if (!inputs || inputs.length === 0) return; if (inputs[0].hasAttribute('readonly')) { inputs.forEach(x => { x.removeAttribute('readonly'); x.classList.remove('travado'); }); btn.innerHTML = "💾 Salvar"; btn.style.backgroundColor = "#1a4d2e"; btn.style.color = "white"; } else { inputs.forEach(x => { x.setAttribute('readonly', 'true'); x.classList.add('travado'); }); btn.innerHTML = "✏️ Editar"; btn.style.backgroundColor = "transparent"; btn.style.color = "#1a4d2e"; salvarEdicaoEstoqueNuvem(); } } 
@@ -621,7 +622,7 @@ async function enviarChecklistCarro() {
     salvarCacheLocal();
 
     alert("✅ Inspeção finalizada localmente!\n\nO PDF será gerado na nuvem na próxima sincronização em 2º plano."); 
-    escolherModulo('Checklist');
+    voltarParaPlacas();
     btn.innerText = "💾 Enviar Inspeção e PDF"; btn.disabled = false; 
 }
 
@@ -677,7 +678,7 @@ async function enviarChecklist() {
     salvarCacheLocal();
 
     alert("✅ Sucesso!\n\nO checklist foi salvo no celular e o PDF será gerado na nuvem durante a sincronização."); 
-    escolherModulo('Checklist');
+    voltarParaPlacas();
     
     btn.innerText = "💾 Enviar Checklist e Gerar PDF"; 
     btn.disabled = false;
@@ -692,6 +693,6 @@ async function enviarChecklistEmpilhadeira() {
     salvarCacheLocal();
 
     alert("✅ Inspeção salva localmente!\nSerá sincronizada em 2º plano automaticamente."); 
-    escolherModulo('Checklist');
+    voltarParaPlacas();
     btn.innerText = "💾 Enviar Inspeção e PDF"; btn.disabled = false;
 }
