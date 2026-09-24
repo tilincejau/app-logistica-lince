@@ -12,6 +12,9 @@
     --text-muted: #6b7280;
     --border-color: #e5e7eb;
     --input-bg: #f9fafb;
+    /* ALINHAMENTO DOS NOVOS ÍCONES PHOSPHOR */
+   i.ph, i.ph-fill { font-size: 1.2em; vertical-align: middle; margin-right: 5px; margin-top: -2px; }
+   button i.ph, button i.ph-fill { margin-right: 8px; }
 }
 
 body { 
