@@ -3,9 +3,8 @@
    Gerencia a inversão do Menu -> Placa, Validações, Fotos, PDF, etc.
    ========================================================= */
 
-// ATENÇÃO: COLOQUE AQUI O SEU NOVO LINK DO GOOGLE APPS SCRIPT
-const API_URL = "https://script.google.com/macros/s/AKfycbxq1Ap2LEJp1IrQXtvlBa2XPjTKy2Iz24POlCEJhgv_lPLijE0TPXFzepr6D1qbcNRU/exec";
-const APP_VERSAO = "1.7"; // Forçando atualização de cache
+const API_URL = "COLE_AQUI_SEU_LINK_DO_APPS_SCRIPT";
+const APP_VERSAO = "1.8"; // Forçando atualização de cache
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
@@ -200,7 +199,7 @@ window.onload = function() {
 async function fazerLogin() { 
     let u = document.getElementById('campo-usuario').value; let s = document.getElementById('campo-senha').value; let msg = document.getElementById('mensagem-erro'); let btn = document.getElementById('btn-login'); 
     if (!u || !s) { msg.innerHTML = "<i class='ph ph-warning'></i> Preencha usuário e senha!"; msg.style.display = 'block'; return; } 
-    if (API_URL === "SEU_LINK_AQUI" || !API_URL) { msg.innerHTML = "<i class='ph ph-warning'></i> A URL do Sistema não foi configurada!"; msg.style.display = 'block'; return; }
+    if (API_URL === "COLE_AQUI_SEU_LINK_DO_APPS_SCRIPT" || !API_URL) { msg.innerHTML = "<i class='ph ph-warning'></i> A URL do Sistema não foi configurada!"; msg.style.display = 'block'; return; }
     btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Baixando Dados..."; msg.style.display = 'none'; 
     try { 
         let req1 = await fetch(`${API_URL}?acao=login&usuario=${u}&senha=${s}`); let res1 = await req1.json(); 
