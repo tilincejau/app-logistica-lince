@@ -4,7 +4,7 @@
    ========================================================= */
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxq1Ap2LEJp1IrQXtvlBa2XPjTKy2Iz24POlCEJhgv_lPLijE0TPXFzepr6D1qbcNRU/exec";
-const APP_VERSAO = "1.4"; // Atualizado com Botão de Sincronia Manual e Fix Visual
+const APP_VERSAO = "1.2"; // Atualizado com Botão de Sincronia Manual e Fix Visual
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
