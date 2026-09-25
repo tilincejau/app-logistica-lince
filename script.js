@@ -3,14 +3,13 @@
    Gerencia a inversão do Menu -> Placa, Validações, Fotos, PDF, etc.
    ========================================================= */
 
-// ATENÇÃO: COLOQUE AQUI O SEU NOVO LINK DO GOOGLE APPS SCRIPT
-const API_URL = "https://script.google.com/macros/s/AKfycbxq1Ap2LEJp1IrQXtvlBa2XPjTKy2Iz24POlCEJhgv_lPLijE0TPXFzepr6D1qbcNRU/exec";
-const APP_VERSAO = "1.9"; // Versão atualizada para forçar a limpeza de cache
+const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
+const APP_VERSAO = "2.0"; // Versão 2.0 para forçar a limpeza da cache
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
 const EMPILHADEIRAS = ['05025DR3290', '05025DR8824'];
-const TRUCKS = ['FEE9E40']; // Apenas esta placa tem os pneus TK
+const TRUCKS = ['FEE9E40'];
 const TOCOS = ['AXZ1D53', 'FCT1J98', 'FIF9A30', 'FMQ8H77', 'FPJ1B16', 'FUH9H91', 'IVE8J03', 'NTP4G17', 'FMR4I10', 'FQY6B30', 'TKR8I49', 'TLL8H30', 'TLY0G57', 'UDN0J81', 'UPS1J80', 'UPX9D25', 'URT4E79', 'URU3F36'];
 
 window.isCavalo = false; window.isTruck = false; window.isToco = false; window.isCarro = false; window.isEmpilhadeira = false;
@@ -78,37 +77,33 @@ async function sincronizarSegundoPlano(manual = false) {
         try {
             let p = {...reqPayload}; delete p._localId;
             
-            // Tenta enviar para o Google
             let resp = await fetch(API_URL, { 
                 method: 'POST', 
                 body: JSON.stringify(p),
                 headers: { "Content-Type": "text/plain;charset=utf-8" }
             });
             
-            let txt = await resp.text();
             let resJSON;
-            
-            // Verifica se o Google devolveu HTML (Erro de URL) ou JSON
             try {
-                resJSON = JSON.parse(txt);
-            } catch(errParse) {
-                Swal.fire("Erro de Rota (Google)", "O script do Google recusou a conexão. Verifique se a URL está certa e se você gerou uma NOVA Implantação.<br><br>Detalhe: " + txt.substring(0,100), "error");
+                resJSON = await resp.json();
+            } catch(e) {
+                Swal.fire("Erro Crítico (Google)", "O link não é válido ou a implantação falhou. Verifique o link do Apps Script.", "error");
                 break;
             }
 
-            // Verifica se o código lá no Google deu erro de lógica
-            if(resJSON.erro) {
+            if (resJSON.erro) {
                 Swal.fire("Erro na Planilha/Código.gs", resJSON.erro, "error");
                 break;
             }
-            
-            // Deu tudo certo, tira o dado da fila do celular
-            let filaAtual = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
-            filaAtual = filaAtual.filter(item => item._localId !== reqPayload._localId);
-            localStorage.setItem('lince_fila_requisicoes', JSON.stringify(filaAtual));
-            processouAlgo = true;
+
+            if (resJSON.sucesso) {
+                let filaAtual = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
+                filaAtual = filaAtual.filter(item => item._localId !== reqPayload._localId);
+                localStorage.setItem('lince_fila_requisicoes', JSON.stringify(filaAtual));
+                processouAlgo = true;
+            }
         } catch (e) { 
-            Swal.fire("Erro de Rede", "Bloqueio ao tentar enviar: " + e.message, "error");
+            Swal.fire("Erro de Conexão", "Servidor inacessível no momento: " + e.message, "error");
             break; 
         }
     }
@@ -198,30 +193,12 @@ window.onload = function() {
 
     let construtorFicha = (arr, isCar) => arr.map(p => `<details><summary>${p.n}</summary><div class="pneu-detalhes"><div class="linha-info"><span class="info-label" style="margin:0;">Estado:</span> <span class="info-valor" id="${isCar?'carro-':''}estado-${p.id}" style="font-weight:bold;">---</span></div><div class="linha-info"><span class="info-label" style="margin:0;">TWI:</span> <span class="info-valor" id="${isCar?'carro-':''}twi-${p.id}">---</span></div><div class="linha-info" style="margin-top:10px;"><span class="info-label" style="margin:0;">KM Troca:</span> <input type="number" id="${isCar?'carro-':''}km-troca-${p.id}" class="input-editavel travado" value="0" readonly></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Data Troca:</span> <input type="date" id="${isCar?'carro-':''}data-troca-${p.id}" class="input-editavel travado" readonly></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Pneu Colocado:</span> <select id="${isCar?'carro-':''}pneu-colocado-${p.id}" class="input-editavel travado" disabled style="background-color: transparent;"><option value="NOVO">NOVO</option><option value="1 RESSOLAGEM">1 RESSOLAGEM</option><option value="2 RESSOLAGEM">2 RESSOLAGEM</option><option value="3 RESSOLAGEM">3 RESSOLAGEM</option></select></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Últ. Rodízio:</span> <input type="date" id="${isCar?'carro-':''}data-rodizio-${p.id}" class="input-editavel travado" readonly></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Próx Rodízio (KM):</span> <input type="number" id="${isCar?'carro-':''}prox-rodizio-${p.id}" class="input-editavel travado" value="0" readonly oninput="calcularRodizioPneus()"></div><div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label" style="margin:0;">Status Rodízio:</span> <span id="${isCar?'carro-':''}status-rod-${p.id}" style="font-weight:bold;">---</span></div></div></details>`).join('');
     let construtorChk = (arr, isCar) => arr.map(p => `<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;"><span style="font-weight: bold; width: 50px; color:${arr===pneusCarreta?'#0056b3':'#333'};">${p.n}</span><input type="number" id="${isCar?'chk-carro-twi-':'chk-twi-'}${p.id}" placeholder="mm" class="input-campo" style="margin:0; width: 80px; padding: 10px; text-align:center;" oninput="calcularStatusTwi(this, '${isCar?'badge-carro-estado-':'badge-estado-'}${p.id}')"><span id="${isCar?'badge-carro-estado-':'badge-estado-'}${p.id}" class="twi-estado-badge" style="flex: 1;">Aguardando...</span></div>`).join('');
-    
     htmlFichaTruck = construtorFicha(pneusTruck, false); htmlChkTruck = construtorChk(pneusTruck, false);
     htmlFichaToco = construtorFicha(pneusToco, false); htmlChkToco = construtorChk(pneusToco, false);
     htmlFichaCarreta = construtorFicha(pneusCarreta, false); htmlChkCarreta = construtorChk(pneusCarreta, false);
     htmlFichaCarro = construtorFicha(pneusCarro, true); htmlChkCarro = construtorChk(pneusCarro, true);
     
-    document.querySelectorAll('.img-placa').forEach(img => { 
-        let onclickVal = img.getAttribute('onclick'); 
-        if(onclickVal) { 
-            let match = onclickVal.match(/'([^']+)'/); 
-            if(match && match[1] !== 'OUTROS') { 
-                let placa = match[1]; 
-                let wrapper = document.createElement('div'); 
-                wrapper.style.position = 'relative'; 
-                img.parentNode.insertBefore(wrapper, img); 
-                wrapper.appendChild(img); 
-                let check = document.createElement('div'); 
-                check.id = 'check-' + placa; 
-                check.innerHTML = '<i class="ph-fill ph-check-circle" style="color:#10b981;"></i>'; 
-                check.style.cssText = 'display:none; align-items:center; justify-content:center; position:absolute; top:-5px; right:-5px; font-size:24px; background:#fff; border-radius:50%; box-shadow:0 2px 4px rgba(0,0,0,0.3); z-index:10;'; 
-                wrapper.appendChild(check); 
-            } 
-        } 
-    });
+    document.querySelectorAll('.img-placa').forEach(img => { let onclickVal = img.getAttribute('onclick'); if(onclickVal) { let match = onclickVal.match(/'([^']+)'/); if(match && match[1] !== 'OUTROS') { let placa = match[1]; let wrapper = document.createElement('div'); wrapper.style.position = 'relative'; img.parentNode.insertBefore(wrapper, img); wrapper.appendChild(img); let check = document.createElement('div'); check.id = 'check-' + placa; check.innerHTML = '<i class="ph-fill ph-check-circle" style="color:#10b981;"></i>'; check.style.cssText = 'display:none; align-items:center; justify-content:center; position:absolute; top:-5px; right:-5px; font-size:24px; background:#fff; border-radius:50%; box-shadow:0 2px 4px rgba(0,0,0,0.3); z-index:10;'; wrapper.appendChild(check); } } });
 
     let bdSalvo = localStorage.getItem('lince_logistica_bd');
     if (bdSalvo) {
@@ -242,72 +219,30 @@ window.onload = function() {
 };
 
 async function fazerLogin() { 
-    let u = document.getElementById('campo-usuario').value; 
-    let s = document.getElementById('campo-senha').value; 
-    let msg = document.getElementById('mensagem-erro'); 
-    let btn = document.getElementById('btn-login'); 
-    
-    if (!u || !s) { 
-        msg.innerHTML = "<i class='ph ph-warning'></i> Preencha usuário e senha!"; 
-        msg.style.display = 'block'; 
-        return; 
-    } 
-    
-    if (API_URL === "COLE_AQUI_SEU_LINK_DO_APPS_SCRIPT" || API_URL === "SEU_LINK_AQUI" || !API_URL) { 
-        msg.innerHTML = "<i class='ph ph-warning'></i> A URL do Sistema não foi configurada no script.js!"; 
-        msg.style.display = 'block'; 
-        return; 
-    }
-    
-    btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Baixando Dados..."; 
-    msg.style.display = 'none'; 
-    
+    let u = document.getElementById('campo-usuario').value; let s = document.getElementById('campo-senha').value; let msg = document.getElementById('mensagem-erro'); let btn = document.getElementById('btn-login'); 
+    if (!u || !s) { msg.innerHTML = "<i class='ph ph-warning'></i> Preencha usuário e senha!"; msg.style.display = 'block'; return; } 
+    if (API_URL === "COLE_AQUI_O_NOVO_LINK_QUE_GEROU_AGORA" || !API_URL) { msg.innerHTML = "<i class='ph ph-warning'></i> A URL do Sistema não foi configurada!"; msg.style.display = 'block'; return; }
+    btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Baixando..."; msg.style.display = 'none'; 
     try { 
-        let req1 = await fetch(`${API_URL}?acao=login&usuario=${u}&senha=${s}`); 
-        let res1 = await req1.json(); 
-        
+        let req1 = await fetch(`${API_URL}?acao=login&usuario=${u}&senha=${s}`); let res1 = await req1.json(); 
         if (res1.sucesso) { 
-            window.usuarioLogado = u; 
-            localStorage.setItem('lince_logistica_user', JSON.stringify({u: u, s: s}));
-            
-            let req2 = await fetch(`${API_URL}?acao=buscar_inicial`); 
-            let res2 = await req2.json(); 
-            
+            window.usuarioLogado = u; localStorage.setItem('lince_logistica_user', JSON.stringify({u: u, s: s}));
+            let req2 = await fetch(`${API_URL}?acao=buscar_inicial`); let res2 = await req2.json(); 
             if (res2.sucesso) { 
-                atualizarVariaveisGlobais(res2); 
-                localStorage.setItem('lince_logistica_bd', JSON.stringify(res2));
-                esconderTodasTelas(); 
-                document.getElementById('tela-menu').style.display = 'flex'; 
-            } else { 
-                msg.innerHTML = "<i class='ph ph-x-circle'></i> Erro ao baixar dados: " + res2.erro; 
-                msg.style.display = 'block'; 
-            } 
-        } else { 
-            msg.innerHTML = "<i class='ph ph-x-circle'></i> Credenciais incorretas!"; 
-            msg.style.display = 'block'; 
-        } 
-    } catch (e) { 
-        msg.innerHTML = "<i class='ph ph-wifi-x'></i> Erro de rede ou Link Bloqueado."; 
-        msg.style.display = 'block'; 
-        console.error(e); 
-    } 
+                atualizarVariaveisGlobais(res2); localStorage.setItem('lince_logistica_bd', JSON.stringify(res2));
+                esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; 
+            } else { msg.innerHTML = "<i class='ph ph-x-circle'></i> Erro: " + res2.erro; msg.style.display = 'block'; } 
+        } else { msg.innerHTML = "<i class='ph ph-x-circle'></i> Credenciais incorretas!"; msg.style.display = 'block'; } 
+    } catch (e) { msg.innerHTML = "<i class='ph ph-wifi-x'></i> Erro de comunicação."; msg.style.display = 'block'; console.error(e); } 
     btn.innerHTML = "<i class='ph ph-sign-in'></i> Entrar"; 
 }
 
 function esconderTodasTelas() { 
-    document.getElementById('tela-login').style.display = 'none'; 
-    document.getElementById('tela-placas').style.display = 'none'; 
-    document.getElementById('tela-menu').style.display = 'none'; 
-    document.getElementById('tela-submenu-estoque').style.display = 'none'; 
-    document.getElementById('tela-interna').style.display = 'none'; 
+    document.getElementById('tela-login').style.display = 'none'; document.getElementById('tela-placas').style.display = 'none'; document.getElementById('tela-menu').style.display = 'none'; document.getElementById('tela-submenu-estoque').style.display = 'none'; document.getElementById('tela-interna').style.display = 'none'; 
 } 
 
 function sairDaConta() { 
-    localStorage.removeItem('lince_logistica_user'); 
-    window.usuarioLogado = ""; 
-    esconderTodasTelas(); 
-    document.getElementById('campo-senha').value = ''; 
-    document.getElementById('tela-login').style.display = 'flex'; 
+    localStorage.removeItem('lince_logistica_user'); window.usuarioLogado = ""; esconderTodasTelas(); document.getElementById('campo-senha').value = ''; document.getElementById('tela-login').style.display = 'flex'; 
 } 
 
 function voltarParaPlacas() { esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex'; } 
@@ -342,55 +277,25 @@ function escolherModulo(modulo) {
 }
 
 function abrirModuloEstoque(sub) { 
-    document.getElementById('card-est-posicao').style.display = (sub === 'posicao') ? 'block' : 'none'; 
-    document.getElementById('card-est-movimentacao').style.display = (sub === 'movimentacao') ? 'block' : 'none'; 
-    document.getElementById('card-est-compra').style.display = (sub === 'compra') ? 'block' : 'none'; 
-    document.getElementById('titulo-tela-interna').innerHTML = sub === 'posicao' ? '<i class="ph ph-chart-bar"></i> Posição do Estoque' : (sub === 'movimentacao' ? '<i class="ph ph-arrows-left-right"></i> Entrada / Saída' : '<i class="ph ph-shopping-cart"></i> Solicitar Compra'); 
-    
-    let secoes = document.getElementsByClassName('secao-conteudo'); 
-    for (let i = 0; i < secoes.length; i++) { secoes[i].style.display = 'none'; } 
-    
-    document.getElementById('conteudo-Estoque').style.display = 'flex'; 
-    document.getElementById('alerta-veiculo-interna').style.display = 'none'; 
-    document.getElementById('btn-trocar-veiculo').style.display = 'none'; 
-    document.getElementById('btn-voltar-menu').onclick = function() { esconderTodasTelas(); document.getElementById('tela-submenu-estoque').style.display = 'flex'; }; 
-    esconderTodasTelas(); 
-    document.getElementById('tela-interna').style.display = 'flex'; 
+    document.getElementById('card-est-posicao').style.display = (sub === 'posicao') ? 'block' : 'none'; document.getElementById('card-est-movimentacao').style.display = (sub === 'movimentacao') ? 'block' : 'none'; document.getElementById('card-est-compra').style.display = (sub === 'compra') ? 'block' : 'none'; document.getElementById('titulo-tela-interna').innerHTML = sub === 'posicao' ? '<i class="ph ph-chart-bar"></i> Posição do Estoque' : (sub === 'movimentacao' ? '<i class="ph ph-arrows-left-right"></i> Entrada / Saída' : '<i class="ph ph-shopping-cart"></i> Solicitar Compra'); 
+    let secoes = document.getElementsByClassName('secao-conteudo'); for (let i = 0; i < secoes.length; i++) { secoes[i].style.display = 'none'; } 
+    document.getElementById('conteudo-Estoque').style.display = 'flex'; document.getElementById('alerta-veiculo-interna').style.display = 'none'; document.getElementById('btn-trocar-veiculo').style.display = 'none'; document.getElementById('btn-voltar-menu').onclick = function() { esconderTodasTelas(); document.getElementById('tela-submenu-estoque').style.display = 'flex'; }; esconderTodasTelas(); document.getElementById('tela-interna').style.display = 'flex'; 
 }
 
 async function selecionarPlaca(placa, bypassTrava = false) { 
     if (placa === 'OUTROS') { 
-        if (typeof Swal === 'undefined') { alert("Erro ao carregar bibliotecas. Recarregue a página."); return; }
-        
-        const { value: pC } = await Swal.fire({
-            title: 'Outro Veículo',
-            input: 'text',
-            inputLabel: 'Digite a placa do veículo (Ex: ABC-1234):',
-            showCancelButton: true,
-            confirmButtonText: 'Confirmar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#1a4d2e'
-        });
+        if (typeof Swal === 'undefined') { alert("Erro ao carregar bibliotecas."); return; }
+        const { value: pC } = await Swal.fire({ title: 'Outro Veículo', input: 'text', inputLabel: 'Digite a placa:', showCancelButton: true, confirmButtonColor: '#1a4d2e' });
         if (!pC) return; 
         placa = pC.toUpperCase().replace(/[^A-Z0-9]/g, ''); 
 
-        const { value: cat } = await Swal.fire({
-            title: 'Categoria',
-            input: 'select',
-            inputOptions: { '1': 'Caminhão', '2': 'Cavalo', '3': 'Utilitário/Carro', '4': 'Empilhadeira' },
-            inputPlaceholder: 'Selecione a categoria',
-            showCancelButton: true,
-            confirmButtonText: 'Confirmar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#1a4d2e'
-        });
+        const { value: cat } = await Swal.fire({ title: 'Categoria', input: 'select', inputOptions: { '1': 'Caminhão', '2': 'Cavalo', '3': 'Utilitário/Carro', '4': 'Empilhadeira' }, showCancelButton: true, confirmButtonColor: '#1a4d2e' });
         if(!cat) return;
         let tipoVeiculo = "CAMINHAO";
         if(cat === "2") { tipoVeiculo = "CAVALO"; CAVALOS.push(placa); }
         else if(cat === "3") { tipoVeiculo = "CARRO"; CARROS.push(placa); }
         else if(cat === "4") { tipoVeiculo = "EMPILHADEIRA"; EMPILHADEIRAS.push(placa); }
         else { TRUCKS.push(placa); }
-        
         if (!window.frota[placa]) { window.frota[placa] = { km_atual: 0, gasto_mes: 0, pneus: {}, tipo: tipoVeiculo, categoria_temp: tipoVeiculo, abast_atual: { km_atual: 0, litros: 0, km_ant: 0 } }; } 
     } 
 
@@ -403,25 +308,13 @@ async function selecionarPlaca(placa, bypassTrava = false) {
             if (dataStr.includes('/')) { let partes = dataStr.split(' ')[0].split('/'); dataObj = new Date(partes[2], partes[1] - 1, partes[0]); } else { dataObj = new Date(dataStr); }
             return (dataObj >= inicioSemana && String(h.placa).trim().toUpperCase() === placa.trim().toUpperCase());
         });
-        
         if (jaFeito) {
-            const result = await Swal.fire({
-                title: 'Atenção!',
-                text: `O Checklist para a placa ${placa} JÁ FOI FEITO nesta semana! Deseja preencher um NOVO checklist?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#1a4d2e',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Sim, preencher',
-                cancelButtonText: 'Cancelar'
-            });
+            const result = await Swal.fire({ title: 'Atenção!', text: `O Checklist para a placa ${placa} JÁ FOI FEITO nesta semana! Deseja preencher um NOVO checklist?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#1a4d2e', cancelButtonColor: '#d33', confirmButtonText: 'Sim', cancelButtonText: 'Não' });
             if (!result.isConfirmed) return;
         }
     }
 
-    let dados = window.frota[placa]; 
-    if (!dados) { Swal.fire("Atenção", "Veículo não encontrado!", "warning"); return; }
-    
+    let dados = window.frota[placa]; if (!dados) { Swal.fire("Atenção", "Veículo não encontrado!", "warning"); return; }
     document.getElementById('texto-placa-interna').innerText = placa; 
     
     window.isCavalo = CAVALOS.includes(placa.trim()); window.isTruck = TRUCKS.includes(placa.trim()); window.isToco = TOCOS.includes(placa.trim()); window.isCarro = CARROS.includes(placa.trim()); window.isEmpilhadeira = EMPILHADEIRAS.includes(placa.trim());
@@ -430,7 +323,6 @@ async function selecionarPlaca(placa, bypassTrava = false) {
     let ctCaminhao = document.getElementById('ficha-pneus-caminhao-container'); let chkCaminhao = document.getElementById('chk-pneus-caminhao-container'); 
     let ctCarreta = document.getElementById('ficha-pneus-carreta-container'); let chkCarreta = document.getElementById('chk-pneus-carreta-container'); 
     let ctCarro = document.getElementById('ficha-pneus-carro-container'); let chkCarro = document.getElementById('chk-pneus-carro-container'); 
-    
     if (window.isCarro) { 
         if(ctCarro) ctCarro.innerHTML = htmlFichaCarro; if(chkCarro) chkCarro.innerHTML = htmlChkCarro; 
         if(ctCaminhao) ctCaminhao.innerHTML = ""; if(chkCaminhao) chkCaminhao.innerHTML = ""; 
@@ -441,82 +333,29 @@ async function selecionarPlaca(placa, bypassTrava = false) {
         if(ctCarreta) ctCarreta.innerHTML = htmlFichaCarreta; if(chkCarreta) chkCarreta.innerHTML = htmlChkCarreta; 
         if(ctCarro) ctCarro.innerHTML = ""; if(chkCarro) chkCarro.innerHTML = ""; 
     } 
-    
-    document.querySelectorAll('.is-carreta').forEach(el => { el.style.display = window.isCavalo ? 'block' : 'none'; }); 
-    document.querySelectorAll('.esconder-carro').forEach(el => { el.style.display = (window.isCarro || window.isEmpilhadeira) ? 'none' : 'block'; }); 
-    document.querySelectorAll('.mostrar-carro').forEach(el => { el.style.display = window.isCarro ? 'block' : 'none'; }); 
-    document.querySelectorAll('.esconder-cavalo-chk').forEach(el => { el.style.display = (window.isCavalo || window.isEmpilhadeira) ? 'none' : 'block'; }); 
-    
-    let selAbast = document.getElementById('tipo-abast'); 
-    if (window.isCarro) { 
-        selAbast.innerHTML = `<option value="DIESEL">Abastecer COMBUSTÍVEL no Veículo</option><option value="CHEGADA DE DIESEL">📥 Receber COMBUSTÍVEL (Estoque)</option>`; 
-    } else { 
-        selAbast.innerHTML = `<option value="DIESEL">Abastecer DIESEL no Caminhão</option><option value="ARLA">Abastecer ARLA no Caminhão</option><option value="CHEGADA DE DIESEL">📥 Receber CHEGADA DE DIESEL</option><option value="CHEGADA DE ARLA">📥 Receber CHEGADA DE ARLA</option>`; 
-    } 
-    
-    let elTipo = document.getElementById('tipo-veiculo'); if(elTipo) elTipo.value = dados.tipo || ""; 
-    let elMotorista = document.getElementById('nome-motorista'); if(elMotorista) elMotorista.value = dados.motorista || ""; 
-    let formatNum = v => v ? String(v).replace(/[^0-9]/g, '') : ""; 
-    let elKm = document.getElementById('km-master'); if(elKm) elKm.value = formatNum(dados.km_atual); 
-    let elO = document.getElementById('km-proxima-troca'); if(elO) elO.value = formatNum(dados.km_oleo); 
-    let elT = document.getElementById('data-proxima-afericao'); if(elT) elT.value = dados.data_tacografo || ""; 
-    let elG = document.getElementById('data-engraxada'); if(elG) elG.value = dados.data_graxa || ""; 
-    let elCar = document.getElementById('qtd-carrinhos'); if(elCar) elCar.value = dados.qtd_carrinhos || 0; 
-    let elCon = document.getElementById('qtd-cones'); if(elCon) elCon.value = dados.qtd_cones || 0; 
-    let elCal = document.getElementById('qtd-calcos'); if(elCal) elCal.value = dados.qtd_calcos || 0; 
-    let elExt = document.getElementById('data-extintor-ficha'); if(elExt) elExt.value = dados.data_extintor || ""; 
-    urlDocAtual = dados.link_documento || ""; 
-    
+    document.querySelectorAll('.is-carreta').forEach(el => { el.style.display = window.isCavalo ? 'block' : 'none'; }); document.querySelectorAll('.esconder-carro').forEach(el => { el.style.display = (window.isCarro || window.isEmpilhadeira) ? 'none' : 'block'; }); document.querySelectorAll('.mostrar-carro').forEach(el => { el.style.display = window.isCarro ? 'block' : 'none'; }); document.querySelectorAll('.esconder-cavalo-chk').forEach(el => { el.style.display = (window.isCavalo || window.isEmpilhadeira) ? 'none' : 'block'; }); 
+    let selAbast = document.getElementById('tipo-abast'); if (window.isCarro) { selAbast.innerHTML = `<option value="DIESEL">Abastecer COMBUSTÍVEL no Veículo</option><option value="CHEGADA DE DIESEL">📥 Receber COMBUSTÍVEL (Estoque)</option>`; } else { selAbast.innerHTML = `<option value="DIESEL">Abastecer DIESEL no Caminhão</option><option value="ARLA">Abastecer ARLA no Caminhão</option><option value="CHEGADA DE DIESEL">📥 Receber CHEGADA DE DIESEL</option><option value="CHEGADA DE ARLA">📥 Receber CHEGADA DE ARLA</option>`; } 
+    let elTipo = document.getElementById('tipo-veiculo'); if(elTipo) elTipo.value = dados.tipo || ""; let elMotorista = document.getElementById('nome-motorista'); if(elMotorista) elMotorista.value = dados.motorista || ""; let formatNum = v => v ? String(v).replace(/[^0-9]/g, '') : ""; let elKm = document.getElementById('km-master'); if(elKm) elKm.value = formatNum(dados.km_atual); let elO = document.getElementById('km-proxima-troca'); if(elO) elO.value = formatNum(dados.km_oleo); let elT = document.getElementById('data-proxima-afericao'); if(elT) elT.value = dados.data_tacografo || ""; let elG = document.getElementById('data-engraxada'); if(elG) elG.value = dados.data_graxa || ""; let elCar = document.getElementById('qtd-carrinhos'); if(elCar) elCar.value = dados.qtd_carrinhos || 0; let elCon = document.getElementById('qtd-cones'); if(elCon) elCon.value = dados.qtd_cones || 0; let elCal = document.getElementById('qtd-calcos'); if(elCal) elCal.value = dados.qtd_calcos || 0; let elExt = document.getElementById('data-extintor-ficha'); if(elExt) elExt.value = dados.data_extintor || ""; urlDocAtual = dados.link_documento || ""; 
     let abData = dados.abast_atual || {km_ant: 0, km_atual: 0, litros: 0};
-    document.getElementById('abast-km-ant').value = abData.km_ant; 
-    document.getElementById('abast-km-atual').value = abData.km_atual; 
-    document.getElementById('abast-litros').value = abData.litros;
+    document.getElementById('abast-km-ant').value = abData.km_ant; document.getElementById('abast-km-atual').value = abData.km_atual; document.getElementById('abast-litros').value = abData.litros;
     
     if (dados.pneus && !window.isEmpilhadeira) { 
         let pIds = window.isCarro ? ['dd','de','td','te'] : (window.isToco ? ['dd','de','tde','tdi','tee','tei','1step'] : ['dd','de','tde','tdi','tee','tei','tkde','tkdi','tkee','tkei','1step','c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','c11','c12','2step']);
         let pref = window.isCarro ? 'carro-' : ''; 
         pIds.forEach(pos => { 
             let pneu = dados.pneus[pos] || {}; 
-            let elEstado = document.getElementById(`${pref}estado-${pos}`); 
-            let elTwi = document.getElementById(`${pref}twi-${pos}`); 
-            let elKmTroca = document.getElementById(`${pref}km-troca-${pos}`); 
-            let elDataTroca = document.getElementById(`${pref}data-troca-${pos}`); 
-            let elDataRod = document.getElementById(`${pref}data-rodizio-${pos}`); 
-            let elProxRod = document.getElementById(`${pref}prox-rodizio-${pos}`); 
-            let elColocado = document.getElementById(`${pref}pneu-colocado-${pos}`);
-            if(elEstado) elEstado.innerText = pneu.estado || "---"; 
-            if(elTwi) elTwi.innerText = pneu.milimetros ? pneu.milimetros + " mm" : "---"; 
-            if(elKmTroca) elKmTroca.value = pneu.km_ultima_troca || 0; 
-            if(elDataTroca) elDataTroca.value = pneu.data_ultima_troca || ""; 
-            if(elDataRod) elDataRod.value = pneu.data_ultimo_rodizio || ""; 
-            if(elProxRod) elProxRod.value = pneu.km_proximo_rodizio || 0; 
-            if(elColocado) elColocado.value = pneu.pneu_colocado || "NOVO";
+            let elEstado = document.getElementById(`${pref}estado-${pos}`); let elTwi = document.getElementById(`${pref}twi-${pos}`); let elKmTroca = document.getElementById(`${pref}km-troca-${pos}`); let elDataTroca = document.getElementById(`${pref}data-troca-${pos}`); let elDataRod = document.getElementById(`${pref}data-rodizio-${pos}`); let elProxRod = document.getElementById(`${pref}prox-rodizio-${pos}`); let elColocado = document.getElementById(`${pref}pneu-colocado-${pos}`);
+            if(elEstado) elEstado.innerText = pneu.estado || "---"; if(elTwi) elTwi.innerText = pneu.milimetros ? pneu.milimetros + " mm" : "---"; if(elKmTroca) elKmTroca.value = pneu.km_ultima_troca || 0; if(elDataTroca) elDataTroca.value = pneu.data_ultima_troca || ""; if(elDataRod) elDataRod.value = pneu.data_ultimo_rodizio || ""; if(elProxRod) elProxRod.value = pneu.km_proximo_rodizio || 0; if(elColocado) elColocado.value = pneu.pneu_colocado || "NOVO";
         }); 
     } 
-    
-    let iL = document.getElementById('ficha-img-lat'); let pL = document.getElementById('ficha-pl-lat'); 
-    if (iL && pL) { 
-        document.getElementById('ficha-label-foto-1').innerText = window.isCarro ? "Frente" : "Lateral"; 
-        if (dados.foto_lateral && dados.foto_lateral !== "") { iL.src = forcarImagemDiretaDrive(dados.foto_lateral); iL.style.display = 'block'; pL.style.display = 'none'; } 
-        else { iL.style.display = 'none'; pL.style.display = 'flex'; } 
-    } 
-    let iT = document.getElementById('ficha-img-tras'); let pT = document.getElementById('ficha-pl-tras'); 
-    if (iT && pT) { 
-        document.getElementById('ficha-label-foto-2').innerText = window.isCarro ? "Verso/Traseira" : "Traseira"; 
-        if (dados.foto_traseira && dados.foto_traseira !== "") { iT.src = forcarImagemDiretaDrive(dados.foto_traseira); iT.style.display = 'block'; pT.style.display = 'none'; } 
-        else { iT.style.display = 'none'; pT.style.display = 'flex'; } 
-    } 
-    
-    let aK = document.getElementById('aviso-ultimo-km'); if(aK) aK.innerText = dados.km_atual || 0; 
-    let aG = document.getElementById('abast-gasto-mes'); if(aG) aG.innerText = (dados.gasto_mes || 0) + " L"; 
-    
+    let iL = document.getElementById('ficha-img-lat'); let pL = document.getElementById('ficha-pl-lat'); if (iL && pL) { document.getElementById('ficha-label-foto-1').innerText = window.isCarro ? "Frente" : "Lateral"; if (dados.foto_lateral && dados.foto_lateral !== "") { iL.src = forcarImagemDiretaDrive(dados.foto_lateral); iL.style.display = 'block'; pL.style.display = 'none'; } else { iL.style.display = 'none'; pL.style.display = 'flex'; } } let iT = document.getElementById('ficha-img-tras'); let pT = document.getElementById('ficha-pl-tras'); if (iT && pT) { document.getElementById('ficha-label-foto-2').innerText = window.isCarro ? "Verso/Traseira" : "Traseira"; if (dados.foto_traseira && dados.foto_traseira !== "") { iT.src = forcarImagemDiretaDrive(dados.foto_traseira); iT.style.display = 'block'; pT.style.display = 'none'; } else { iT.style.display = 'none'; pT.style.display = 'flex'; } } 
+    let aK = document.getElementById('aviso-ultimo-km'); if(aK) aK.innerText = dados.km_atual || 0; let aG = document.getElementById('abast-gasto-mes'); if(aG) aG.innerText = (dados.gasto_mes || 0) + " L"; 
     atualizarKMGeral(); calcularTacografo(); calcularGraxa(); calcularExtintor(); calcularAbastecimento();
     abrirPagina(window.moduloAtual); 
 }
 
 function abrirPagina(nomeDaPagina) { 
     if(nomeDaPagina === 'Abastecimento' && typeof preencherDataHoraAbast === 'function') { preencherDataHoraAbast(); } 
-    
     let icone = "";
     if (nomeDaPagina === "Ficha Técnica") icone = "<i class='ph ph-file-text'></i> ";
     if (nomeDaPagina === "Checklist") icone = "<i class='ph ph-check-square'></i> ";
@@ -527,43 +366,15 @@ function abrirPagina(nomeDaPagina) {
     for (let i = 0; i < secoes.length; i++) { secoes[i].style.display = 'none'; } 
     let secaoAtiva = document.getElementById('conteudo-' + nomeDaPagina); 
     if (secaoAtiva) { secaoAtiva.style.display = 'flex'; } 
-    document.getElementById('alerta-veiculo-interna').style.display = 'block'; 
-    document.getElementById('btn-trocar-veiculo').style.display = 'block'; 
-    document.getElementById('btn-voltar-menu').onclick = voltarParaMenu; 
-    esconderTodasTelas(); 
-    document.getElementById('tela-interna').style.display = 'flex'; 
+    document.getElementById('alerta-veiculo-interna').style.display = 'block'; document.getElementById('btn-trocar-veiculo').style.display = 'block'; document.getElementById('btn-voltar-menu').onclick = voltarParaMenu; 
+    esconderTodasTelas(); document.getElementById('tela-interna').style.display = 'flex'; 
 
-    if (nomeDaPagina === 'Checklist') {
-        iniciarNovoChecklist();
-    }
+    if (nomeDaPagina === 'Checklist') { iniciarNovoChecklist(); }
 }
 
-let isDrawingPad = false; 
-function initPad(canvasId) { 
-    let cvs = document.getElementById(canvasId); if(!cvs) return; 
-    let ctx = cvs.getContext('2d'); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#000'; 
-    const getPos = (e) => { 
-        let rect = cvs.getBoundingClientRect(); 
-        let cX = e.touches ? e.touches[0].clientX : e.clientX; let cY = e.touches ? e.touches[0].clientY : e.clientY; 
-        return { x: (cX - rect.left) * (cvs.width / rect.width), y: (cY - rect.top) * (cvs.height / rect.height) }; 
-    }; 
-    let start = (e) => { e.preventDefault(); isDrawingPad = true; let p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); cvs.setAttribute('data-t', '1'); }; 
-    let move = (e) => { e.preventDefault(); if(!isDrawingPad) return; let p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }; 
-    let end = (e) => { e.preventDefault(); isDrawingPad = false; }; 
-    cvs.onmousedown = start; cvs.ontouchstart = start; cvs.onmousemove = move; cvs.ontouchmove = move; cvs.onmouseup = end; cvs.ontouchend = end; cvs.onmouseout = end; 
-} 
-function limparPad(canvasId) { let cvs = document.getElementById(canvasId); if(!cvs) return; let ctx = cvs.getContext('2d'); ctx.fillStyle = "#fff"; ctx.fillRect(0,0,cvs.width,cvs.height); cvs.removeAttribute('data-t'); } 
-function getPadB64(canvasId) { let cvs = document.getElementById(canvasId); if(!cvs || !cvs.getAttribute('data-t')) return ""; return cvs.toDataURL('image/png'); } 
-function forcarImagemDiretaDrive(url) { if (!url || typeof url !== 'string') return ""; let matchId = url.match(/\/d\/([a-zA-Z0-9_-]+)/); if (matchId && matchId[1]) return "https://lh3.googleusercontent.com/d/" + matchId[1]; let matchId2 = url.match(/id=([a-zA-Z0-9_-]+)/); if (matchId2 && matchId2[1]) return "https://lh3.googleusercontent.com/d/" + matchId2[1]; return url; }
+let isDrawingPad = false; function initPad(canvasId) { let cvs = document.getElementById(canvasId); if(!cvs) return; let ctx = cvs.getContext('2d'); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#000'; const getPos = (e) => { let rect = cvs.getBoundingClientRect(); let cX = e.touches ? e.touches[0].clientX : e.clientX; let cY = e.touches ? e.touches[0].clientY : e.clientY; return { x: (cX - rect.left) * (cvs.width / rect.width), y: (cY - rect.top) * (cvs.height / rect.height) }; }; let start = (e) => { e.preventDefault(); isDrawingPad = true; let p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); cvs.setAttribute('data-t', '1'); }; let move = (e) => { e.preventDefault(); if(!isDrawingPad) return; let p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }; let end = (e) => { e.preventDefault(); isDrawingPad = false; }; cvs.onmousedown = start; cvs.ontouchstart = start; cvs.onmousemove = move; cvs.ontouchmove = move; cvs.onmouseup = end; cvs.ontouchend = end; cvs.onmouseout = end; } function limparPad(canvasId) { let cvs = document.getElementById(canvasId); if(!cvs) return; let ctx = cvs.getContext('2d'); ctx.fillStyle = "#fff"; ctx.fillRect(0,0,cvs.width,cvs.height); cvs.removeAttribute('data-t'); } function getPadB64(canvasId) { let cvs = document.getElementById(canvasId); if(!cvs || !cvs.getAttribute('data-t')) return ""; return cvs.toDataURL('image/png'); } function forcarImagemDiretaDrive(url) { if (!url || typeof url !== 'string') return ""; let matchId = url.match(/\/d\/([a-zA-Z0-9_-]+)/); if (matchId && matchId[1]) return "https://lh3.googleusercontent.com/d/" + matchId[1]; let matchId2 = url.match(/id=([a-zA-Z0-9_-]+)/); if (matchId2 && matchId2[1]) return "https://lh3.googleusercontent.com/d/" + matchId2[1]; return url; }
 
-function renderizarMotoristas() { 
-    let options = `<option value="">Selecione o Motorista...</option>`; 
-    if (window.listaMotoristas && window.listaMotoristas.length > 0) { 
-        window.listaMotoristas.forEach(m => { options += `<option value="${m}">${m}</option>`; }); 
-    } 
-    options += `<option value="NOVO" style="font-weight:bold; color:#1a4d2e;">➕ OUTRO (Adicionar Novo)</option>`; 
-    ['chk-motorista', 'chk-carro-motorista', 'chk-emp-motorista', 'abast-motorista', 'nome-motorista'].forEach(id => { let el = document.getElementById(id); if(el) el.innerHTML = options; }); 
-}
+function renderizarMotoristas() { let options = `<option value="">Selecione o Motorista...</option>`; if (window.listaMotoristas && window.listaMotoristas.length > 0) { window.listaMotoristas.forEach(m => { options += `<option value="${m}">${m}</option>`; }); } options += `<option value="NOVO" style="font-weight:bold; color:#1a4d2e;">➕ OUTRO (Adicionar Novo)</option>`; ['chk-motorista', 'chk-carro-motorista', 'chk-emp-motorista', 'abast-motorista', 'nome-motorista'].forEach(id => { let el = document.getElementById(id); if(el) el.innerHTML = options; }); }
 function verificarNovoMotoristaAbast(sel) { let inputNovo = document.getElementById('abast-motorista-novo'); if(sel.value === "NOVO") { inputNovo.style.display = 'block'; inputNovo.focus(); } else { inputNovo.style.display = 'none'; inputNovo.value = ''; } }
 function atualizarKMGeral() { document.getElementById('km-atual-oleo').innerText = document.getElementById('km-master').value; calcularOleo(); calcularRodizioPneus(); } 
 
@@ -572,24 +383,8 @@ function salvarFichaNaNuvemBackground() {
     let tIds = window.isCarro ? ['dd','de','td','te'] : (window.isToco ? ['dd','de','tde','tdi','tee','tei','1step'] : ['dd','de','tde','tdi','tee','tei','tkde','tkdi','tkee','tkei','1step','c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','c11','c12','2step']); let pref = window.isCarro ? 'carro-' : ''; 
     tIds.forEach(id => { let km = document.getElementById(pref+'km-troca-'+id); if(km) { payload.pneus[id] = { km_ultima_troca: km.value, data_ultima_troca: document.getElementById(pref+'data-troca-'+id).value, data_ultimo_rodizio: document.getElementById(pref+'data-rodizio-'+id).value, pneu_colocado: document.getElementById(pref+'pneu-colocado-'+id).value, km_proximo_rodizio: document.getElementById(pref+'prox-rodizio-'+id).value }; } }); 
     
-    window.frota[payload.placa].tipo = payload.tipo;
-    window.frota[payload.placa].motorista = payload.motorista;
-    window.frota[payload.placa].km_atual = payload.km_atual;
-    window.frota[payload.placa].km_oleo = payload.km_oleo;
-    window.frota[payload.placa].data_tacografo = payload.data_tacografo;
-    window.frota[payload.placa].data_graxa = payload.data_graxa;
-    window.frota[payload.placa].qtd_carrinhos = payload.qtd_carrinhos;
-    window.frota[payload.placa].qtd_cones = payload.qtd_cones;
-    window.frota[payload.placa].qtd_calcos = payload.qtd_calcos;
-    window.frota[payload.placa].data_extintor = payload.data_extintor;
-    for(let id in payload.pneus) {
-        if(!window.frota[payload.placa].pneus[id]) window.frota[payload.placa].pneus[id] = {};
-        window.frota[payload.placa].pneus[id].km_ultima_troca = payload.pneus[id].km_ultima_troca;
-        window.frota[payload.placa].pneus[id].data_ultima_troca = payload.pneus[id].data_ultima_troca;
-        window.frota[payload.placa].pneus[id].data_ultimo_rodizio = payload.pneus[id].data_ultimo_rodizio;
-        window.frota[payload.placa].pneus[id].pneu_colocado = payload.pneus[id].pneu_colocado;
-        window.frota[payload.placa].pneus[id].km_proximo_rodizio = payload.pneus[id].km_proximo_rodizio;
-    }
+    window.frota[payload.placa].tipo = payload.tipo; window.frota[payload.placa].motorista = payload.motorista; window.frota[payload.placa].km_atual = payload.km_atual; window.frota[payload.placa].km_oleo = payload.km_oleo; window.frota[payload.placa].data_tacografo = payload.data_tacografo; window.frota[payload.placa].data_graxa = payload.data_graxa; window.frota[payload.placa].qtd_carrinhos = payload.qtd_carrinhos; window.frota[payload.placa].qtd_cones = payload.qtd_cones; window.frota[payload.placa].qtd_calcos = payload.qtd_calcos; window.frota[payload.placa].data_extintor = payload.data_extintor;
+    for(let id in payload.pneus) { if(!window.frota[payload.placa].pneus[id]) window.frota[payload.placa].pneus[id] = {}; window.frota[payload.placa].pneus[id].km_ultima_troca = payload.pneus[id].km_ultima_troca; window.frota[payload.placa].pneus[id].data_ultima_troca = payload.pneus[id].data_ultima_troca; window.frota[payload.placa].pneus[id].data_ultimo_rodizio = payload.pneus[id].data_ultimo_rodizio; window.frota[payload.placa].pneus[id].pneu_colocado = payload.pneus[id].pneu_colocado; window.frota[payload.placa].pneus[id].km_proximo_rodizio = payload.pneus[id].km_proximo_rodizio; }
     let elAv = document.getElementById('aviso-ultimo-km'); if(elAv) elAv.innerText = payload.km_atual;
 
     adicionarNaFila(payload);
@@ -688,7 +483,7 @@ function confirmarEEnviarAbastecimento() {
 
 function renderizarHistoricoAbast() { 
     let construtorHTML = (lista, isChegada) => { 
-        if (!lista || lista.length === 0) return "<p style='color:#666; font-size:12px; margin:0;'>Nenhum registro encontrado.</p>"; 
+        if (!lista || lista.length === 0) return "<p style='color:#666; font-size:12px; margin:0;'>Nenhum registo encontrado.</p>"; 
         return lista.map(i => {
             let btnEdit = (i.usuario === window.usuarioLogado && i.id_transacao && !isChegada) ? 
                 `<span style="cursor:pointer; font-size:14px; margin-left:8px; background:#e5e7eb; padding:2px 5px; border-radius:5px;" onclick="abrirModalEditAbast('${i.id_transacao}', '${i.placa}', '${i.litros}', '${i.km}')"><i class='ph ph-pencil-simple'></i> Edit</span>` : "";
@@ -725,10 +520,7 @@ function salvarEdicaoAbast() {
     fecharModalEditAbast();
 }
 
-function renderizarEstoquePecas() { let container = document.getElementById('lista-estoque-atual'); let comboMov = document.getElementById('est-item'); let comboCompra = document.getElementById('lista-pecas'); if(!container || !comboMov) return; if (!window.estoquePecas || window.estoquePecas.length === 0) { container.innerHTML = "<p style='text-align:center; color:#666;'>Nenhuma peça cadastrada no estoque.</p>"; return; } let htmlStr = ""; let comboStrMov = ""; let comboStrCompra = ""; window.estoquePecas.forEach((peca, index) => { htmlStr += `<div style="border-bottom: 1px dashed #ccc; padding: 10px 0; margin-bottom: 5px;"><div style="font-weight:bold; color:#1a4d2e; margin-bottom:5px; font-size:14px;">${peca.item}</div><div style="display:flex; justify-content:space-between; gap:5px;"><div style="flex:1;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Qtd Estoque:</span><input type="number" id="est-edit-qtd-${index}" class="input-editavel travado est-edit-input" value="${peca.qtd || 0}" readonly style="width:100%;"></div><div style="flex:1;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Vlr Pago (R$):</span><input type="number" id="est-edit-valor-${index}" class="input-editavel travado est-edit-input" value="${peca.valor || 0}" readonly style="width:100%;"></div></div><div style="margin-top:5px;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Data Últ. Compra:</span><input type="date" id="est-edit-data-${index}" class="input-editavel travado est-edit-input" value="${peca.data_compra || ''}" readonly style="width:100%;"></div></div>`; comboStrMov += `<option value="${index}">${peca.item}</option>`; comboStrCompra += `<option value="${peca.item}"></option>`; }); comboMov.innerHTML = comboStrMov; if(comboCompra) comboCompra.innerHTML = comboStrCompra; container.innerHTML = htmlStr; } 
-
-function alternarEdicaoEstoque() { let inputs = document.querySelectorAll('.est-edit-input'); let btn = document.getElementById('btn-editar-estoque'); if (!inputs || inputs.length === 0) return; if (inputs[0].hasAttribute('readonly')) { inputs.forEach(x => { x.removeAttribute('readonly'); x.classList.remove('travado'); }); btn.innerHTML = "<i class='ph ph-floppy-disk'></i> Salvar"; btn.style.backgroundColor = "#1a4d2e"; btn.style.color = "white"; } else { inputs.forEach(x => { x.setAttribute('readonly', 'true'); x.classList.add('travado'); }); btn.innerHTML = "<i class='ph ph-pencil-simple'></i> Editar"; btn.style.backgroundColor = "transparent"; btn.style.color = "#1a4d2e"; salvarEdicaoEstoqueNuvem(); } } 
-
+function renderizarEstoquePecas() { let container = document.getElementById('lista-estoque-atual'); let comboMov = document.getElementById('est-item'); let comboCompra = document.getElementById('lista-pecas'); if(!container || !comboMov) return; if (!window.estoquePecas || window.estoquePecas.length === 0) { container.innerHTML = "<p style='text-align:center; color:#666;'>Nenhuma peça cadastrada no estoque.</p>"; return; } let htmlStr = ""; let comboStrMov = ""; let comboStrCompra = ""; window.estoquePecas.forEach((peca, index) => { htmlStr += `<div style="border-bottom: 1px dashed #ccc; padding: 10px 0; margin-bottom: 5px;"><div style="font-weight:bold; color:#1a4d2e; margin-bottom:5px; font-size:14px;">${peca.item}</div><div style="display:flex; justify-content:space-between; gap:5px;"><div style="flex:1;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Qtd Estoque:</span><input type="number" id="est-edit-qtd-${index}" class="input-editavel travado est-edit-input" value="${peca.qtd || 0}" readonly style="width:100%;"></div><div style="flex:1;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Vlr Pago (R$):</span><input type="number" id="est-edit-valor-${index}" class="input-editavel travado est-edit-input" value="${peca.valor || 0}" readonly style="width:100%;"></div></div><div style="margin-top:5px;"><span class="info-label" style="font-size:11px; margin:0; display:block;">Data Últ. Compra:</span><input type="date" id="est-edit-data-${index}" class="input-editavel travado est-edit-input" value="${peca.data_compra || ''}" readonly style="width:100%;"></div></div>`; comboStrMov += `<option value="${index}">${peca.item}</option>`; comboStrCompra += `<option value="${peca.item}"></option>`; }); comboMov.innerHTML = comboStrMov; if(comboCompra) comboCompra.innerHTML = comboStrCompra; container.innerHTML = htmlStr; } function alternarEdicaoEstoque() { let inputs = document.querySelectorAll('.est-edit-input'); let btn = document.getElementById('btn-editar-estoque'); if (!inputs || inputs.length === 0) return; if (inputs[0].hasAttribute('readonly')) { inputs.forEach(x => { x.removeAttribute('readonly'); x.classList.remove('travado'); }); btn.innerHTML = "<i class='ph ph-floppy-disk'></i> Salvar"; btn.style.backgroundColor = "#1a4d2e"; btn.style.color = "white"; } else { inputs.forEach(x => { x.setAttribute('readonly', 'true'); x.classList.add('travado'); }); btn.innerHTML = "<i class='ph ph-pencil-simple'></i> Editar"; btn.style.backgroundColor = "transparent"; btn.style.color = "#1a4d2e"; salvarEdicaoEstoqueNuvem(); } } 
 async function salvarEdicaoEstoqueNuvem() { 
     let pecasEditadas = {}; 
     window.estoquePecas.forEach((peca, index) => { let nQtd = document.getElementById(`est-edit-qtd-${index}`).value; let nData = document.getElementById(`est-edit-data-${index}`).value; let nValor = document.getElementById(`est-edit-valor-${index}`).value; peca.qtd = nQtd; peca.data_compra = nData; peca.valor = nValor; pecasEditadas[peca.item] = { qtd: nQtd, data_compra: nData, valor: nValor }; }); 
@@ -737,7 +529,6 @@ async function salvarEdicaoEstoqueNuvem() {
     salvarCacheLocal();
     mostrarToast("<i class='ph ph-floppy-disk'></i> Edições salvas localmente");
 } 
-
 function mudarFormEstoque() { let t = document.getElementById('est-tipo').value; document.getElementById('div-est-placa').style.display = t === "SAÍDA" ? "block" : "none"; document.getElementById('div-est-compra').style.display = t === "ENTRADA" ? "block" : "none"; } 
 
 async function salvarMovimentacaoEstoque() { 
@@ -790,7 +581,7 @@ function renderizarHistorico(d) {
     let c = document.getElementById('container-historico'); 
     c.innerHTML = ""; 
     if (!d || d.length === 0) { 
-        c.innerHTML = "<p style='text-align:center; color:#666;'>Nenhum checklist registrado ainda.</p>"; 
+        c.innerHTML = "<p style='text-align:center; color:#666;'>Nenhum checklist registado ainda.</p>"; 
         return; 
     } 
     let exibidos = new Set();
