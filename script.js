@@ -71,20 +71,46 @@ async function sincronizarSegundoPlano(manual = false) {
 
     isSyncing = true;
     let processouAlgo = false;
-    if(manual) mostrarToast(`<i class='ph ph-arrows-clockwise ph-spin'></i> Sincronizando ${fila.length} pendências...`, "#d97706");
+    if(manual) mostrarToast(`<i class='ph ph-arrows-clockwise ph-spin'></i> Enviando ${fila.length} pendências...`, "#d97706");
 
     for (let i = 0; i < fila.length; i++) {
         let reqPayload = fila[i];
         try {
             let p = {...reqPayload}; delete p._localId;
-            let resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) });
-            await resp.json();
             
+            // Tenta enviar para o Google
+            let resp = await fetch(API_URL, { 
+                method: 'POST', 
+                body: JSON.stringify(p),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
+            });
+            
+            let txt = await resp.text();
+            let resJSON;
+            
+            // Verifica se o Google devolveu HTML (Erro de URL) ou JSON
+            try {
+                resJSON = JSON.parse(txt);
+            } catch(errParse) {
+                Swal.fire("Erro de Rota (Google)", "O script do Google recusou a conexão. Verifique se a URL está certa e se você gerou uma NOVA Implantação.<br><br>Detalhe: " + txt.substring(0,100), "error");
+                break;
+            }
+
+            // Verifica se o código lá no Google deu erro de lógica
+            if(resJSON.erro) {
+                Swal.fire("Erro na Planilha/Código.gs", resJSON.erro, "error");
+                break;
+            }
+            
+            // Deu tudo certo, tira o dado da fila do celular
             let filaAtual = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
             filaAtual = filaAtual.filter(item => item._localId !== reqPayload._localId);
             localStorage.setItem('lince_fila_requisicoes', JSON.stringify(filaAtual));
             processouAlgo = true;
-        } catch (e) { break; }
+        } catch (e) { 
+            Swal.fire("Erro de Rede", "Bloqueio ao tentar enviar: " + e.message, "error");
+            break; 
+        }
     }
     
     if (processouAlgo) {
