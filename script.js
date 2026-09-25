@@ -55,7 +55,13 @@ function salvarCacheLocal() {
 function adicionarNaFila(payload) {
     let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
     payload._localId = Date.now() + Math.random().toString(36).substr(2, 5);
-    payload.id_transacao = payload._localId;
+    
+    // CORREÇÃO: Só cria um ID de transação novo se for um formulário INÉDITO.
+    // Se for uma Edição, preserva o ID original para o Google achar a linha certa.
+    if (!payload.id_transacao) {
+        payload.id_transacao = payload._localId;
+    }
+    
     fila.push(payload);
     localStorage.setItem('lince_fila_requisicoes', JSON.stringify(fila));
     
