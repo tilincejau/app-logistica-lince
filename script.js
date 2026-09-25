@@ -4,7 +4,7 @@
    ========================================================= */
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
-const APP_VERSAO = "2.0"; // Versão 2.0 para forçar a limpeza da cache
+const APP_VERSAO = "2.1"; // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
@@ -58,7 +58,29 @@ function adicionarNaFila(payload) {
     payload.id_transacao = payload._localId;
     fila.push(payload);
     localStorage.setItem('lince_fila_requisicoes', JSON.stringify(fila));
+    
+    // Mostra indicador visual na tela que há pendências
+    atualizarBotaoSyncManual();
+    
     sincronizarSegundoPlano(false); 
+}
+
+function atualizarBotaoSyncManual() {
+    let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
+    let btn = document.getElementById('btn-sync-manual');
+    if (btn) {
+        if (fila.length > 0) {
+            btn.innerHTML = `<i class="ph ph-warning-circle"></i> Enviando ${fila.length} pendências...`;
+            btn.style.color = "#d97706";
+            btn.style.borderColor = "#d97706";
+            btn.style.backgroundColor = "#fffbeb";
+        } else {
+            btn.innerHTML = `<i class="ph ph-arrows-clockwise"></i> Sincronizar Dados`;
+            btn.style.color = "var(--primary-color)";
+            btn.style.borderColor = "var(--primary-color)";
+            btn.style.backgroundColor = "transparent";
+        }
+    }
 }
 
 async function sincronizarSegundoPlano(manual = false) {
@@ -66,11 +88,20 @@ async function sincronizarSegundoPlano(manual = false) {
     if (isSyncing) { if(manual) mostrarToast("<i class='ph ph-spinner ph-spin'></i> Sincronização em andamento...", "#d97706"); return; }
 
     let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
-    if (fila.length === 0) { if (manual) { mostrarToast("<i class='ph ph-check-circle'></i> Tudo já está atualizado!", "#059669"); recarregarDadosSilenciosamente(); } return; }
+    if (fila.length === 0) { 
+        if (manual) { 
+            mostrarToast("<i class='ph ph-check-circle'></i> Tudo já está atualizado!", "#059669"); 
+            recarregarDadosSilenciosamente(); 
+        } 
+        atualizarBotaoSyncManual();
+        return; 
+    }
 
     isSyncing = true;
     let processouAlgo = false;
-    if(manual) mostrarToast(`<i class='ph ph-arrows-clockwise ph-spin'></i> Enviando ${fila.length} pendências...`, "#d97706");
+    let novaFila = [...fila]; // Cópia segura da fila para não perder dados
+    
+    if(manual) mostrarToast(`<i class='ph ph-arrows-clockwise ph-spin'></i> Processando ${fila.length} envios...`, "#d97706");
 
     for (let i = 0; i < fila.length; i++) {
         let reqPayload = fila[i];
@@ -87,31 +118,39 @@ async function sincronizarSegundoPlano(manual = false) {
             try {
                 resJSON = await resp.json();
             } catch(e) {
-                Swal.fire("Erro Crítico (Google)", "O link não é válido ou a implantação falhou. Verifique o link do Apps Script.", "error");
-                break;
+                if (manual) Swal.fire("Erro Crítico (Google)", "O link não retornou dados válidos. O sistema tentará novamente mais tarde.", "error");
+                break; // Interrompe para não deletar os dados
             }
 
             if (resJSON.erro) {
-                Swal.fire("Erro na Planilha/Código.gs", resJSON.erro, "error");
-                break;
+                console.error("Erro reportado pelo Google:", resJSON.erro);
+                if(manual) Swal.fire("Erro na Planilha", resJSON.erro, "error");
+                // Remove o break para que o sistema pule o formulário defeituoso e tente enviar o restante da fila
+                // Mas NÃO remove o item com erro da novaFila, para garantir que o programador consiga corrigir depois.
+                continue; 
             }
 
             if (resJSON.sucesso) {
-                let filaAtual = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
-                filaAtual = filaAtual.filter(item => item._localId !== reqPayload._localId);
-                localStorage.setItem('lince_fila_requisicoes', JSON.stringify(filaAtual));
+                // Apenas remove da fila local quando o Google retorna sucesso = true
+                novaFila = novaFila.filter(item => item._localId !== reqPayload._localId);
+                localStorage.setItem('lince_fila_requisicoes', JSON.stringify(novaFila));
                 processouAlgo = true;
             }
         } catch (e) { 
-            Swal.fire("Erro de Conexão", "Servidor inacessível no momento: " + e.message, "error");
-            break; 
+            console.error("Erro de comunicação local:", e);
+            if(manual) Swal.fire("Erro de Conexão", "Sinal instável. Os dados estão seguros no celular e serão enviados depois.", "warning");
+            break; // Se caiu a internet, para tudo e mantém na fila
         }
     }
     
+    atualizarBotaoSyncManual();
+
     if (processouAlgo) {
-        let filaFinal = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
-        if (filaFinal.length === 0) { mostrarToast("<i class='ph ph-check-circle'></i> Tudo sincronizado com sucesso!", "#059669"); } 
-        else { mostrarToast(`<i class='ph ph-warning'></i> Sobraram ${filaFinal.length} itens (Sem rede)`, "#dc2626"); }
+        if (novaFila.length === 0) { 
+            if(manual || processouAlgo) mostrarToast("<i class='ph ph-check-circle'></i> Tudo sincronizado com sucesso!", "#059669"); 
+        } else { 
+            mostrarToast(`<i class='ph ph-warning'></i> Restam ${novaFila.length} itens aguardando rede`, "#dc2626"); 
+        }
         recarregarDadosSilenciosamente();
     }
     isSyncing = false;
@@ -124,11 +163,11 @@ async function forcarSincronizacaoManual() {
     btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Sincronizando...";
     btn.disabled = true;
     await sincronizarSegundoPlano(true);
-    btn.innerHTML = originalHTML;
+    atualizarBotaoSyncManual();
     btn.disabled = false;
 }
 
-setInterval(() => sincronizarSegundoPlano(false), 180000);
+setInterval(() => sincronizarSegundoPlano(false), 30000); // Reduzido para tentar a cada 30 segundos
 document.addEventListener("visibilitychange", function() { if (document.visibilityState === 'visible') sincronizarSegundoPlano(false); });
 
 function atualizarVariaveisGlobais(res) {
@@ -168,7 +207,7 @@ async function recarregarDadosSilenciosamente() {
         let res = await req.json();
         
         let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
-        if (fila.length > 0) return;
+        if (fila.length > 0) return; // Não recarrega visualmente se tiver dados pendentes locais
 
         if (res.sucesso) {
             atualizarVariaveisGlobais(res);
@@ -186,10 +225,13 @@ async function recarregarDadosSilenciosamente() {
 window.onload = function() {
     let versaoLocal = localStorage.getItem('lince_versao');
     if (versaoLocal !== APP_VERSAO) {
+        // NÃO apagamos a fila de requisições ao atualizar versão para preservar offline
         localStorage.removeItem('lince_logistica_user');
         localStorage.removeItem('lince_logistica_bd');
         localStorage.setItem('lince_versao', APP_VERSAO);
     }
+    
+    atualizarBotaoSyncManual();
 
     let construtorFicha = (arr, isCar) => arr.map(p => `<details><summary>${p.n}</summary><div class="pneu-detalhes"><div class="linha-info"><span class="info-label" style="margin:0;">Estado:</span> <span class="info-valor" id="${isCar?'carro-':''}estado-${p.id}" style="font-weight:bold;">---</span></div><div class="linha-info"><span class="info-label" style="margin:0;">TWI:</span> <span class="info-valor" id="${isCar?'carro-':''}twi-${p.id}">---</span></div><div class="linha-info" style="margin-top:10px;"><span class="info-label" style="margin:0;">KM Troca:</span> <input type="number" id="${isCar?'carro-':''}km-troca-${p.id}" class="input-editavel travado" value="0" readonly></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Data Troca:</span> <input type="date" id="${isCar?'carro-':''}data-troca-${p.id}" class="input-editavel travado" readonly></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Pneu Colocado:</span> <select id="${isCar?'carro-':''}pneu-colocado-${p.id}" class="input-editavel travado" disabled style="background-color: transparent;"><option value="NOVO">NOVO</option><option value="1 RESSOLAGEM">1 RESSOLAGEM</option><option value="2 RESSOLAGEM">2 RESSOLAGEM</option><option value="3 RESSOLAGEM">3 RESSOLAGEM</option></select></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Últ. Rodízio:</span> <input type="date" id="${isCar?'carro-':''}data-rodizio-${p.id}" class="input-editavel travado" readonly></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Próx Rodízio (KM):</span> <input type="number" id="${isCar?'carro-':''}prox-rodizio-${p.id}" class="input-editavel travado" value="0" readonly oninput="calcularRodizioPneus()"></div><div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label" style="margin:0;">Status Rodízio:</span> <span id="${isCar?'carro-':''}status-rod-${p.id}" style="font-weight:bold;">---</span></div></div></details>`).join('');
     let construtorChk = (arr, isCar) => arr.map(p => `<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;"><span style="font-weight: bold; width: 50px; color:${arr===pneusCarreta?'#0056b3':'#333'};">${p.n}</span><input type="number" id="${isCar?'chk-carro-twi-':'chk-twi-'}${p.id}" placeholder="mm" class="input-campo" style="margin:0; width: 80px; padding: 10px; text-align:center;" oninput="calcularStatusTwi(this, '${isCar?'badge-carro-estado-':'badge-estado-'}${p.id}')"><span id="${isCar?'badge-carro-estado-':'badge-estado-'}${p.id}" class="twi-estado-badge" style="flex: 1;">Aguardando...</span></div>`).join('');
@@ -246,7 +288,7 @@ function sairDaConta() {
 } 
 
 function voltarParaPlacas() { esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex'; } 
-function voltarParaMenu() { esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; }
+function voltarParaMenu() { esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; atualizarBotaoSyncManual(); }
 
 function escolherModulo(modulo) { 
     window.moduloAtual = modulo; 
@@ -453,7 +495,7 @@ function confirmarEEnviarAbastecimento() {
     let p = abastPendente; let t = p.tipo; let pl = p.placa;
     
     adicionarNaFila(p);
-    Swal.fire("Sucesso!", "Salvo no telemóvel!<br><br>O lançamento foi para a fila e será enviado automaticamente.", "success"); 
+    Swal.fire("Salvo e Agendado!", "Dados blindados no aplicativo!<br><br>O lançamento será enviado para o Google automaticamente na próxima sincronização.", "success"); 
     
     document.getElementById('abast-km-novo').value = ""; document.getElementById('abast-litros-bomba').value = ""; 
     document.getElementById('chegada-litros').value = ""; document.getElementById('chegada-nf').value = ""; 
@@ -539,22 +581,27 @@ async function salvarMovimentacaoEstoque() {
     
     let btn = document.getElementById('btn-salvar-mov-est'); btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Salvando..."; btn.disabled = true; 
     
-    adicionarNaFila(p);
-    
-    let q = parseFloat(qtd); 
-    if (tipo === "SAÍDA") { peca.qtd = parseFloat(peca.qtd) - q; } 
-    if (tipo === "ENTRADA") { peca.qtd = parseFloat(peca.qtd) + q; if(valor) peca.valor = valor; if(q) peca.qtd_compra = q; if(link) peca.link = link; peca.data_compra = p.data.substring(0,10); } 
-    
-    salvarCacheLocal();
-    renderizarEstoquePecas(); 
-    document.getElementById('est-qtd').value = ""; document.getElementById('est-placa').value = ""; document.getElementById('est-valor').value = ""; document.getElementById('est-link').value = ""; 
-    
-    Swal.fire("Sucesso", "Movimentação salva no telemóvel!<br>Será sincronizada na nuvem.", "success"); 
-    btn.innerHTML = "<i class='ph ph-floppy-disk'></i> Salvar Movimentação"; btn.disabled = false; 
+    try {
+        adicionarNaFila(p);
+        
+        let q = parseFloat(qtd); 
+        if (tipo === "SAÍDA") { peca.qtd = parseFloat(peca.qtd) - q; } 
+        if (tipo === "ENTRADA") { peca.qtd = parseFloat(peca.qtd) + q; if(valor) peca.valor = valor; if(q) peca.qtd_compra = q; if(link) peca.link = link; peca.data_compra = p.data.substring(0,10); } 
+        
+        salvarCacheLocal();
+        renderizarEstoquePecas(); 
+        document.getElementById('est-qtd').value = ""; document.getElementById('est-placa').value = ""; document.getElementById('est-valor').value = ""; document.getElementById('est-link').value = ""; 
+        
+        Swal.fire("Sucesso", "Movimentação salva no aplicativo!<br>Será sincronizada na nuvem em breve.", "success"); 
+    } catch(err) {
+        Swal.fire("Erro", "Ocorreu um erro ao salvar: " + err.message, "error");
+    } finally {
+        btn.innerHTML = "<i class='ph ph-floppy-disk'></i> Salvar Movimentação"; btn.disabled = false; 
+    }
 }
       
 async function gerarSolicitacaoCompra() { 
-    if (!navigator.onLine) { Swal.fire("Sem Internet", "Precisa estar ligado à internet para gerar o PDF de Compra!", "error"); return; }
+    if (!navigator.onLine) { Swal.fire("Sem Internet", "Gerar o PDF de Compra precisa de conexão imediata. Conecte-se e tente novamente.", "error"); return; }
 
     let nomeItem = document.getElementById('compra-item').value; if(!nomeItem) { Swal.fire("Atenção", "Selecione ou digite o item que deseja comprar!", "warning"); return; } 
     let qtd = document.getElementById('compra-qtd').value; let urgencia = document.getElementById('compra-urgencia').value; if(!qtd) { Swal.fire("Atenção", "Digite a quantidade que precisa comprar!", "warning"); return; } 
@@ -649,7 +696,7 @@ async function enviarChecklistCarro() {
     adicionarNaFila(pl);
     salvarCacheLocal();
 
-    Swal.fire("Sucesso!", "Inspeção finalizada localmente!<br><br>O PDF será gerado na nuvem na próxima sincronização em 2º plano.", "success"); 
+    Swal.fire("Blindado!", "Inspeção finalizada e armazenada no telemóvel!<br><br>O PDF será gerado na nuvem na próxima sincronização em 2º plano.", "success"); 
     voltarParaPlacas();
     btn.innerHTML = "<i class='ph ph-floppy-disk'></i> Enviar Inspeção e PDF"; btn.disabled = false; 
 }
@@ -705,7 +752,7 @@ async function enviarChecklist() {
     window.historicoChecklist.unshift({data: new Date().toISOString(), placa: pl.placa}); 
     salvarCacheLocal();
 
-    Swal.fire("Sucesso!", "O checklist foi salvo no telemóvel e o PDF será gerado na nuvem durante a sincronização.", "success"); 
+    Swal.fire("Blindado!", "O checklist foi guardado com segurança no aparelho. O envio será feito automaticamente em plano de fundo.", "success"); 
     voltarParaPlacas();
     
     btn.innerHTML = "<i class='ph ph-floppy-disk'></i> Enviar Checklist e Gerar PDF"; 
@@ -722,7 +769,7 @@ async function enviarChecklistEmpilhadeira() {
     window.historicoChecklist.unshift({data: new Date().toISOString(), placa: pl.placa}); 
     salvarCacheLocal();
 
-    Swal.fire("Sucesso!", "Inspeção salva localmente!<br>Será sincronizada em 2º plano automaticamente.", "success"); 
+    Swal.fire("Blindado!", "Inspeção salva localmente!<br>Será sincronizada em 2º plano automaticamente.", "success"); 
     voltarParaPlacas();
     btn.innerHTML = "<i class='ph ph-floppy-disk'></i> Enviar Inspeção e PDF"; btn.disabled = false;
 }
