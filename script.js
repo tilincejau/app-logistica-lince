@@ -148,7 +148,9 @@ async function sincronizarSegundoPlano(manual = false) {
 
             if (resJSON.sucesso) {
                 // Apenas remove da fila local quando o Google retorna sucesso = true
-                novaFila = novaFila.filter(item => item._localId !== reqPayload._localId);
+                // Relê a fila salva: um formulário enviado DURANTE esta sincronização também está nela e não pode ser perdido
+                let filaAtual = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
+                novaFila = filaAtual.filter(item => item._localId !== reqPayload._localId);
                 localStorage.setItem('lince_fila_requisicoes', JSON.stringify(novaFila));
                 processouAlgo = true;
             }
@@ -170,6 +172,9 @@ async function sincronizarSegundoPlano(manual = false) {
         recarregarDadosSilenciosamente();
     }
     isSyncing = false;
+    // Algo entrou na fila enquanto enviava: manda logo, sem esperar os 30s
+    let filaFinal = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
+    if (navigator.onLine && filaFinal.some(item => !fila.some(f => f._localId === item._localId))) sincronizarSegundoPlano(false);
 }
 
 async function forcarSincronizacaoManual() {
@@ -228,16 +233,21 @@ async function recarregarDadosSilenciosamente() {
         if (fila.length > 0) return; // Não recarrega visualmente se tiver dados pendentes locais
 
         if (res.sucesso) {
-            atualizarVariaveisGlobais(res);
             localStorage.setItem('lince_logistica_bd', JSON.stringify(res));
-
-            let telaInterna = document.getElementById('tela-interna');
-            let placaAtual = document.getElementById('texto-placa-interna').innerText;
-            if (telaInterna.style.display === 'flex' && placaAtual) {
-                selecionarPlaca(placaAtual, true); 
-            }
+            // Não redesenha a tela de formulário aberta (checklist, abastecimento, estoque): apagaria o que está sendo preenchido.
+            // Os dados novos entram quando o usuário sai dessa tela (aplicarDadosAguardando).
+            if (document.getElementById('tela-interna').style.display === 'flex') { dadosAguardandoTela = res; return; }
+            atualizarVariaveisGlobais(res);
         }
     } catch(e) {}
+}
+
+let dadosAguardandoTela = null;
+function aplicarDadosAguardando() {
+    let d = dadosAguardandoTela; dadosAguardandoTela = null;
+    if (!d) return;
+    if ((JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || []).length > 0) return; // há envios pendentes: a próxima sincronização recarrega
+    atualizarVariaveisGlobais(d);
 }
 
 window.onload = function() {
@@ -308,8 +318,8 @@ function sairDaConta() {
     localStorage.removeItem('lince_logistica_user'); window.usuarioLogado = ""; esconderTodasTelas(); document.getElementById('campo-senha').value = ''; document.getElementById('tela-login').style.display = 'flex'; 
 } 
 
-function voltarParaPlacas() { esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex'; } 
-function voltarParaMenu() { esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; atualizarBotaoSyncManual(); }
+function voltarParaPlacas() { aplicarDadosAguardando(); esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex'; } 
+function voltarParaMenu() { aplicarDadosAguardando(); esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; atualizarBotaoSyncManual(); }
 
 function escolherModulo(modulo) { 
     window.moduloAtual = modulo; 
@@ -342,7 +352,7 @@ function escolherModulo(modulo) {
 function abrirModuloEstoque(sub) { 
     document.getElementById('card-est-posicao').style.display = (sub === 'posicao') ? 'block' : 'none'; document.getElementById('card-est-movimentacao').style.display = (sub === 'movimentacao') ? 'block' : 'none'; document.getElementById('card-est-compra').style.display = (sub === 'compra') ? 'block' : 'none'; document.getElementById('titulo-tela-interna').innerHTML = sub === 'posicao' ? '<i class="ph ph-chart-bar"></i> Posição do Estoque' : (sub === 'movimentacao' ? '<i class="ph ph-arrows-left-right"></i> Entrada / Saída' : '<i class="ph ph-shopping-cart"></i> Solicitar Compra'); 
     let secoes = document.getElementsByClassName('secao-conteudo'); for (let i = 0; i < secoes.length; i++) { secoes[i].style.display = 'none'; } 
-    document.getElementById('conteudo-Estoque').style.display = 'flex'; document.getElementById('alerta-veiculo-interna').style.display = 'none'; document.getElementById('btn-trocar-veiculo').style.display = 'none'; document.getElementById('btn-voltar-menu').onclick = function() { esconderTodasTelas(); document.getElementById('tela-submenu-estoque').style.display = 'flex'; }; esconderTodasTelas(); document.getElementById('tela-interna').style.display = 'flex'; 
+    document.getElementById('conteudo-Estoque').style.display = 'flex'; document.getElementById('alerta-veiculo-interna').style.display = 'none'; document.getElementById('btn-trocar-veiculo').style.display = 'none'; document.getElementById('btn-voltar-menu').onclick = function() { aplicarDadosAguardando(); esconderTodasTelas(); document.getElementById('tela-submenu-estoque').style.display = 'flex'; }; esconderTodasTelas(); document.getElementById('tela-interna').style.display = 'flex'; 
 }
 
 async function selecionarPlaca(placa, bypassTrava = false) { 
