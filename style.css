@@ -34,6 +34,54 @@ body {
 .logo { width: 100%; max-width: 220px; display: block; margin: 0 auto 15px auto; }
 .desenvolvedor { text-align: center; font-size: 11px; color: var(--text-muted); margin-top: -10px; margin-bottom: 25px; font-weight: 500;}
 
+/* BARRA DO TOPO (LOGO PEQUENA + STATUS DA CONEXÃO) */
+.topo-app {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; gap: 10px;
+    margin: -25px -20px 18px -20px; padding: 12px 20px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    box-shadow: 0 4px 14px rgba(26, 77, 46, 0.25);
+}
+.topo-logo { width: 36px; height: 36px; border-radius: 50%; background: #fff; object-fit: cover; flex-shrink: 0; }
+.topo-titulo { flex: 1; color: #fff; font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+.status-conexao {
+    display: flex; align-items: center; gap: 6px; border: none; border-radius: 20px;
+    padding: 6px 11px; background: rgba(255,255,255,0.15); color: #fff;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.status-conexao:empty { display: none; }
+.status-conexao::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 3px rgba(74,222,128,0.25); }
+.status-conexao.pendente::before { background: #fbbf24; box-shadow: 0 0 0 3px rgba(251,191,36,0.25); }
+.status-conexao.offline { background: #fee2e2; color: #991b1b; }
+.status-conexao.offline::before { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.2); }
+
+/* MENU EM CARDS */
+.grid-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.tile-menu {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;
+    background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px;
+    padding: 16px 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); cursor: pointer;
+    font-family: 'Inter', sans-serif; transition: transform 0.1s ease;
+}
+.tile-menu:active { transform: scale(0.97); background: #f9fafb; }
+.tile-icone {
+    width: 44px; height: 44px; border-radius: 12px; margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: center;
+    background: #ecfdf5; color: var(--primary-color); font-size: 24px;
+}
+.tile-icone i.ph { margin: 0; }
+.tile-menu b { font-size: 15px; color: var(--text-main); }
+.tile-menu small { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+.btn-sair {
+    background: none; border: none; width: 100%; padding: 12px; margin-bottom: 20px;
+    color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+
+/* LOGIN */
+#tela-login .logo { max-width: 180px; }
+.login-titulo { margin: 0 0 4px 0; text-align: center; color: var(--primary-color); font-size: 20px; font-weight: 700; }
+.login-sub { margin: 0 0 18px 0; text-align: center; color: var(--text-muted); font-size: 13px; }
+
 /* INPUTS E SELECTS MODERMOS */
 .input-campo { 
     width: 100%; padding: 14px 16px; margin-bottom: 15px; 

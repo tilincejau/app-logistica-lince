@@ -87,6 +87,16 @@ function atualizarBotaoSyncManual() {
             btn.style.backgroundColor = "transparent";
         }
     }
+    atualizarStatusConexao();
+}
+
+// Indicador da barra do topo: Online / pendências aguardando envio / Offline
+function atualizarStatusConexao() {
+    let pend = (JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || []).length;
+    let txtPend = pend + (pend > 1 ? " pendentes" : " pendente");
+    let classe = !navigator.onLine ? "offline" : (pend > 0 ? "pendente" : "online");
+    let txt = !navigator.onLine ? ("Offline" + (pend > 0 ? " · " + pend : "")) : (pend > 0 ? txtPend : "Online");
+    document.querySelectorAll('.status-conexao').forEach(el => { el.className = "status-conexao " + classe; el.textContent = txt; });
 }
 
 async function sincronizarSegundoPlano(manual = false) {
@@ -175,6 +185,8 @@ async function forcarSincronizacaoManual() {
 
 setInterval(() => sincronizarSegundoPlano(false), 30000); // Reduzido para tentar a cada 30 segundos
 document.addEventListener("visibilitychange", function() { if (document.visibilityState === 'visible') sincronizarSegundoPlano(false); });
+window.addEventListener("online", function() { atualizarStatusConexao(); sincronizarSegundoPlano(false); }); // Voltou o sinal: envia as pendências na hora
+window.addEventListener("offline", atualizarStatusConexao);
 
 function atualizarVariaveisGlobais(res) {
     window.frota = res.frota || window.frota;
@@ -229,6 +241,9 @@ async function recarregarDadosSilenciosamente() {
 }
 
 window.onload = function() {
+    // Guarda o app no aparelho para abrir mesmo sem internet (ver sw.js)
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e => console.error("Service Worker:", e));
+
     let versaoLocal = localStorage.getItem('lince_versao');
     if (versaoLocal !== APP_VERSAO) {
         // NÃO apagamos a fila de requisições ao atualizar versão para preservar offline

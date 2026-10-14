@@ -1,0 +1,15 @@
+{
+    "name": "Logística Lince",
+    "short_name": "Lince",
+    "description": "Ficha técnica, checklist, abastecimento e estoque da frota Lince.",
+    "lang": "pt-BR",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#f0f2f5",
+    "theme_color": "#1a4d2e",
+    "icons": [
+        { "src": "https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png", "sizes": "400x400", "type": "image/png", "purpose": "any" }
+    ]
+}

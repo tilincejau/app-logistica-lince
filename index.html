@@ -11,6 +11,11 @@
     <meta http-equiv="Expires" content="0">
     
     <title>Logística - Lince</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Lince">
     <!-- Fontes e Ícones -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,34 +25,39 @@
     <!-- NOVO: BIBLIOTECA SWEETALERT2 (Alertas Modernos) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    <link rel="stylesheet" href="style.css?v=5">
+    <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 
     <div id="tela-login" class="app-container">
         <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logo Lince" class="logo">
-        <div class="desenvolvedor">Desenvolvido por João Marcelo Magon Bonini</div>
-        <input type="text" id="campo-usuario" class="input-campo" placeholder="Usuário">
-        <input type="password" id="campo-senha" class="input-campo" placeholder="Senha">
+        <div class="card card-login">
+            <h2 class="login-titulo">Bem-vindo</h2>
+            <p class="login-sub">Entre com seu usuário para continuar</p>
+            <input type="text" id="campo-usuario" class="input-campo" placeholder="Usuário" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+            <input type="password" id="campo-senha" class="input-campo" placeholder="Senha" autocomplete="current-password" onkeydown="if(event.key === 'Enter') fazerLogin()">
         <p id="mensagem-erro">Usuário ou senha incorretos!</p>
-        <button class="btn-principal" onclick="fazerLogin()" id="btn-login"><i class="ph ph-sign-in"></i> Entrar</button>
+        <button class="btn-principal" onclick="fazerLogin()" id="btn-login" style="margin-bottom: 0;"><i class="ph ph-sign-in"></i> Entrar</button>
+        </div>
+        <div class="desenvolvedor">Desenvolvido por João Marcelo Magon Bonini</div>
     </div>
 
     <div id="tela-menu" class="app-container" style="display: none;">
-        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
-        <div class="desenvolvedor">Desenvolvido por João Marcelo Magon Bonini</div>
+        <header class="topo-app"><img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Lince" class="topo-logo"><b class="topo-titulo">Logística Lince</b><button type="button" class="status-conexao" onclick="forcarSincronizacaoManual()"></button></header>
+        <h2 class="titulo-tela" style="text-align: left; margin-bottom: 15px;">Menu Principal</h2>
+        <div class="grid-menu">
+            <button class="tile-menu" onclick="escolherModulo('Ficha Técnica')"><span class="tile-icone"><i class="ph ph-file-text"></i></span><b>Ficha Técnica</b><small>Dados do veículo</small></button>
+            <button class="tile-menu" onclick="escolherModulo('Checklist')"><span class="tile-icone"><i class="ph ph-check-square"></i></span><b>Checklist</b><small>Inspeção semanal</small></button>
+            <button class="tile-menu" onclick="escolherModulo('Abastecimento')"><span class="tile-icone"><i class="ph ph-gas-pump"></i></span><b>Abastecimento</b><small>Diesel e Arla</small></button>
+            <button class="tile-menu" onclick="escolherModulo('Estoque')"><span class="tile-icone"><i class="ph ph-package"></i></span><b>Estoque</b><small>Peças e óleo</small></button>
+        </div>
         <button class="btn-secundario" style="margin-bottom: 10px; border: 1.5px dashed var(--primary-color); color: var(--primary-color); background: transparent;" onclick="forcarSincronizacaoManual()" id="btn-sync-manual"><i class="ph ph-arrows-clockwise"></i> Sincronizar Dados</button>
-        <button class="btn-secundario" onclick="sairDaConta()"><i class="ph ph-sign-out"></i> Sair da Conta</button>
-        <h2 class="titulo-tela">Menu Principal</h2>
-        <button class="btn-principal" onclick="escolherModulo('Ficha Técnica')"><i class="ph ph-file-text"></i> Ficha Técnica</button>
-        <button class="btn-principal" onclick="escolherModulo('Checklist')"><i class="ph ph-check-square"></i> Checklist</button>
-        <button class="btn-principal" onclick="escolherModulo('Abastecimento')"><i class="ph ph-gas-pump"></i> Abastecimento</button>
-        <button class="btn-principal" onclick="escolherModulo('Estoque')"><i class="ph ph-package"></i> Estoque (Peças e Óleo)</button>
+        <button class="btn-sair" onclick="sairDaConta()"><i class="ph ph-sign-out"></i> Sair da Conta</button>
+        <div class="desenvolvedor">Desenvolvido por João Marcelo Magon Bonini</div>
     </div>
 
     <div id="tela-placas" class="app-container" style="display: none;">
-        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
-        <div class="desenvolvedor">Desenvolvido por João Marcelo Magon Bonini</div>
+        <header class="topo-app"><img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Lince" class="topo-logo"><b class="topo-titulo">Logística Lince</b><button type="button" class="status-conexao" onclick="forcarSincronizacaoManual()"></button></header>
         <button class="btn-secundario" onclick="voltarParaMenu()"><i class="ph ph-arrow-left"></i> Voltar ao Menu</button>
         <h2 class="titulo-tela">Selecione o Veículo</h2>
         
@@ -77,7 +87,7 @@
             <img src="https://i.postimg.cc/xTL2FQvs/26.png" class="img-placa" onclick="selecionarPlaca('FGX2A32')">
         </div>
 
-        <h3 class="card-titulo" style="margin-top: 25px; border-left: none; padding-left:0;"><i class="ph ph-forklift"></i> Empilhadeiras</h3>
+        <h3 class="card-titulo" style="margin-top: 25px; border-left: none; padding-left:0;"><i class="ph ph-stack"></i> Empilhadeiras</h3>
         <div class="grid-placas">
             <img src="https://i.postimg.cc/W3XtjrMW/29.png" class="img-placa" onclick="selecionarPlaca('05025DR3290')"><img src="https://i.postimg.cc/gctrTVc8/30.png" class="img-placa" onclick="selecionarPlaca('05025DR8824')">
         </div>
@@ -89,8 +99,7 @@
     </div>
 
     <div id="tela-submenu-estoque" class="app-container" style="display: none;">
-        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
-        <div class="desenvolvedor">Desenvolvido por João Marcelo Magon Bonini</div>
+        <header class="topo-app"><img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Lince" class="topo-logo"><b class="topo-titulo">Logística Lince</b><button type="button" class="status-conexao" onclick="forcarSincronizacaoManual()"></button></header>
         <button class="btn-secundario" onclick="voltarParaMenu()"><i class="ph ph-arrow-left"></i> Voltar ao Menu</button>
         <h2 class="titulo-tela"><i class="ph ph-package"></i> Estoque de Peças</h2>
         
@@ -100,8 +109,7 @@
     </div>
 
     <div id="tela-interna" class="app-container" style="display: none;">
-        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo" style="max-width: 180px;">
-        <div class="desenvolvedor" style="margin-bottom: 15px;">Desenvolvido por João Marcelo Magon Bonini</div>
+        <header class="topo-app"><img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Lince" class="topo-logo"><b class="topo-titulo">Logística Lince</b><button type="button" class="status-conexao" onclick="forcarSincronizacaoManual()"></button></header>
 
         <div style="display:flex; gap:10px; width:100%;">
             <button class="btn-secundario" style="padding: 10px; margin-bottom:15px; font-size:13px;" id="btn-trocar-veiculo" onclick="voltarParaPlacas()"><i class="ph ph-arrows-left-right"></i> Trocar</button>
@@ -193,6 +201,6 @@
     </div>
     <input type="file" id="foto-camera-fallback" accept="image/*" capture="environment" style="display:none;" onchange="processarFoto(this, fotoAlvoCamera)">
 
-    <script src="script.js?v=5"></script>
+    <script src="script.js?v=6"></script>
 </body>
 </html>
