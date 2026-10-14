@@ -422,7 +422,19 @@ function abrirPagina(nomeDaPagina) {
 
 let isDrawingPad = false; function initPad(canvasId) { let cvs = document.getElementById(canvasId); if(!cvs) return; let ctx = cvs.getContext('2d'); ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#000'; const getPos = (e) => { let rect = cvs.getBoundingClientRect(); let cX = e.touches ? e.touches[0].clientX : e.clientX; let cY = e.touches ? e.touches[0].clientY : e.clientY; return { x: (cX - rect.left) * (cvs.width / rect.width), y: (cY - rect.top) * (cvs.height / rect.height) }; }; let start = (e) => { e.preventDefault(); isDrawingPad = true; let p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); cvs.setAttribute('data-t', '1'); }; let move = (e) => { e.preventDefault(); if(!isDrawingPad) return; let p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }; let end = (e) => { e.preventDefault(); isDrawingPad = false; }; cvs.onmousedown = start; cvs.ontouchstart = start; cvs.onmousemove = move; cvs.ontouchmove = move; cvs.onmouseup = end; cvs.ontouchend = end; cvs.onmouseout = end; } function limparPad(canvasId) { let cvs = document.getElementById(canvasId); if(!cvs) return; let ctx = cvs.getContext('2d'); ctx.fillStyle = "#fff"; ctx.fillRect(0,0,cvs.width,cvs.height); cvs.removeAttribute('data-t'); } function getPadB64(canvasId) { let cvs = document.getElementById(canvasId); if(!cvs || !cvs.getAttribute('data-t')) return ""; return cvs.toDataURL('image/png'); } function forcarImagemDiretaDrive(url) { if (!url || typeof url !== 'string') return ""; let matchId = url.match(/\/d\/([a-zA-Z0-9_-]+)/); if (matchId && matchId[1]) return "https://lh3.googleusercontent.com/d/" + matchId[1]; let matchId2 = url.match(/id=([a-zA-Z0-9_-]+)/); if (matchId2 && matchId2[1]) return "https://lh3.googleusercontent.com/d/" + matchId2[1]; return url; }
 
-function renderizarMotoristas() { let options = `<option value="">Selecione o Motorista...</option>`; if (window.listaMotoristas && window.listaMotoristas.length > 0) { window.listaMotoristas.forEach(m => { options += `<option value="${m}">${m}</option>`; }); } options += `<option value="NOVO" style="font-weight:bold; color:#1a4d2e;">➕ OUTRO (Adicionar Novo)</option>`; ['chk-motorista', 'chk-carro-motorista', 'chk-emp-motorista', 'abast-motorista', 'nome-motorista'].forEach(id => { let el = document.getElementById(id); if(el) el.innerHTML = options; }); }
+function renderizarMotoristas() { let options = `<option value="">Selecione o Motorista...</option>`; if (window.listaMotoristas && window.listaMotoristas.length > 0) { window.listaMotoristas.forEach(m => { options += `<option value="${m}">${m}</option>`; }); } options += `<option value="NOVO" style="font-weight:bold; color:#1a4d2e;">➕ OUTRO (Adicionar Novo)</option>`; ['chk-motorista', 'chk-carro-motorista', 'chk-emp-motorista', 'abast-motorista', 'nome-motorista'].forEach(id => { let el = document.getElementById(id); if(!el) return; let atual = el.value; el.innerHTML = options; if (atual && atual !== "NOVO") { if (![...el.options].some(o => o.value === atual)) el.add(new Option(atual, atual), 1); el.value = atual; } }); }
+function verificarNovoMotorista(sel) {
+    if (sel.value !== "NOVO") return;
+    Swal.fire({ title: "Novo Motorista", input: "text", inputPlaceholder: "Digite o nome do motorista...", inputAttributes: { autocapitalize: "characters" }, showCancelButton: true, confirmButtonText: "Salvar", cancelButtonText: "Cancelar", confirmButtonColor: "#1a4d2e", inputValidator: v => !v.replace(/["<>]/g, '').trim() && "Digite o nome do motorista!" }).then(r => {
+        if (!r.isConfirmed) { sel.value = sel.dataset.anterior || ""; return; }
+        let nome = r.value.replace(/["<>]/g, '').trim().toUpperCase();
+        let existente = window.listaMotoristas.find(m => String(m).trim().toUpperCase() === nome);
+        if (existente) { nome = existente; } else { window.listaMotoristas.push(nome); salvarCacheLocal(); }
+        renderizarMotoristas();
+        sel.value = nome; sel.dataset.anterior = nome;
+        mostrarToast("<i class='ph ph-user-plus'></i> Motorista adicionado! Será salvo na base ao enviar.", "#059669");
+    });
+}
 function verificarNovoMotoristaAbast(sel) { let inputNovo = document.getElementById('abast-motorista-novo'); if(sel.value === "NOVO") { inputNovo.style.display = 'block'; inputNovo.focus(); } else { inputNovo.style.display = 'none'; inputNovo.value = ''; } }
 function atualizarKMGeral() { document.getElementById('km-atual-oleo').innerText = document.getElementById('km-master').value; calcularOleo(); calcularRodizioPneus(); } 
 
@@ -628,7 +640,43 @@ async function gerarSolicitacaoCompra() {
     } 
 }
 
-function calcularStatusTwi(inE, bId) { let b = document.getElementById(bId); if(!b) return; let v = parseFloat(inE.value); if (isNaN(v)) { b.innerText = "Aguardando..."; b.style.backgroundColor = "#eee"; b.style.color = "#666"; return; } if (v >= 10) { b.innerText = "Pneu Novo"; b.style.backgroundColor = "#d4edda"; b.style.color = "#155724"; } else if (v >= 5) { b.innerText = "Meia-Vida"; b.style.backgroundColor = "#fff3cd"; b.style.color = "#856404"; } else { b.innerText = "No Limite"; b.style.backgroundColor = "#f8d7da"; b.style.color = "#721c24"; } } function processarFoto(input, idPreview) { if (!input.files || !input.files[0]) return; const r = new FileReader(); r.onload = function(e) { const img = new Image(); img.src = e.target.result; img.onload = function() { const cv = document.createElement('canvas'); const MW = 800; let w = img.width; let h = img.height; if (w > MW) { h = Math.round((h * MW) / w); w = MW; } cv.width = w; cv.height = h; const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, w, h); const dU = cv.toDataURL('image/jpeg', 0.6); if(idPreview === 'preview-lat' || idPreview === 'preview-frente') b64Lateral = dU; if(idPreview === 'preview-tras' || idPreview === 'preview-verso') b64Traseira = dU; let pr = document.getElementById(idPreview); pr.src = dU; pr.style.display = 'block'; } }; r.readAsDataURL(input.files[0]); } 
+function calcularStatusTwi(inE, bId) { let b = document.getElementById(bId); if(!b) return; let v = parseFloat(inE.value); if (isNaN(v)) { b.innerText = "Aguardando..."; b.style.backgroundColor = "#eee"; b.style.color = "#666"; return; } if (v >= 10) { b.innerText = "Pneu Novo"; b.style.backgroundColor = "#d4edda"; b.style.color = "#155724"; } else if (v >= 5) { b.innerText = "Meia-Vida"; b.style.backgroundColor = "#fff3cd"; b.style.color = "#856404"; } else { b.innerText = "No Limite"; b.style.backgroundColor = "#f8d7da"; b.style.color = "#721c24"; } } function processarFoto(input, idPreview) { if (!input.files || !input.files[0]) return; const r = new FileReader(); r.onload = function(e) { const img = new Image(); img.src = e.target.result; img.onload = function() { salvarFotoRedimensionada(img, img.width, img.height, idPreview); } }; r.readAsDataURL(input.files[0]); } 
+function salvarFotoRedimensionada(fonte, largura, altura, idPreview) { const cv = document.createElement('canvas'); const MW = 800; let w = largura; let h = altura; if (w > MW) { h = Math.round((h * MW) / w); w = MW; } cv.width = w; cv.height = h; const cx = cv.getContext('2d'); cx.drawImage(fonte, 0, 0, w, h); const dU = cv.toDataURL('image/jpeg', 0.6); if(idPreview === 'preview-lat' || idPreview === 'preview-frente') b64Lateral = dU; if(idPreview === 'preview-tras' || idPreview === 'preview-verso') b64Traseira = dU; let pr = document.getElementById(idPreview); pr.src = dU; pr.style.display = 'block'; }
+
+// CÂMERA: abre a câmera dentro do app; se o aparelho não permitir, usa a câmera nativa do celular
+let fotoAlvoCamera = ""; let streamCamera = null; let cameraFrontal = false;
+async function abrirCamera(idPreview) {
+    fotoAlvoCamera = idPreview;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { abrirCameraNativa(); return; }
+    try {
+        await iniciarStreamCamera();
+        document.getElementById('modal-camera').style.display = 'flex';
+    } catch (e) {
+        console.error("Câmera indisponível:", e);
+        Swal.fire({ title: "Câmera indisponível", text: "Não foi possível abrir a câmera no app. Deseja usar a câmera do celular?", icon: "warning", showCancelButton: true, confirmButtonText: "Usar câmera do celular", cancelButtonText: "Cancelar", confirmButtonColor: "#1a4d2e" }).then(r => { if (r.isConfirmed) abrirCameraNativa(); });
+    }
+}
+function abrirCameraNativa() { let i = document.getElementById('foto-camera-fallback'); i.value = ""; i.click(); }
+async function iniciarStreamCamera() {
+    let novoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: cameraFrontal ? "user" : { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+    pararStreamCamera(); streamCamera = novoStream;
+    let v = document.getElementById('camera-video'); v.srcObject = streamCamera; await v.play().catch(() => {});
+}
+function pararStreamCamera() { if (streamCamera) { streamCamera.getTracks().forEach(t => t.stop()); streamCamera = null; } document.getElementById('camera-video').srcObject = null; }
+function fecharCamera() { pararStreamCamera(); document.getElementById('modal-camera').style.display = 'none'; }
+async function trocarCamera() {
+    cameraFrontal = !cameraFrontal;
+    try { await iniciarStreamCamera(); } catch (e) {
+        cameraFrontal = !cameraFrontal; mostrarToast("<i class='ph ph-warning'></i> Não foi possível trocar de câmera", "#dc2626");
+        try { await iniciarStreamCamera(); } catch (e2) { fecharCamera(); }
+    }
+}
+function capturarFoto() {
+    let v = document.getElementById('camera-video');
+    if (!v.videoWidth) { mostrarToast("<i class='ph ph-spinner ph-spin'></i> Aguarde a câmera carregar...", "#d97706"); return; }
+    salvarFotoRedimensionada(v, v.videoWidth, v.videoHeight, fotoAlvoCamera);
+    fecharCamera();
+}
 
 function renderizarHistorico(d) { 
     let c = document.getElementById('container-historico'); 

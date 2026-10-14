@@ -170,6 +170,16 @@ details[open] summary::after { content: '▴'; }
     display: flex; align-items: center; justify-content: center; color: var(--text-muted); 
     font-size: 13px; border: 2px dashed #cbd5e1; margin-top: 8px; font-weight: 500;
 }
+.foto-acoes { display: flex; gap: 10px; }
+.btn-foto {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 12px 8px; border: none; border-radius: 12px; font-size: 13px; font-weight: 600;
+    font-family: 'Inter', sans-serif; background: var(--primary-color); color: #fff; cursor: pointer;
+}
+.btn-foto.sec { background: #e5e7eb; color: #374151; }
+.btn-foto:active { transform: scale(0.97); }
+.modal-camera-box { max-width: 480px; }
+#camera-video { width: 100%; max-height: 60vh; border-radius: 12px; background: #000; display: block; object-fit: contain; }
 
 /* HISTÓRICO LISTA */
 .historico-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 10px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
