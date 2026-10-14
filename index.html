@@ -1,426 +1,193 @@
-/* =========================================================
-   SISTEMA LINCE - GOOGLE APPS SCRIPT (BACKEND)
-   ========================================================= */
-const SPREADSHEET_ID = "1-G_0PYk52QGJFjxureg11abLbWY_ftnoEiy582yMvN4";
-
-var PASTAS_CHECKLIST = {
-  "AXZ1D53": "1dmVp46qbB_QjHXqIym24a_3hj1eIKaPA", "FCT1J98": "1_V9lqo7Yo5oH7w3clvg6hwsymeSyfG2T",
-  "FEE9E40": "14O-DKxUFa1uumnGopTFXHTY0ys37JMAe", "FEF7C02": "16WtHBRoKBJi7EKGh_1xpNVaGgJ234y32",
-  "FIF9A30": "10fgDKhzeFW-huSujN_eM5eprGPmn4yxn", "FMQ8H77": "1-gtHazyPOAobwpQd290bK9dCLMR6s_Zd",
-  "FMR4I10": "1SMfxQhbljoIS-JfdBZOtgjTXiKNZxK0x", "FPJ1B16": "1jVfBMIX4DdicbTNBNslGY9L_uF4OsR6G",
-  "FQY6B30": "1kgk-NS0xRuzAehnrSArFTXl9iZRCSJCB", "FUH9H91": "1ur2Q49CNidDIXM5YYbz39VN7wpOb_FUy",
-  "FYY7G32": "1m6-QkwdYrVFKugrB6t6m2-rWFP_VRvVA", "GHE3E06": "1TfEcghFMidwgkNuWFHQw9eY8rUr1L5Ip",
-  "IVE8J03": "1hLfz6Wsr4EpCPuQ_CMBLnDHzW_P4KKXL", "NTP4G17": "1giDQLxl4GjRbGYyB9p-66lKQsjp4kkyx",
-  "TKR8I49": "1X-OloUIvlHbzQLzVlenlf3Jf28zgZ2ct", "TLL8H30": "1IMTbSquEm44f-xzTa_KP8NWAeEwB76p6",
-  "TLY0G57": "1WZIFO-cKIsEJZYnG8WyDvQuqwjPOonaT", "UDN0J81": "1TWC02cgjWe3d0pMovSVjdNrJQ_cM0Nuq",
-  "UPS1J80": "1uAdoTRAZ4TThmRFkdR1hIMM0vuFYfFqh", "UPX9D25": "14Oq5Lbdjg_iJ_OMGtSQfAoNF1CaQ8Hfu",
-  "URT4E79": "1IIbViiRJTu-BGs1Jy3uWkiuckuHQ6h_j", "URU3F36": "1bO8lSIrl0J-w-7xCUSr5Yx_jAz0KviF7",
-  "CLW4E92": "1izYkbQzSbjc_AVJq9h-l5f4mwv9lf4uo", "UGF2G86": "1_kLxEEqGL_4VfPFBNjwZNDDZn2O27oiM", "FGX2A32": "1QL_RBIQggLUZfahNRoOUsCxfRttQJaQm",
-  "05025DR3290": "1QG_YhHoKlX30zVGeH19R7fIMQZ0VHnoY", "05025DR8824": "1PTa-rpQGZJvMj49l9-F1Go44OHoANvOW"
-};
-
-var PASTAS_FOTOS = {
-  "AXZ1D53": "1Xkf7gL93RwpYwjp5QJBHXCFi0aLE460Y", "FCT1J98": "1O0Ma0oZOkgywGILFLj_qsdOsrc8HWveX",
-  "FEE9E40": "1qluhsQ4tGZ1JprurVSvV82Xj8whHkWs_", "FIF9A30": "1c5w9sPz6fsKdYjm2CT65yENZpEB3W8Gc",
-  "FMQ8H77": "1WJkb64M-CkL-susktiqrElX2Q3Wol15s", "FMR4I10": "1O10A3K38mGtYYWQ39SVcFQ9UQnt2LU4p",
-  "FPJ1B16": "1HoMfbzkeXnpSETaw0qVKn3K7To2xeaZt", "FQY6B30": "143ALpnG0aBtMX_Czl6phPbsXC-OH3_I0",
-  "FUH9H91": "154fKCcj9RiZK-BcyEFuuyiOBrmbP3RWE", "IVE8J03": "1f3_cdhVjzGteGiWXP8ccbNwtvPopiWmE",
-  "NTP4G17": "1rhtlZPDFWTH1QsZqNdu39yDG7uHr4MBG", "TKR8I49": "12kT7C_Vqq2lEmxPyfUK1VZhadtfiCjge",
-  "TLL8H30": "1elQodDXxYyhXjvgd3FQZMpQx8TZkML04", "TLY0G57": "19PXOppoa6g1Jg8Ri16msLqC-0fMfl832",
-  "UDN0J81": "1B1-Tdl1Q7io0GbJ7fmWvpSLnFFRqD4dv", "UPS1J80": "1IvklrKBHCTFP_ys3j9gJQWBZieTRZhis",
-  "UPX9D25": "15kytE_thObAfjTrTAZNXsfUks5tZs56r", "URT4E79": "14eGCw6L26ivo0_JVdpT-OZoCCb3GJhRj",
-  "URU3F36": "1kvVZwjoN87tGqn04lt9ZCBorBFiVax3q",
-  "CLW4E92": "1SmS5CP7kff2Z5JwEoDFeuFxp97Zef2tF", "UGF2G86": "16uI9kyPQkNLpS2-rsFoo9qpSDM_LHw_-", "FGX2A32": "1CXPavrDADJsjW7aMqPbqETTV-lzWBCoK"
-};
-
-var CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32'];
-var CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
-var EMPILHADEIRAS = ['05025DR3290', '05025DR8824'];
-var TRUCKS = ['FEE9E40'];
-var TOCOS = ['AXZ1D53', 'FCT1J98', 'FIF9A30', 'FMQ8H77', 'FPJ1B16', 'FUH9H91', 'IVE8J03', 'NTP4G17', 'FMR4I10', 'FQY6B30', 'TKR8I49', 'TLL8H30', 'TLY0G57', 'UDN0J81', 'UPS1J80', 'UPX9D25', 'URT4E79', 'URU3F36'];
-
-function limparEspacos(texto) { if(!texto) return ""; return String(texto).replace(/[^a-zA-Z0-9]/g, '').toUpperCase(); }
-
-function doGet(e) { try { var acao = e.parameter.acao; if (acao === 'login') return verificarLogin(e.parameter.usuario, e.parameter.senha); if (acao === 'buscar_inicial') return buscarInicial(); return retornarJSON({"erro": "Ação GET não encontrada"}); } catch (erro) { return retornarJSON({"erro": "Erro interno: " + erro.message}); } }
-
-function doPost(e) { 
-    try { 
-        var dados = JSON.parse(e.postData.contents); 
-        var acao = dados.acao; 
-        if (acao === 'salvar_checklist') return salvarChecklist(dados); 
-        if (acao === 'salvar_ficha_tecnica') return salvarFichaTecnica(dados); 
-        if (acao === 'salvar_abastecimento') return salvarAbastecimento(dados); 
-        if (acao === 'editar_abastecimento') return editarAbastecimento(dados);
-        if (acao === 'salvar_estoque') return salvarMovimentacaoEstoque(dados); 
-        if (acao === 'editar_estoque') return editarEstoqueGeral(dados); 
-        if (acao === 'solicitar_compra') return gerarPdfCompra(dados); 
-        return retornarJSON({"erro": "Ação POST não encontrada"}); 
-    } catch (erro) { return retornarJSON({"erro": "Erro POST: " + erro.message}); } 
-}
-
-function verificarLogin(u, s) { 
-    var arquivo = SpreadsheetApp.openById(SPREADSHEET_ID);
-    var planilha = arquivo.getSheetByName("Usuarios"); 
-    if (!planilha) return retornarJSON({"erro": "Aba 'Usuarios' não existe na planilha!"}); 
-    var dados = planilha.getDataRange().getValues(); 
-    var userReq = String(u).trim().toLowerCase(); 
-    var passReq = String(s).trim(); 
-    for (var i = 1; i < dados.length; i++) { 
-        if (!dados[i][0]) continue; 
-        var userSheet = String(dados[i][0]).trim().toLowerCase(); 
-        var passSheet = String(dados[i][1]).trim(); 
-        if (userSheet === userReq && passSheet === passReq) return retornarJSON({ "sucesso": true, "versao_backend": "v9.6" }); 
-    } 
-    return retornarJSON({ "sucesso": false }); 
-}
-
-function buscarInicial() {
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  var listaMotoristas = []; var abaMot = ss.getSheetByName("Motoristas"); if (abaMot) { var dadosM = abaMot.getDataRange().getValues(); for (var m = 1; m < dadosM.length; m++) { if (String(dadosM[m][0]).trim() !== "") listaMotoristas.push(String(dadosM[m][0]).trim()); } }
-  
-  var abaVeiculos = ss.getSheetByName("Veiculos"); var dadosV = abaVeiculos.getDataRange().getValues(); var frota = {};
-  for (var i = 1; i < dadosV.length; i++) {
-    var placa = limparEspacos(dadosV[i][0]); if (!placa) continue;
-    frota[placa] = {
-        "placa": placa, "tipo": dadosV[i][1] || "", "motorista": dadosV[i][2] || "",
-        "km_atual": dadosV[i][3] || "", "km_oleo": dadosV[i][4] || "",
-        "data_tacografo": formatarDataSegura(dadosV[i][5]), "data_graxa": formatarDataSegura(dadosV[i][6]),
-        "link_documento": dadosV[i][7] || "", "foto_lateral": dadosV[i][8] || "", "foto_traseira": dadosV[i][9] || "",
-        "mes_foto": formatarMesSeguro(dadosV[i][10]), "qtd_carrinhos": dadosV[i][11] !== undefined ? dadosV[i][11] : "0",
-        "qtd_cones": dadosV[i][12] !== undefined ? dadosV[i][12] : "0",
-        "qtd_calcos": dadosV[i][13] !== undefined ? dadosV[i][13] : "0",
-        "data_extintor": formatarDataSegura(dadosV[i][14]),
-        "gasto_mes": 0, "pneus": {}, "abast_atual": { km_atual: 0, litros: 0, km_ant: 0 }
-    };
-  }
-  
-  var abaPneus = ss.getSheetByName("Pneus"); if (abaPneus) { var dadosP = abaPneus.getDataRange().getValues(); for (var j = 1; j < dadosP.length; j++) { var placaP = limparEspacos(dadosP[j][0]); if (!placaP) continue; if (frota[placaP]) { var posicao = limparEspacos(dadosP[j][1]).toLowerCase(); frota[placaP].pneus[posicao] = { "estado": dadosP[j][2] || "---", "milimetros": dadosP[j][3] || "---", "km_ultima_troca": dadosP[j][4] || "0", "data_ultima_troca": formatarDataSegura(dadosP[j][5]), "data_ultimo_rodizio": formatarDataSegura(dadosP[j][6]), "pneu_colocado": dadosP[j][7] || "NOVO", "km_proximo_rodizio": dadosP[j][8] || "0" }; } } }
-  
-  var estoqueDiesel = 0; var estoqueArla = 0; var gastoMesGeral = 0; var dataHoje = new Date(); var mAtualNum = dataHoje.getMonth() + 1; var yAtualNum = dataHoje.getFullYear(); var mesAtualSTR = yAtualNum + "-" + (mAtualNum < 10 ? "0" + mAtualNum : mAtualNum);
-  var listaDiesel = []; var listaArla = []; var listaChegDiesel = []; var listaChegArla = []; var abastHistPorPlaca = {};
-  var abaReg = ss.getSheetByName("Registro_Abastecimento");
-  
-  if (abaReg) {
-      var dadosAbast = abaReg.getDataRange().getValues();
-      for (var a = 1; a < dadosAbast.length; a++) {
-          var aData = dadosAbast[a][0]; if (!aData || String(aData).trim() === "") continue;
-          var aPlaca = limparEspacos(dadosAbast[a][1]); var aTipo = String(dadosAbast[a][2]).toUpperCase();
-          var aKm = parseFloat(dadosAbast[a][3]) || 0; var aLitros = parseFloat(dadosAbast[a][4]) || 0;
-          var dtFormat = ""; var isMesAtual = false;
-          if (aData instanceof Date) { var mm = aData.getMonth() + 1; var yy = aData.getFullYear(); var dd = aData.getDate(); if (yy === yAtualNum && mm === mAtualNum) isMesAtual = true; dtFormat = (dd < 10 ? "0" + dd : dd) + "/" + (mm < 10 ? "0" + mm : mm) + "/" + yy; } else { var strData = String(aData).trim(); dtFormat = strData.substring(0, 10); if (dtFormat.indexOf("-") === 4) { if (strData.substring(0, 7) === mesAtualSTR) isMesAtual = true; var partes = dtFormat.split("-"); if (partes.length === 3) dtFormat = partes[2] + "/" + partes[1] + "/" + partes[0]; } }
-          
-          var itemHist = { data: dtFormat, placa: aPlaca, litros: aLitros, id_transacao: dadosAbast[a][9] || "", usuario: dadosAbast[a][8] || "", km: aKm };
-          
-          if (aTipo === "CHEGADA DE DIESEL") { estoqueDiesel += aLitros; listaChegDiesel.push(itemHist); }
-          else if (aTipo === "CHEGADA DE ARLA") { estoqueArla += aLitros; listaChegArla.push(itemHist); }
-          else if (aTipo === "DIESEL" || aTipo === "COMBUSTÍVEL") {
-              if (!abastHistPorPlaca[aPlaca]) abastHistPorPlaca[aPlaca] = [];
-              abastHistPorPlaca[aPlaca].push({km: aKm, litros: aLitros});
-              estoqueDiesel -= aLitros; listaDiesel.push(itemHist);
-              if (isMesAtual) { gastoMesGeral += aLitros; if (frota[aPlaca]) frota[aPlaca].gasto_mes += aLitros; }
-          }
-          else if (aTipo === "ARLA") { estoqueArla -= aLitros; listaArla.push(itemHist); }
-      }
-  }
-  
-  for (var p in frota) {
-      if (abastHistPorPlaca[p] && abastHistPorPlaca[p].length > 0) {
-          var arr = abastHistPorPlaca[p];
-          var last = arr[arr.length - 1];
-          var prev = arr.length > 1 ? arr[arr.length - 2] : {km: 0, litros: 0};
-          frota[p].abast_atual = { km_atual: last.km, litros: last.litros, km_ant: prev.km };
-      }
-  }
-
-  var histAbast = { diesel: listaDiesel.slice(-24).reverse(), arla: listaArla.slice(-24).reverse(), cheg_diesel: listaChegDiesel.slice(-3).reverse(), cheg_arla: listaChegArla.slice(-3).reverse() };
-  var historico = [];
-  var abaResp = ss.getSheetByName("Checklist_Respostas");
-  if (abaResp) {
-      var dadosR = abaResp.getDataRange().getValues();
-      var adicionados = 0;
-      for (var k = dadosR.length - 1; k > 0; k--) {
-          if (!String(dadosR[k][0]).trim()) continue;
-          historico.push({ "data": dadosR[k][0], "placa": dadosR[k][1] });
-          adicionados++;
-          if (adicionados >= 150) break;
-      }
-  }
-  var estoqueGeral = []; var abaEst = ss.getSheetByName("Estoque_Geral"); if(abaEst) { var dE = abaEst.getDataRange().getValues(); for(var e = 1; e < dE.length; e++) { if(String(dE[e][0]).trim() !== "") { estoqueGeral.push({ item: dE[e][0], qtd: dE[e][1], min: dE[e][2], link: dE[e][3], qtd_compra: dE[e][4], valor: dE[e][5], data_compra: formatarDataSegura(dE[e][6]) }); } } }
-  
-  return retornarJSON({ "sucesso": true, "versao_backend": "v9.6", "frota": frota, "historico": historico, "motoristas": listaMotoristas, "estoque_diesel": Math.round(estoqueDiesel), "estoque_arla": Math.round(estoqueArla), "gasto_mes_geral": Math.round(gastoMesGeral), "hist_abast": histAbast, "estoque_pecas": estoqueGeral });
-}
-
-function salvarAbastecimento(dados) {
-    var lock = LockService.getScriptLock(); lock.waitLock(15000);
-    try {
-        var ss = SpreadsheetApp.openById(SPREADSHEET_ID); var abaReg = ss.getSheetByName("Registro_Abastecimento");
-        if (!abaReg) { abaReg = ss.insertSheet("Registro_Abastecimento"); abaReg.appendRow(["Data", "Placa", "Tipo", "KM", "Litros", "Motorista", "Responsavel", "NF", "Usuário Logado", "ID Transacao"]); }
-        
-        var ultimaLinhaReg = abaReg.getLastRow();
-        if (ultimaLinhaReg > 0) {
-            var maxLinhas = Math.min(100, ultimaLinhaReg);
-            var startR = Math.max(1, ultimaLinhaReg - maxLinhas + 1);
-            var ultimas = abaReg.getRange(startR, 10, maxLinhas, 1).getValues();
-            for (var u = 0; u < ultimas.length; u++) {
-                if (dados.id_transacao && String(ultimas[u][0]) === String(dados.id_transacao)) return retornarJSON({"sucesso": true, "msg": "Já processado"});
-            }
-        }
-        
-        abaReg.appendRow([ dados.data, dados.placa, dados.tipo, dados.km, dados.litros, dados.motorista, dados.responsavel, dados.nf, dados.usuario, dados.id_transacao ]);
-        
-        if ((dados.tipo === "DIESEL" || dados.tipo === "ARLA" || dados.tipo === "COMBUSTÍVEL") && dados.km) {
-            var abaVeiculos = ss.getSheetByName("Veiculos"); var valVeiculos = abaVeiculos.getDataRange().getValues(); var placaAlvo = limparEspacos(dados.placa);
-            for (var i = 1; i < valVeiculos.length; i++) {
-                if (limparEspacos(valVeiculos[i][0]) === placaAlvo) {
-                    var kmAntigo = parseFloat(valVeiculos[i][3]) || 0;
-                    if (parseFloat(dados.km) > kmAntigo) abaVeiculos.getRange(i + 1, 4).setValue(dados.km);
-                    break;
-                }
-            }
-        }
-
-        if (dados.motorista && dados.motorista !== "") {
-            var abaMot = ss.getSheetByName("Motoristas");
-            if(abaMot) {
-                var dadosMot = abaMot.getDataRange().getValues();
-                var existe = false;
-                for (var m = 1; m < dadosMot.length; m++) {
-                    if (String(dadosMot[m][0]).trim().toUpperCase() === String(dados.motorista).trim().toUpperCase()) {
-                        existe = true; break;
-                    }
-                }
-                if (!existe) abaMot.appendRow([String(dados.motorista).trim().toUpperCase()]);
-            }
-        }
-        return retornarJSON({"sucesso": true});
-    } catch(e) { return retornarJSON({"erro": e.message}); } finally { lock.releaseLock(); }
-}
-
-function editarAbastecimento(dados) {
-    var lock = LockService.getScriptLock(); lock.waitLock(15000);
-    try {
-        var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-        var abaReg = ss.getSheetByName("Registro_Abastecimento");
-        var valReg = abaReg.getDataRange().getValues();
-        for (var i = valReg.length - 1; i > 0; i--) {
-            if (String(valReg[i][9]) === String(dados.id_transacao)) {
-                abaReg.getRange(i + 1, 4).setValue(dados.km);
-                abaReg.getRange(i + 1, 5).setValue(dados.litros);
-                
-                var placaAlvo = limparEspacos(valReg[i][1]);
-                var abaVeiculos = ss.getSheetByName("Veiculos"); 
-                var valVeiculos = abaVeiculos.getDataRange().getValues();
-                for (var v = 1; v < valVeiculos.length; v++) {
-                    if (limparEspacos(valVeiculos[v][0]) === placaAlvo) {
-                        var kmAtualPlan = parseFloat(valVeiculos[v][3]) || 0;
-                        var kmAntigo = parseFloat(valReg[i][3]) || 0;
-                        if (kmAtualPlan === kmAntigo || parseFloat(dados.km) > kmAtualPlan) {
-                            abaVeiculos.getRange(v + 1, 4).setValue(dados.km);
-                        }
-                        break;
-                    }
-                }
-                break;
-            }
-        }
-        return retornarJSON({"sucesso": true});
-    } catch(e) { return retornarJSON({"erro": e.message}); } finally { lock.releaseLock(); }
-}
-
-function salvarMovimentacaoEstoque(dados) {
-    var lock = LockService.getScriptLock(); lock.waitLock(15000);
-    try {
-        var ss = SpreadsheetApp.openById(SPREADSHEET_ID); var abaReg = ss.getSheetByName("Registro_Estoque"); if(!abaReg) { abaReg = ss.insertSheet("Registro_Estoque"); abaReg.appendRow(["Data", "Item", "Tipo", "Quantidade", "Responsável", "Placa/Obs", "Valor (R$)", "Link/NF", "Usuário Logado"]); } abaReg.appendRow([dados.data, dados.item, dados.tipo, dados.qtd, dados.responsavel, dados.placa, dados.valor, dados.link, dados.usuario]); var abaEst = ss.getSheetByName("Estoque_Geral"); if(abaEst) { var dE = abaEst.getDataRange().getValues(); for(var i=1; i<dE.length; i++) { if(String(dE[i][0]).trim() === String(dados.item).trim()) { var qtdAntiga = parseFloat(dE[i][1]) || 0; var mov = parseFloat(dados.qtd) || 0; if(dados.tipo === "SAÍDA") { abaEst.getRange(i+1, 2).setValue(qtdAntiga - mov); } else if(dados.tipo === "ENTRADA") { abaEst.getRange(i+1, 2).setValue(qtdAntiga + mov); if(dados.valor) abaEst.getRange(i+1, 6).setValue(dados.valor); if(mov) abaEst.getRange(i+1, 5).setValue(mov); if(dados.link) abaEst.getRange(i+1, 4).setValue(dados.link); abaEst.getRange(i+1, 7).setValue(dados.data.substring(0,10)); } break; } } }
-        return retornarJSON({"sucesso": true});
-    } catch(e) { return retornarJSON({"erro": e.message}); } finally { lock.releaseLock(); }
-}
-
-function editarEstoqueGeral(dados) {
-    var lock = LockService.getScriptLock(); lock.waitLock(15000);
-    try {
-        var ss = SpreadsheetApp.openById(SPREADSHEET_ID); var abaEst = ss.getSheetByName("Estoque_Geral"); var dE = abaEst.getDataRange().getValues(); var pecasEditadas = dados.pecas; for(var i = 1; i < dE.length; i++) { var nomeItem = String(dE[i][0]).trim(); if (pecasEditadas[nomeItem]) { var p = pecasEditadas[nomeItem]; if (p.qtd !== undefined) abaEst.getRange(i+1, 2).setValue(p.qtd); if (p.valor !== undefined) abaEst.getRange(i+1, 6).setValue(p.valor); if (p.data_compra !== undefined) abaEst.getRange(i+1, 7).setValue(p.data_compra); } }
-        return retornarJSON({"sucesso": true});
-    } catch(e) { return retornarJSON({"erro": e.message}); } finally { lock.releaseLock(); }
-}
-
-function gerarPdfCompra(dados) { try { var folderId = "1nMkshnO8H04W5gSBEO901Y_ysQoUaTUI"; var folder = DriveApp.getFolderById(folderId.trim()); var dataFormatada = Utilities.formatDate(new Date(), "GMT-03:00", "dd/MM/yyyy HH:mm"); var html = `<html><head><style>body { font-family: 'Arial', sans-serif; font-size: 12px; color: #333; margin: 0; padding: 20px; } .cabecalho { text-align: center; border-bottom: 3px solid #b30000; padding-bottom: 10px; margin-bottom: 30px; } .cabecalho img { width: 120px; margin-bottom: 5px; } .cabecalho h2 { color: #b30000; margin: 0; font-size: 18px; text-transform: uppercase; } .secao { border: 1px solid #ddd; border-radius: 4px; padding: 15px; margin-bottom: 15px; background: #fff; } .linha { margin-bottom: 10px; font-size: 14px; } b { color: #1a4d2e; } .urgencia { display: inline-block; padding: 5px 10px; border-radius: 4px; font-weight: bold; background: #ffeeba; color: #856404; } .urgencia.alta { background: #f8d7da; color: #721c24; } .assinaturas { margin-top: 60px; text-align: center; display: table; width: 100%; } .ass-box { display: table-cell; width: 45%; vertical-align: bottom; } .ass-linha { border-bottom: 1px solid #000; width: 80%; margin: 0 auto 5px auto; }</style></head><body><div class="cabecalho"><img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logotipo Lince"><h2>SOLICITAÇÃO OFICIAL DE COMPRA</h2></div><div class="secao"><div class="linha"><b>Data da Solicitação:</b> ${dataFormatada}</div><div class="linha"><b>Solicitante:</b> ${dados.usuario}</div><div class="linha"><b>Item Solicitado:</b> <span style="font-size: 16px;">${dados.item}</span></div><div class="linha"><b>Quantidade Necessária:</b> <span style="font-size: 16px;">${dados.qtd}</span></div><div class="linha"><b>Nível de Urgência:</b> <span class="urgencia ${dados.urgencia === 'ALTA' ? 'alta' : ''}">${dados.urgencia}</span></div></div><div class="secao" style="background: #f1f8ff; border-color: #0056b3;"><h3 style="margin-top:0; color: #0056b3;">ℹ️ Informações da Última Compra (Referência)</h3><div class="linha"><b>Valor Pago Anteriormente:</b> R$ ${dados.valor_ref || "---"}</div><div class="linha"><b>Quantidade Comprada:</b> ${dados.qtd_ref || "---"}</div><div class="linha"><b>Fornecedor/Link da Última Compra:</b><br> <a href="${dados.link_ref}" target="_blank" style="word-break: break-all;">${dados.link_ref || "Sem registro"}</a></div></div><div class="assinaturas"><div class="ass-box"><div class="ass-linha"></div><b>GERENTE DE ARMAZÉM</b><br><span style="color:#555">ANTONIO FERNANDO GIMENEZ</span></div></div></body></html>`; var blob = Utilities.newBlob(html, MimeType.HTML).getAs(MimeType.PDF); var nomeArquivo = "SolicitacaoCompra_" + dados.item.replace(/[^a-zA-Z0-9]/g, "").substring(0,10) + "_" + Utilities.formatDate(new Date(), "GMT-03:00", "dd-MM") + ".pdf"; blob.setName(nomeArquivo); var file = folder.createFile(blob); file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); return retornarJSON({"sucesso": true, "link_pdf": file.getUrl()}); } catch(e) { return retornarJSON({"erro": "Erro PDF Compra: " + e.message}); } }
-function formatarDataSegura(valor) { if (!valor || String(valor).trim() === "") return ""; try { if (valor instanceof Date) return Utilities.formatDate(valor, "GMT-03:00", "yyyy-MM-dd"); var str = String(valor).trim(); if (str.includes('T')) return str.split('T')[0]; if (str.includes('/')) { var p = str.split('/'); if (p.length === 3) return p[2].substring(0,4) + '-' + p[1] + '-' + p[0]; } return str; } catch (e) { return ""; } }
-function formatarMesSeguro(valor) { if (!valor || String(valor).trim() === "") return ""; try { if (valor instanceof Date) return Utilities.formatDate(valor, "GMT-03:00", "yyyy-MM"); return String(valor).trim().substring(0, 7); } catch (e) { return ""; } }
-function salvarImagemNoDrive(base64Data, nomeArquivo, folderId) { try { var folder = null; if (folderId) { try { folder = DriveApp.getFolderById(folderId.trim()); } catch(ex) {} } if (!folder) { var folderName = "Fotos_Caminhoes_Lince"; var folders = DriveApp.getFoldersByName(folderName); folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName); } var bytes = Utilities.base64Decode(base64Data.split(',')[1] || base64Data); var blob = Utilities.newBlob(bytes, 'image/jpeg', nomeArquivo); var file = folder.createFile(blob); file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); return file.getUrl(); } catch(e) { return "Erro Drive Imagem: " + e.message; } }
-function retornarJSON(objeto) { return ContentService.createTextOutput(JSON.stringify(objeto)).setMimeType(ContentService.MimeType.JSON); }
-
-function salvarFichaTecnica(dados) {
-  var lock = LockService.getScriptLock(); lock.waitLock(15000);
-  try {
-      var ss = SpreadsheetApp.openById(SPREADSHEET_ID); var placa = limparEspacos(dados.placa); var abaVeiculos = ss.getSheetByName("Veiculos"); var valVeiculos = abaVeiculos.getDataRange().getValues();
-      for (var i = 1; i < valVeiculos.length; i++) {
-          var placaPlanilha = limparEspacos(valVeiculos[i][0]);
-          if (placaPlanilha === placa) {
-              if(dados.tipo !== undefined) abaVeiculos.getRange(i + 1, 2).setValue(dados.tipo);
-              if(dados.motorista !== undefined) abaVeiculos.getRange(i + 1, 3).setValue(dados.motorista);
-              if(dados.km_atual !== undefined && String(dados.km_atual).trim() !== "") abaVeiculos.getRange(i + 1, 4).setValue(dados.km_atual);
-              if(dados.km_oleo !== undefined && String(dados.km_oleo).trim() !== "") abaVeiculos.getRange(i + 1, 5).setValue(dados.km_oleo);
-              if(dados.data_tacografo !== undefined) abaVeiculos.getRange(i + 1, 6).setValue(dados.data_tacografo);
-              if(dados.data_graxa !== undefined) abaVeiculos.getRange(i + 1, 7).setValue(dados.data_graxa);
-              if(dados.qtd_carrinhos !== undefined) abaVeiculos.getRange(i + 1, 12).setValue(dados.qtd_carrinhos);
-              if(dados.qtd_cones !== undefined) abaVeiculos.getRange(i + 1, 13).setValue(dados.qtd_cones);
-              if(dados.qtd_calcos !== undefined) abaVeiculos.getRange(i + 1, 14).setValue(dados.qtd_calcos);
-              if(dados.data_extintor !== undefined) abaVeiculos.getRange(i + 1, 15).setValue(dados.data_extintor);
-              break;
-          }
-      }
-      
-      var abaPneus = ss.getSheetByName("Pneus"); var valPneus = abaPneus.getDataRange().getValues(); var pneuRows = {};
-      for (var j = 1; j < valPneus.length; j++) { if (limparEspacos(valPneus[j][0]) === placa) pneuRows[limparEspacos(valPneus[j][1])] = j + 1; }
-      var objPneus = dados.pneus || {};
-      for (var key in objPneus) {
-          var idTratado = limparEspacos(key);
-          if (pneuRows[idTratado]) {
-              if (objPneus[key].km_ultima_troca !== undefined) abaPneus.getRange(pneuRows[idTratado], 5).setValue(objPneus[key].km_ultima_troca);
-              if (objPneus[key].data_ultima_troca !== undefined) abaPneus.getRange(pneuRows[idTratado], 6).setValue(objPneus[key].data_ultima_troca);
-              if (objPneus[key].data_ultimo_rodizio !== undefined) abaPneus.getRange(pneuRows[idTratado], 7).setValue(objPneus[key].data_ultimo_rodizio);
-              if (objPneus[key].pneu_colocado !== undefined) abaPneus.getRange(pneuRows[idTratado], 8).setValue(objPneus[key].pneu_colocado);
-              if (objPneus[key].km_proximo_rodizio !== undefined) abaPneus.getRange(pneuRows[idTratado], 9).setValue(objPneus[key].km_proximo_rodizio);
-          }
-      }
-      SpreadsheetApp.flush(); return retornarJSON({"sucesso": true});
-  } catch(e) { return retornarJSON({"erro": e.message}); } finally { lock.releaseLock(); }
-}
-
-function salvarChecklist(dados) {
-  var lock = LockService.getScriptLock(); lock.waitLock(15000);
-  try {
-      salvarFichaTecnica(dados);
-      
-      // Adiciona novo motorista na aba Motoristas se não existir (Checklist)
-      var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-      if (dados.motorista && dados.motorista !== "") {
-          var abaMot = ss.getSheetByName("Motoristas");
-          if(abaMot) {
-              var dadosMot = abaMot.getDataRange().getValues();
-              var existeMot = false;
-              for (var m = 1; m < dadosMot.length; m++) {
-                  if (String(dadosMot[m][0]).trim().toUpperCase() === String(dados.motorista).trim().toUpperCase()) {
-                      existeMot = true; break;
-                  }
-              }
-              if (!existeMot) abaMot.appendRow([String(dados.motorista).trim().toUpperCase()]);
-          }
-      }
-
-      var placa = limparEspacos(dados.placa);
-      var abaVeiculos = ss.getSheetByName("Veiculos");
-      var valVeiculos = abaVeiculos.getDataRange().getValues();
-      var mesAtual = Utilities.formatDate(new Date(), "GMT-03:00", "yyyy-MM");
-      var linkLat = null, linkTras = null;
-      
-      var isCavalo = CAVALOS.includes(placa) || dados.categoria === "CAVALO";
-      var isEmpilhadeira = EMPILHADEIRAS.includes(placa) || dados.categoria === "EMPILHADEIRA";
-      
-      if (!isCavalo && !isEmpilhadeira) {
-        var fotoFolderId = PASTAS_FOTOS[placa] || "116jff_YokKGuVuko0H6V9Hkk3Iz4hDZC";
-        if (dados.foto_lateral_b64) linkLat = salvarImagemNoDrive(dados.foto_lateral_b64, placa + "_FrenteLateral_" + mesAtual + ".jpg", fotoFolderId);
-        if (dados.foto_traseira_b64) linkTras = salvarImagemNoDrive(dados.foto_traseira_b64, placa + "_VersoTraseira_" + mesAtual + ".jpg", fotoFolderId);
-      }
-      
-      var qtdCarrinhos = "0"; var qtdCones = "0"; var qtdCalcos = "0";
-      for (var v = 1; v < valVeiculos.length; v++) {
-          var placaPlanilha = limparEspacos(valVeiculos[v][0]);
-          if (placaPlanilha === placa) {
-              if (linkLat) abaVeiculos.getRange(v + 1, 9).setValue(linkLat);
-              if (linkTras) abaVeiculos.getRange(v + 1, 10).setValue(linkTras);
-              if (linkLat || linkTras) abaVeiculos.getRange(v + 1, 11).setValue("'" + mesAtual);
-              if(dados.data_extintor) abaVeiculos.getRange(v + 1, 15).setValue(dados.data_extintor);
-              if(dados.qtd_carrinhos !== undefined && dados.qtd_carrinhos !== "") abaVeiculos.getRange(v + 1, 12).setValue(dados.qtd_carrinhos);
-              if(dados.qtd_cones !== undefined && dados.qtd_cones !== "") abaVeiculos.getRange(v + 1, 13).setValue(dados.qtd_cones);
-              if(dados.qtd_calcos !== undefined && dados.qtd_calcos !== "") abaVeiculos.getRange(v + 1, 14).setValue(dados.qtd_calcos);
-              qtdCarrinhos = dados.qtd_carrinhos || valVeiculos[v][11] || "0";
-              qtdCones = dados.qtd_cones || valVeiculos[v][12] || "0";
-              qtdCalcos = dados.qtd_calcos || valVeiculos[v][13] || "0";
-              break;
-          }
-      }
-      if(!isEmpilhadeira) {
-          var abaPneus = ss.getSheetByName("Pneus"); var valPneus = abaPneus.getDataRange().getValues(); var pneuRows = {};
-          for (var j = 1; j < valPneus.length; j++) { if (limparEspacos(valPneus[j][0]) === placa) pneuRows[limparEspacos(valPneus[j][1])] = j + 1; }
-          var objPneus = dados.pneus || {};
-          for (var key in objPneus) {
-              var idTratado = limparEspacos(key);
-              if (pneuRows[idTratado] && objPneus[key].estado) {
-                  abaPneus.getRange(pneuRows[idTratado], 3).setValue(objPneus[key].estado);
-                  abaPneus.getRange(pneuRows[idTratado], 4).setValue(objPneus[key].milimetros);
-              } else if(objPneus[key].estado) {
-                  abaPneus.appendRow([placa, idTratado.toUpperCase(), objPneus[key].estado, objPneus[key].milimetros, dados.km_atual || 0, new Date(), "", "", "0"]);
-              }
-          }
-      }
-      
-      var abaResp = ss.getSheetByName("Checklist_Respostas"); if (!abaResp) { abaResp = ss.insertSheet("Checklist_Respostas"); abaResp.appendRow(["Data", "Placa", "Motorista", "Modelo", "KM", "Motor", "Câmbio", "Embreagem", "Direção", "Freios", "Suspensão", "Pneus", "Elétrica", "Indicadores", "Cabine", "Faltantes", "Extintores", "Parada", "Obs", "Link Foto Lateral", "Link Foto Traseira", "Placa Carreta", "Asa Delta", "Freio Lona", "Faixas Refletivas", "Link PDF", "Usuário Logado", "ID Transacao"]); }
-      
-      var ultimaLinhaChk = abaResp.getLastRow();
-      if (ultimaLinhaChk > 0) {
-          var maxLinhasChk = Math.min(50, ultimaLinhaChk);
-          var startChk = Math.max(1, ultimaLinhaChk - maxLinhasChk + 1);
-          var ultimasChk = abaResp.getRange(startChk, 28, maxLinhasChk, 1).getValues(); 
-          for (var u = 0; u < ultimasChk.length; u++) {
-              if (dados.id_transacao && String(ultimasChk[u][0]) === String(dados.id_transacao)) return retornarJSON({"sucesso": true, "msg": "Já processado", "link_pdf": ""});
-          }
-      }
-      
-      var hoje = Utilities.formatDate(new Date(), "GMT-03:00", "dd/MM/yyyy HH:mm");
-      dados.qtd_carrinhos = qtdCarrinhos; dados.qtd_cones = qtdCones; dados.qtd_calcos = qtdCalcos;
-      var linkPdf = gerarPDFChecklistDinamico(dados, hoje);
-      
-      abaResp.appendRow([ hoje, placa, dados.motorista, dados.modelo, dados.km_atual, dados.chk_motor, dados.chk_cambio, dados.chk_embreagem, dados.chk_direcao, dados.chk_freios, dados.chk_suspensao, dados.chk_pneus_geral, dados.chk_eletrica, dados.chk_indicadores, dados.chk_cabine, dados.chk_faltantes, dados.chk_extintores, dados.chk_parada, dados.chk_obs, (linkLat || "Sem foto"), (linkTras || "Sem foto"), dados.placa_carreta, dados.chk_asa_delta, dados.chk_freio_lona, dados.chk_faixas, linkPdf, dados.usuario, dados.id_transacao ]);
-      return retornarJSON({"sucesso": true, "data_criacao": hoje, "linkLat": linkLat, "linkTras": linkTras, "mesAtual": mesAtual, "link_pdf": linkPdf});
-  } catch(e) { return retornarJSON({"erro": e.message}); } finally { lock.releaseLock(); }
-}
-
-function gerarPDFChecklistDinamico(dados, dataFormatada) {
-  try {
-    var placa = limparEspacos(dados.placa);
-    var folderId = PASTAS_CHECKLIST[placa] || "1tukhdA4UHwh3RBW7IfPD8hfiY_nOJClt";
-    var folder = null;
-    if (folderId) { try { folder = DriveApp.getFolderById(folderId.trim()); } catch(ex) {} }
-    if (!folder) { var folderName = "Checklists_" + placa; var folders = DriveApp.getFoldersByName(folderName); folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName); }
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a4d2e">
     
-    function dataBR(d) { if(!d || d === "" || d === "---") return "-"; var p = String(d).split('-'); if(p.length === 3) return p[2] + '/' + p[1] + '/' + p[0]; return d; }
-    var txtExtintores = dados.chk_extintores || ""; if (txtExtintores) txtExtintores = txtExtintores.replace(/(\d{4})-(\d{2})-(\d{2})/, "$3/$2/$1");
+    <!-- BLOQUEADORES DE CACHE PARA CELULAR -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     
-    var isCarro = CARROS.includes(placa) || dados.categoria === "CARRO";
-    var isEmpilhadeira = EMPILHADEIRAS.includes(placa) || dados.categoria === "EMPILHADEIRA";
-    var isTruck = TRUCKS.includes(placa) || CAVALOS.includes(placa) || dados.categoria === "CAVALO";
-    var html = "";
-    var labelMotorista = isEmpilhadeira ? "EMPILHADEIRISTA" : "MOTORISTA";
+    <title>Logística - Lince</title>
+    <!-- Fontes e Ícones -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- NOVO: BIBLIOTECA SWEETALERT2 (Alertas Modernos) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-    var boxAssinaturas = `<div class="assinaturas"><div class="ass-box"><img src="${dados.assinatura_motorista_b64 || ''}" style="max-height: 80px; max-width: 100%; display: block; margin: 0 auto 5px auto;"><div class="ass-linha"></div><b>${labelMotorista}</b><br><span style="color:#555">${dados.motorista}</span></div><div class="ass-box"><img src="${dados.assinatura_gerente_b64 || ''}" style="max-height: 80px; max-width: 100%; display: block; margin: 0 auto 5px auto;"><div class="ass-linha"></div><b>GERENTE DE ARMAZÉM</b><br><span style="color:#555">ANTONIO FERNANDO GIMENEZ</span></div></div>`;
+    <div id="tela-login" class="app-container">
+        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logo Lince" class="logo">
+        <div class="desenvolvedor">Desenvolvido por JM developer</div>
+        <input type="text" id="campo-usuario" class="input-campo" placeholder="Usuário">
+        <input type="password" id="campo-senha" class="input-campo" placeholder="Senha">
+        <p id="mensagem-erro">Usuário ou senha incorretos!</p>
+        <button class="btn-principal" onclick="fazerLogin()" id="btn-login"><i class="ph ph-sign-in"></i> Entrar</button>
+    </div>
 
-    if (isEmpilhadeira) {
-        html = `<html><head><style>body { font-family: 'Arial', sans-serif; font-size: 12px; color: #333; margin: 0; padding: 20px; } .cabecalho { text-align: center; border-bottom: 3px solid #1a4d2e; padding-bottom: 10px; margin-bottom: 20px; } .cabecalho img { width: 120px; margin-bottom: 5px; } .cabecalho h2 { color: #555; margin: 0; font-size: 16px; text-transform: uppercase; } .secao { border: 1px solid #1a4d2e; border-radius: 4px; padding: 15px; margin-bottom: 15px; background: #fafafa; } .secao-titulo { background-color: #1a4d2e; color: white; padding: 5px 10px; font-size: 13px; font-weight: bold; margin: -15px -15px 15px -15px; border-top-left-radius: 3px; border-top-right-radius: 3px; } table { width: 100%; border-collapse: collapse; margin-bottom: 5px; background: white; table-layout: fixed; } th, td { border: 1px solid #ddd; padding: 8px; font-size: 12px; word-wrap: break-word; } .th-label { background-color: #eee; font-weight: bold; width: 30%; text-align: left; } .td-value { text-align: left; } .assinaturas { margin-top: 40px; text-align: center; display: table; width: 100%; } .ass-box { display: table-cell; width: 45%; vertical-align: bottom; } .ass-linha { border-bottom: 1px solid #000; width: 80%; margin: 0 auto 5px auto; }</style></head><body>
-        <div class="cabecalho"><img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png"><h2>INSPEÇÃO DE EMPILHADEIRA</h2></div>
-        <div class="secao"><div class="secao-titulo">DADOS GERAIS</div>
-        <table><tr><th class="th-label">Identificação:</th><td class="td-value"><b>${placa}</b></td></tr><tr><th class="th-label">Data da Inspeção:</th><td class="td-value">${dataFormatada.split(' ')[0].split('/').reverse().join('/') + ' ' + dataFormatada.split(' ')[1]}</td></tr><tr><th class="th-label">Operador (Empilhadeirista):</th><td class="td-value">${dados.motorista}</td></tr><tr><th class="th-label">Horímetro Atual:</th><td class="td-value"><b>${dados.km_atual} Horas</b></td></tr><tr><th class="th-label">Inspetor Logado:</th><td class="td-value">${dados.usuario}</td></tr></table></div>
-        <div class="secao"><div class="secao-titulo">ITENS AUSENTES OU COM DEFEITO</div><p style="padding: 10px; border: 1px solid #ddd; background: white; font-weight: bold; color: ${dados.chk_faltantes.includes('TODOS OS ITENS ESTÃO') ? '#007328' : '#cc0000'};">${dados.chk_faltantes}</p></div>
-        <div class="secao"><div class="secao-titulo">PLANO DE AÇÃO E OBSERVAÇÕES</div><p style="padding: 10px; background: #fff; border: 1px solid #ddd; min-height: 60px;">${dados.chk_obs || "Nenhum plano de ação descrito."}</p></div>
-        ${boxAssinaturas}</body></html>`;
-    } else if (isCarro) {
-        html = `<html><head><style>body { font-family: 'Arial', sans-serif; font-size: 11px; color: #333; margin: 0; padding: 10px; } .cabecalho { text-align: center; border-bottom: 3px solid #1a4d2e; padding-bottom: 10px; margin-bottom: 15px; } .cabecalho img { width: 120px; margin-bottom: 5px; } .cabecalho h2 { color: #555; margin: 0; font-size: 14px; } .secao { border: 1px solid #1a4d2e; border-radius: 4px; padding: 10px; margin-bottom: 10px; background: #fafafa; } .secao-titulo { background-color: #1a4d2e; color: white; padding: 5px; font-size: 12px; font-weight: bold; margin: -10px -10px 10px -10px; border-top-left-radius: 3px; border-top-right-radius: 3px; } table { width: 100%; border-collapse: collapse; margin-bottom: 5px; background: white; table-layout: fixed; } th, td { border: 1px solid #ddd; padding: 5px; font-size: 11px; word-wrap: break-word; } .th-label { background-color: #eee; font-weight: bold; width: 25%; text-align: left; } .td-value { text-align: left; width: 25%; } .th-pneu { background-color: #eee; font-weight: bold; text-align: center; } .td-pneu { text-align: center; } .assinaturas { margin-top: 30px; text-align: center; display: table; width: 100%; } .ass-box { display: table-cell; width: 45%; vertical-align: bottom; } .ass-linha { border-bottom: 1px solid #000; width: 80%; margin: 0 auto 5px auto; } .err { color: #cc0000; font-weight: bold; } .ok { color: #007328; font-weight: bold; }</style></head><body>
-        <div class="cabecalho"><img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png"><h2>INSPEÇÃO DE VEÍCULO LEVE / UTILITÁRIO</h2></div>
-        <div class="secao"><div class="secao-titulo">DADOS GERAIS</div><table><tr><th class="th-label">Placa:</th><td class="td-value"><b>${placa}</b></td><th class="th-label">Modelo:</th><td class="td-value">${dados.modelo}</td></tr><tr><th class="th-label">Data:</th><td class="td-value">${dataFormatada.split(' ')[0].split('/').reverse().join('/') + ' ' + dataFormatada.split(' ')[1]}</td><th class="th-label">Motorista:</th><td class="td-value">${dados.motorista}</td></tr><tr><th class="th-label">KM Atual:</th><td class="td-value">${dados.km_atual}</td><th class="th-label">Próx. Óleo:</th><td class="td-value">${dados.km_oleo}</td></tr><tr><th class="th-label">Inspetor:</th><td colspan="3" class="td-value">${dados.usuario}</td></tr></table></div>
-        <div class="secao"><div class="secao-titulo">ITENS DO VEÍCULO (FALTANTES / PROBLEMAS)</div><p style="padding: 10px; border: 1px solid #ddd; background: white; font-weight: bold; color: ${dados.chk_faltantes.includes('TODOS OS ITENS ESTÃO NO CARRO') ? '#007328' : '#cc0000'};">${dados.chk_faltantes}</p></div>
-        <div class="secao"><div class="secao-titulo">MEDIDAS DOS PNEUS</div><table><tr><th class="th-pneu">DD</th><th class="th-pneu">DE</th><th class="th-pneu">TD</th><th class="th-pneu">TE</th></tr><tr><td class="td-pneu">${(dados.pneus['dd']?dados.pneus['dd'].milimetros:'-')}mm<br><small>${(dados.pneus['dd']?dados.pneus['dd'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['de']?dados.pneus['de'].milimetros:'-')}mm<br><small>${(dados.pneus['de']?dados.pneus['de'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['td']?dados.pneus['td'].milimetros:'-')}mm<br><small>${(dados.pneus['td']?dados.pneus['td'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['te']?dados.pneus['te'].milimetros:'-')}mm<br><small>${(dados.pneus['te']?dados.pneus['te'].estado:'-')}</small></td></tr></table></div>
-        <div class="secao"><div class="secao-titulo">SEGURANÇA E OBSERVAÇÕES</div><p><b>Extintor:</b> ${txtExtintores}</p><p style="color: ${dados.chk_parada==='Sim'?'red':'black'}"><b>Necessário Parada Urgente?</b> ${dados.chk_parada}</p><p><b>Observações:</b><br><span style="display:block; padding: 5px; background: #fff; border: 1px solid #ddd; min-height: 40px;">${dados.chk_obs || "Nenhuma observação informada."}</span></p></div>
-        ${boxAssinaturas}</body></html>`;
-    } else {
-        var row2Pneus = isTruck ? `<table><tr><th class="th-pneu">TKDE</th><th class="th-pneu">TKDI</th><th class="th-pneu">TKEE</th><th class="th-pneu">TKEI</th><th class="th-pneu">ESTEPE 1</th></tr><tr><td class="td-pneu">${(dados.pneus['tkde']?dados.pneus['tkde'].milimetros:'-')}mm<br><small>${(dados.pneus['tkde']?dados.pneus['tkde'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['tkdi']?dados.pneus['tkdi'].milimetros:'-')}mm<br><small>${(dados.pneus['tkdi']?dados.pneus['tkdi'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['tkee']?dados.pneus['tkee'].milimetros:'-')}mm<br><small>${(dados.pneus['tkee']?dados.pneus['tkee'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['tkei']?dados.pneus['tkei'].milimetros:'-')}mm<br><small>${(dados.pneus['tkei']?dados.pneus['tkei'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['1step']?dados.pneus['1step'].milimetros:'-')}mm<br><small>${(dados.pneus['1step']?dados.pneus['1step'].estado:'-')}</small></td></tr></table>` : `<table><tr><th class="th-pneu">ESTEPE 1</th></tr><tr><td class="td-pneu">${(dados.pneus['1step']?dados.pneus['1step'].milimetros:'-')}mm<br><small>${(dados.pneus['1step']?dados.pneus['1step'].estado:'-')}</small></td></tr></table>`;
-        html = `<html><head><style>body { font-family: 'Arial', sans-serif; font-size: 10px; color: #333; margin: 0; padding: 5px; } .cabecalho { text-align: center; border-bottom: 3px solid #1a4d2e; padding-bottom: 5px; margin-bottom: 10px; } .cabecalho img { width: 100px; margin-bottom: 5px; } .cabecalho h2 { color: #555; margin: 0; font-size: 13px; } .secao { border: 1px solid #1a4d2e; border-radius: 4px; padding: 6px; margin-bottom: 8px; background: #fafafa; } .secao-titulo { background-color: #1a4d2e; color: white; padding: 3px 6px; font-size: 11px; font-weight: bold; margin: -6px -6px 6px -6px; border-top-left-radius: 3px; border-top-right-radius: 3px; } table { width: 100%; border-collapse: collapse; margin-bottom: 5px; background: white; table-layout: fixed; } th, td { border: 1px solid #ddd; padding: 3px; font-size: 9px; word-wrap: break-word; } .th-label { background-color: #eee; font-weight: bold; width: 25%; text-align: left; } .td-value { text-align: left; width: 25%; } .th-pneu { background-color: #eee; font-weight: bold; text-align: center; } .td-pneu { text-align: center; } .grid-2 { display: table; width: 100%; } .col { display: table-cell; width: 50%; padding-right: 5px; } .assinaturas { margin-top: 20px; text-align: center; display: table; width: 100%; } .ass-box { display: table-cell; width: 45%; vertical-align: bottom; } .ass-linha { border-bottom: 1px solid #000; width: 80%; margin: 0 auto 5px auto; } .err { color: #cc0000; font-weight: bold; } .ok { color: #007328; font-weight: bold; }</style></head><body><div class="cabecalho"><img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" alt="Logotipo Lince"><h2>FICHA DE INSPEÇÃO VEICULAR E CHECKLIST</h2></div><div class="secao"><div class="secao-titulo">DADOS DO VEÍCULO E MOTORISTA</div><table><tr><th class="th-label">Placa do Veículo:</th><td class="td-value"><b>${placa}</b></td><th class="th-label">Modelo/Tipo:</th><td class="td-value">${dados.modelo}</td></tr><tr><th class="th-label">Data da Inspeção:</th><td class="td-value">${dataFormatada.split(' ')[0].split('/').reverse().join('/') + ' ' + dataFormatada.split(' ')[1]}</td><th class="th-label">Motorista:</th><td class="td-value">${dados.motorista}</td></tr><tr><th class="th-label">KM Atual:</th><td class="td-value">${dados.km_atual}</td><th class="th-label">Próx. Troca Óleo:</th><td class="td-value">${dados.km_oleo}</td></tr><tr><th class="th-label">Último Tacógrafo:</th><td class="td-value">${dataBR(dados.data_tacografo)}</td><th class="th-label">Última Graxa:</th><td class="td-value">${dataBR(dados.data_graxa)}</td></tr><tr><th class="th-label">Qtd. Carrinhos:</th><td class="td-value"><b>${dados.qtd_carrinhos}</b></td><th class="th-label">Qtd. Cones:</th><td class="td-value"><b>${dados.qtd_cones}</b></td></tr><tr><th class="th-label">Qtd. Calços:</th><td class="td-value" colspan="3"><b>${dados.qtd_calcos}</b></td></tr>${dados.placa_carreta ? `<tr><th colspan="2" style="background:#d4edda; color:#155724; text-align:center;">CARRETA ENGATADA: <b>${dados.placa_carreta}</b></th><td colspan="2"></td></tr>` : ''}<tr><th class="th-label">Inspetor:</th><td colspan="3" class="td-value">${dados.usuario}</td></tr></table></div><div class="grid-2"><div class="col"><div class="secao"><div class="secao-titulo">SISTEMA MECÂNICO</div><table><tr><th class="th-label">Motor:</th><td class="${dados.chk_motor.includes('NÃO APRESENTA')?'ok':'err'}">${dados.chk_motor}</td></tr><tr><th class="th-label">Câmbio:</th><td class="${dados.chk_cambio.includes('NÃO APRESENTA')?'ok':'err'}">${dados.chk_cambio}</td></tr><tr><th class="th-label">Embreagem:</th><td class="${dados.chk_embreagem.includes('NÃO APRESENTA')?'ok':'err'}">${dados.chk_embreagem}</td></tr><tr><th class="th-label">Direção:</th><td class="${dados.chk_direcao.includes('NÃO APRESENTA')?'ok':'err'}">${dados.chk_direcao}</td></tr><tr><th class="th-label">Freios:</th><td class="${dados.chk_freios.includes('NÃO APRESENTA')?'ok':'err'}">${dados.chk_freios}</td></tr><tr><th class="th-label">Suspensão:</th><td class="${dados.chk_suspensao.includes('NÃO APRESENTA')?'ok':'err'}">${dados.chk_suspensao}</td></tr></table></div>${dados.placa_carreta ? `<div class="secao" style="border-color:#0056b3;"><div class="secao-titulo" style="background-color:#0056b3;">INSPEÇÃO DA CARRETA</div><table><tr><th class="th-label">Asa Delta:</th><td class="${dados.chk_asa_delta.includes('Sim')?'ok':'err'}">${dados.chk_asa_delta}</td></tr><tr><th class="th-label">Freio Lona:</th><td class="${dados.chk_freio_lona.includes('Sim')?'ok':'err'}">${dados.chk_freio_lona}</td></tr><tr><th class="th-label">Faixas Refletivas:</th><td class="${dados.chk_faixas.includes('Sim')?'ok':'err'}">${dados.chk_faixas}</td></tr></table></div>` : ''}</div><div class="col"><div class="secao"><div class="secao-titulo">CABINE, ELÉTRICA E SEGURANÇA</div><table><tr><th class="th-label">Cabine:</th><td class="${dados.chk_cabine.includes('NÃO APRESENTA')?'ok':'err'}">${dados.chk_cabine}</td></tr><tr><th class="th-label">Elétrica:</th><td class="${dados.chk_eletrica.includes('NÃO APRESENTA')?'ok':'err'}">${dados.chk_eletrica}</td></tr><tr><th class="th-label">Indicadores:</th><td class="${dados.chk_indicadores.includes('NÃO APRESENTA')?'ok':'err'}">${dados.chk_indicadores}</td></tr><tr><th class="th-label">Geral Pneus:</th><td class="${dados.chk_pneus_geral.includes('NÃO APRESENTA')?'ok':'err'}">${dados.chk_pneus_geral}</td></tr><tr><th class="th-label">Extintores:</th><td class="td-value"><b>${txtExtintores}</b></td></tr><tr><th class="th-label">Itens Faltantes:</th><td class="${dados.chk_faltantes.includes('TODOS OS ITENS')?'ok':'err'}">${dados.chk_faltantes}</td></tr></table></div></div></div><div class="secao"><div class="secao-titulo">STATUS E TWI DOS PNEUS DO CAVALO/CAMINHÃO</div><table><tr><th class="th-pneu">DD</th><th class="th-pneu">DE</th><th class="th-pneu">TDE</th><th class="th-pneu">TDI</th><th class="th-pneu">TEE</th><th class="th-pneu">TEI</th></tr><tr><td class="td-pneu">${(dados.pneus['dd']?dados.pneus['dd'].milimetros:'-')}mm<br><small>${(dados.pneus['dd']?dados.pneus['dd'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['de']?dados.pneus['de'].milimetros:'-')}mm<br><small>${(dados.pneus['de']?dados.pneus['de'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['tde']?dados.pneus['tde'].milimetros:'-')}mm<br><small>${(dados.pneus['tde']?dados.pneus['tde'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['tdi']?dados.pneus['tdi'].milimetros:'-')}mm<br><small>${(dados.pneus['tdi']?dados.pneus['tdi'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['tee']?dados.pneus['tee'].milimetros:'-')}mm<br><small>${(dados.pneus['tee']?dados.pneus['tee'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['tei']?dados.pneus['tei'].milimetros:'-')}mm<br><small>${(dados.pneus['tei']?dados.pneus['tei'].estado:'-')}</small></td></tr></table>${row2Pneus}</div>${dados.placa_carreta ? `<div class="secao" style="border-color:#0056b3;"><div class="secao-titulo" style="background-color:#0056b3;">STATUS E TWI DOS PNEUS DA CARRETA</div><table><tr><th class="th-pneu">C1</th><th class="th-pneu">C2</th><th class="th-pneu">C3</th><th class="th-pneu">C4</th><th class="th-pneu">C5</th><th class="th-pneu">C6</th></tr><tr><td class="td-pneu">${(dados.pneus['c1']?dados.pneus['c1'].milimetros:'-')}mm<br><small>${(dados.pneus['c1']?dados.pneus['c1'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['c2']?dados.pneus['c2'].milimetros:'-')}mm<br><small>${(dados.pneus['c2']?dados.pneus['c2'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['c3']?dados.pneus['c3'].milimetros:'-')}mm<br><small>${(dados.pneus['c3']?dados.pneus['c3'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['c4']?dados.pneus['c4'].milimetros:'-')}mm<br><small>${(dados.pneus['c4']?dados.pneus['c4'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['c5']?dados.pneus['c5'].milimetros:'-')}mm<br><small>${(dados.pneus['c5']?dados.pneus['c5'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['c6']?dados.pneus['c6'].milimetros:'-')}mm<br><small>${(dados.pneus['c6']?dados.pneus['c6'].estado:'-')}</small></td></tr></table><table><tr><th class="th-pneu">C7</th><th class="th-pneu">C8</th><th class="th-pneu">C9</th><th class="th-pneu">C10</th><th class="th-pneu">C11</th><th class="th-pneu">C12</th><th class="th-pneu">ESTEPE 2</th></tr><tr><td class="td-pneu">${(dados.pneus['c7']?dados.pneus['c7'].milimetros:'-')}mm<br><small>${(dados.pneus['c7']?dados.pneus['c7'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['c8']?dados.pneus['c8'].milimetros:'-')}mm<br><small>${(dados.pneus['c8']?dados.pneus['c8'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['c9']?dados.pneus['c9'].milimetros:'-')}mm<br><small>${(dados.pneus['c9']?dados.pneus['c9'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['c10']?dados.pneus['c10'].milimetros:'-')}mm<br><small>${(dados.pneus['c10']?dados.pneus['c10'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['c11']?dados.pneus['c11'].milimetros:'-')}mm<br><small>${(dados.pneus['c11']?dados.pneus['c11'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['c12']?dados.pneus['c12'].milimetros:'-')}mm<br><small>${(dados.pneus['c12']?dados.pneus['c12'].estado:'-')}</small></td><td class="td-pneu">${(dados.pneus['2step']?dados.pneus['2step'].milimetros:'-')}mm<br><small>${(dados.pneus['2step']?dados.pneus['2step'].estado:'-')}</small></td></tr></table></div>` : ''}<div class="secao"><div class="secao-titulo">DIAGNÓSTICO E OBSERVAÇÕES</div><p style="margin: 0 0 5px 0;"><b>Necessário Parada Urgente para Revisão?</b> <span style="color:${dados.chk_parada==='Sim'?'red':'black'}">${dados.chk_parada}</span></p><p style="margin: 0; padding: 5px; background: #fff; border: 1px solid #ddd; min-height: 30px;">${dados.chk_obs || "Nenhuma observação informada."}</p></div>${boxAssinaturas}</body></html>`;
-    }
+    <div id="tela-menu" class="app-container" style="display: none;">
+        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
+        <div class="desenvolvedor">Desenvolvido por JM developer</div>
+        <button class="btn-secundario" style="margin-bottom: 10px; border: 1.5px dashed var(--primary-color); color: var(--primary-color); background: transparent;" onclick="forcarSincronizacaoManual()" id="btn-sync-manual"><i class="ph ph-arrows-clockwise"></i> Sincronizar Dados</button>
+        <button class="btn-secundario" onclick="sairDaConta()"><i class="ph ph-sign-out"></i> Sair da Conta</button>
+        <h2 class="titulo-tela">Menu Principal</h2>
+        <button class="btn-principal" onclick="escolherModulo('Ficha Técnica')"><i class="ph ph-file-text"></i> Ficha Técnica</button>
+        <button class="btn-principal" onclick="escolherModulo('Checklist')"><i class="ph ph-check-square"></i> Checklist</button>
+        <button class="btn-principal" onclick="escolherModulo('Abastecimento')"><i class="ph ph-gas-pump"></i> Abastecimento</button>
+        <button class="btn-principal" onclick="escolherModulo('Estoque')"><i class="ph ph-package"></i> Estoque (Peças e Óleo)</button>
+    </div>
 
-    var blob = Utilities.newBlob(html, MimeType.HTML).getAs(MimeType.PDF);
-    var nomeArquivo = "Checklist_" + placa + "_" + Utilities.formatDate(new Date(), "GMT-03:00", "dd-MM-yyyy") + ".pdf";
-    blob.setName(nomeArquivo);
-    var file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    return file.getUrl();
-  } catch(e) { return "Erro ao gerar PDF: " + e.message; }
-}
+    <div id="tela-placas" class="app-container" style="display: none;">
+        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
+        <div class="desenvolvedor">Desenvolvido por JM developer</div>
+        <button class="btn-secundario" onclick="voltarParaMenu()"><i class="ph ph-arrow-left"></i> Voltar ao Menu</button>
+        <h2 class="titulo-tela">Selecione o Veículo</h2>
+        
+        <h3 class="card-titulo" style="margin-top: 10px; border-left: none; padding-left:0;"><i class="ph ph-truck"></i> Caminhões</h3>
+        <div class="grid-placas">
+            <img src="https://i.postimg.cc/L6WXqWyR/2.png" class="img-placa" onclick="selecionarPlaca('AXZ1D53')"><img src="https://i.postimg.cc/MKLTcL9g/3.png" class="img-placa" onclick="selecionarPlaca('FCT1J98')">
+            <img src="https://i.postimg.cc/m2nDcndG/4.png" class="img-placa" onclick="selecionarPlaca('FEE9E40')"><img src="https://i.postimg.cc/jd15W1MG/5.png" class="img-placa" onclick="selecionarPlaca('FIF9A30')">
+            <img src="https://i.postimg.cc/g2603K59/6.png" class="img-placa" onclick="selecionarPlaca('FMQ8H77')"><img src="https://i.postimg.cc/cL8JfcjG/7.png" class="img-placa" onclick="selecionarPlaca('FMR4I10')">
+            <img src="https://i.postimg.cc/6pGQChSX/8.png" class="img-placa" onclick="selecionarPlaca('FPJ1B16')"><img src="https://i.postimg.cc/Z5yq6LgZ/9.png" class="img-placa" onclick="selecionarPlaca('FQY6B30')">
+            <img src="https://i.postimg.cc/RZn0wT8v/10.png" class="img-placa" onclick="selecionarPlaca('FUH9H91')"><img src="https://i.postimg.cc/W1J407Kp/11.png" class="img-placa" onclick="selecionarPlaca('IVE8J03')">
+            <img src="https://i.postimg.cc/9QqfyBSM/12.png" class="img-placa" onclick="selecionarPlaca('NTP4G17')"><img src="https://i.postimg.cc/52Ft8mGy/13.png" class="img-placa" onclick="selecionarPlaca('TKR8I49')">
+            <img src="https://i.postimg.cc/FHJK0xqY/14.png" class="img-placa" onclick="selecionarPlaca('TLL8H30')"><img src="https://i.postimg.cc/HLDkzyDs/15.png" class="img-placa" onclick="selecionarPlaca('TLY0G57')">
+            <img src="https://i.postimg.cc/W4L18kLh/16.png" class="img-placa" onclick="selecionarPlaca('UDN0J81')"><img src="https://i.postimg.cc/bvcwgtcZ/17.png" class="img-placa" onclick="selecionarPlaca('UPS1J80')">
+            <img src="https://i.postimg.cc/hGWtsdWV/18.png" class="img-placa" onclick="selecionarPlaca('UPX9D25')"><img src="https://i.postimg.cc/bvcwgtc0/19.png" class="img-placa" onclick="selecionarPlaca('URT4E79')">
+            <img src="https://i.postimg.cc/8CQz46QB/20.png" class="img-placa" onclick="selecionarPlaca('URU3F36')">
+        </div>
+
+        <h3 class="card-titulo" style="margin-top: 25px; border-left: none; padding-left:0;"><i class="ph ph-truck-trailer"></i> Cavalos</h3>
+        <div class="grid-placas">
+            <img src="https://i.postimg.cc/wv3zw2B8/21.png" class="img-placa" onclick="selecionarPlaca('FEF7C02')"><img src="https://i.postimg.cc/Ssj4gdKp/22.png" class="img-placa" onclick="selecionarPlaca('GHE3E06')">
+            <img src="https://i.postimg.cc/9Mz2LbfV/23.png" class="img-placa" onclick="selecionarPlaca('FYY7G32')">
+        </div>
+
+        <h3 class="card-titulo" style="margin-top: 25px; border-left: none; padding-left:0;"><i class="ph ph-car"></i> Utilitários</h3>
+        <div class="grid-placas">
+            <img src="https://i.postimg.cc/kXWmhCQT/24.png" class="img-placa" onclick="selecionarPlaca('CLW4E92')"><img src="https://i.postimg.cc/NfRcPt6b/25.png" class="img-placa" onclick="selecionarPlaca('UGF2G86')">
+            <img src="https://i.postimg.cc/xTL2FQvs/26.png" class="img-placa" onclick="selecionarPlaca('FGX2A32')">
+        </div>
+
+        <h3 class="card-titulo" style="margin-top: 25px; border-left: none; padding-left:0;"><i class="ph ph-forklift"></i> Empilhadeiras</h3>
+        <div class="grid-placas">
+            <img src="https://i.postimg.cc/W3XtjrMW/29.png" class="img-placa" onclick="selecionarPlaca('05025DR3290')"><img src="https://i.postimg.cc/gctrTVc8/30.png" class="img-placa" onclick="selecionarPlaca('05025DR8824')">
+        </div>
+
+        <h3 class="card-titulo" id="titulo-outros" style="margin-top: 25px; display: none; border-left: none; padding-left:0;"><i class="ph ph-question"></i> Outros Veículos</h3>
+        <div class="grid-placas" id="btn-placa-outros" style="display: none; grid-template-columns: 1fr;">
+            <img src="https://i.postimg.cc/TwyDVqft/capa-app-logistica-(400-x-400-px)-(400-x-400-px)-(1200-x-400-px).png" class="img-placa" onclick="selecionarPlaca('OUTROS')">
+        </div>
+    </div>
+
+    <div id="tela-submenu-estoque" class="app-container" style="display: none;">
+        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo">
+        <div class="desenvolvedor">Desenvolvido por JM developer</div>
+        <button class="btn-secundario" onclick="voltarParaMenu()"><i class="ph ph-arrow-left"></i> Voltar ao Menu</button>
+        <h2 class="titulo-tela"><i class="ph ph-package"></i> Estoque de Peças</h2>
+        
+        <button class="btn-principal" onclick="abrirModuloEstoque('posicao')"><i class="ph ph-chart-bar"></i> Posição do Estoque</button>
+        <button class="btn-principal" onclick="abrirModuloEstoque('movimentacao')"><i class="ph ph-arrows-left-right"></i> Lançar Entrada / Saída</button>
+        <button class="btn-principal" onclick="abrirModuloEstoque('compra')" style="background: linear-gradient(135deg, #b30000 0%, #850000 100%);"><i class="ph ph-shopping-cart"></i> Solicitar Compra</button>
+    </div>
+
+    <div id="tela-interna" class="app-container" style="display: none;">
+        <img src="https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png" class="logo" style="max-width: 180px;">
+        <div class="desenvolvedor" style="margin-bottom: 15px;">Desenvolvido por JM developer</div>
+
+        <div style="display:flex; gap:10px; width:100%;">
+            <button class="btn-secundario" style="padding: 10px; margin-bottom:15px; font-size:13px;" id="btn-trocar-veiculo" onclick="voltarParaPlacas()"><i class="ph ph-arrows-left-right"></i> Trocar</button>
+            <button class="btn-secundario" style="padding: 10px; margin-bottom:15px; font-size:13px;" id="btn-voltar-menu" onclick="voltarParaMenu()"><i class="ph ph-house"></i> Menu</button>
+        </div>
+        
+        <h2 id="titulo-tela-interna" class="titulo-tela" style="font-size:18px; margin-bottom: 10px;">Nome da Página</h2>
+        <div id="alerta-veiculo-interna" class="alerta-veiculo">Trabalhando no veículo: <span id="texto-placa-interna" style="font-weight: 700;"></span></div>
+
+        <!-- FICHA TÉCNICA -->
+        <div id="conteudo-Ficha Técnica" class="secao-conteudo">
+            <div class="card"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; margin-bottom: 15px; padding-bottom: 10px;"><h3 class="card-titulo"><i class="ph ph-clipboard-text"></i> Dados Básicos</h3><button id="btn-editar-header" onclick="alternarEdicaoHeader()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;"><i class="ph ph-pencil-simple"></i> Editar</button></div><div class="linha-info"><span class="info-label" style="margin:0;">Tipo/Modelo:</span> <input type="text" id="tipo-veiculo" class="input-editavel travado" value="" readonly style="width: 150px;"></div><div class="linha-info" style="margin-top: 10px;"><span class="info-label" style="margin:0;">Motorista:</span> <select id="nome-motorista" class="input-editavel travado" disabled style="width: 150px; background-color: transparent;"></select></div><div class="linha-info" style="align-items: center; margin-top: 10px;"><span class="info-label" style="margin:0;">KM Atual (Geral):</span> <input type="number" id="km-master" class="input-editavel travado" value="0" oninput="atualizarKMGeral()" style="width: 120px;" readonly></div></div>
+            <div class="card"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; margin-bottom: 15px; padding-bottom: 10px;"><h3 class="card-titulo"><i class="ph ph-drop"></i> Óleo do Motor</h3><button id="btn-editar-oleo" onclick="alternarEdicaoOleo()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;"><i class="ph ph-pencil-simple"></i> Editar</button></div><div class="linha-info"><span class="info-label">KM Atual:</span> <span id="km-atual-oleo" style="font-weight: 700; color: #374151; font-size: 15px;">0</span></div><div class="linha-info"><span class="info-label">Próxima Troca:</span> <input type="number" id="km-proxima-troca" class="input-editavel travado" value="0" oninput="calcularOleo()" readonly></div><div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #d1d5db; padding-top: 10px;"><span class="info-label">Status da Troca:</span><span id="status-oleo" style="font-weight:700; font-size: 14px;">---</span></div></div>
+            <div class="card esconder-carro"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; margin-bottom: 15px; padding-bottom: 10px;"><h3 class="card-titulo"><i class="ph ph-timer"></i> Tacógrafo</h3><button id="btn-editar-tacografo" onclick="alternarEdicaoTacografo()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;"><i class="ph ph-pencil-simple"></i> Editar</button></div><div class="linha-info"><span class="info-label">Última Aferição:</span> <span id="data-ultima-afericao" style="font-weight: 700; color: #374151; font-size: 15px;">--/--/----</span></div><div class="linha-info"><span class="info-label">Próxima Aferição:</span> <input type="date" id="data-proxima-afericao" class="input-editavel travado" oninput="calcularTacografo()" readonly></div><div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #d1d5db; padding-top: 10px;"><span class="info-label">Status:</span><span id="status-tacografo" style="font-weight:700; font-size: 14px;">---</span></div></div>
+            <div class="card"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; margin-bottom: 15px; padding-bottom: 10px;"><h3 class="card-titulo"><i class="ph ph-tire"></i> Pneus</h3><button id="btn-editar-pneus" onclick="alternarEdicaoPneus()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;"><i class="ph ph-pencil-simple"></i> Editar</button></div><div class="esconder-carro"><img src="https://i.postimg.cc/tT7bBkgb/24.png" style="width:100%; border-radius:12px; margin-bottom:15px; border:1px solid #e5e7eb;"><div id="ficha-pneus-caminhao-container"></div></div><div class="mostrar-carro" style="display:none;"><div id="ficha-pneus-carro-container"></div></div><div class="is-carreta" style="margin-top:15px; padding-top:15px; border-top: 2px dashed #3b82f6;"><h3 class="card-titulo" style="border-left-color: #3b82f6; color: #1e3a8a;"><i class="ph ph-tire"></i> Pneus da Carreta</h3><img src="https://i.postimg.cc/RF8Byt3x/25.png" style="width:100%; border-radius:12px; margin-bottom:15px; border:1px solid #e5e7eb;"><div id="ficha-pneus-carreta-container"></div></div></div>
+            <div class="card"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; margin-bottom: 15px; padding-bottom: 10px;"><h3 class="card-titulo"><i class="ph ph-traffic-cone"></i> Extintor / Equip.</h3><button id="btn-editar-equip" onclick="alternarEdicaoEquip()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;"><i class="ph ph-pencil-simple"></i> Editar</button></div><div class="linha-info esconder-carro"><span class="info-label" style="margin:0;">Qtd. Carrinhos:</span> <input type="number" id="qtd-carrinhos" class="input-editavel travado" value="0" readonly></div><div class="linha-info esconder-carro"><span class="info-label" style="margin:0;">Qtd. Cones:</span> <input type="number" id="qtd-cones" class="input-editavel travado" value="0" readonly></div><div class="linha-info esconder-carro"><span class="info-label" style="margin:0;">Qtd. Calços:</span> <input type="number" id="qtd-calcos" class="input-editavel travado" value="0" readonly></div><div class="linha-info esconder-carro" style="margin-top: 10px; border-top: 1px dashed #d1d5db; padding-top: 10px;"></div><div class="linha-info"><span class="info-label" style="margin:0;">Validade Extintor:</span> <input type="date" id="data-extintor-ficha" class="input-editavel travado" readonly oninput="calcularExtintor()"></div><div class="linha-info"><span class="info-label" style="margin:0;">Status Extintor:</span><span id="status-extintor" style="font-weight:700; font-size: 14px;">---</span></div></div>
+            <div class="card"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; margin-bottom: 15px; padding-bottom: 10px;"><h3 class="card-titulo"><i class="ph ph-gas-pump"></i> Abast. / Graxa</h3><button id="btn-editar-abast" onclick="alternarEdicaoAbast()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;"><i class="ph ph-pencil-simple"></i> Editar</button></div><div class="linha-info"><span class="info-label" style="margin:0;">Gasto Mês (Litros):</span><span id="abast-gasto-mes" style="font-weight:700; color:#dc2626; font-size: 15px;">0 L</span></div><div class="linha-info" style="margin-top:10px;"><span class="info-label" style="margin:0;">KM Anterior:</span> <input type="number" id="abast-km-ant" class="input-editavel travado" value="0" oninput="calcularAbastecimento()" readonly></div><div class="linha-info"><span class="info-label" style="margin:0;">KM Atual:</span> <input type="number" id="abast-km-atual" class="input-editavel travado" value="0" oninput="calcularAbastecimento()" readonly></div><div class="linha-info"><span class="info-label" style="margin:0;">Litros Abast.:</span> <input type="number" id="abast-litros" class="input-editavel travado" value="0" oninput="calcularAbastecimento()" readonly></div><div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #d1d5db; padding-top: 10px;"><span class="info-label" style="margin:0;">Média do Veículo:</span><span id="abast-media" style="font-weight:700; font-size: 16px; color: var(--primary-color);">0.00 km/L</span></div><div class="esconder-carro"><div class="linha-info" style="margin-top: 10px; border-top: 1px dashed #d1d5db; padding-top: 10px;"><span class="info-label" style="margin:0;">Última Graxa:</span> <input type="date" id="data-engraxada" class="input-editavel travado" oninput="calcularGraxa()" readonly></div><div class="linha-info"><span class="info-label" style="margin:0;">Próxima (+30 dias):</span> <span id="data-prox-engraxada" style="font-weight: 600; color: var(--text-main);">--/--/----</span></div><div class="linha-info" style="margin-top: 10px;"><span class="info-label" style="margin:0;">Status Graxa:</span><span id="status-graxa" style="font-weight:700; font-size: 14px;">---</span></div></div></div>
+            <div class="card" id="card-fotos-ficha"><h3 class="card-titulo"><i class="ph ph-camera"></i> Fotos do Mês</h3><div style="display: flex; gap: 10px; justify-content: space-between;"><div style="flex: 1; text-align: center;"><span id="ficha-label-foto-1" style="font-size: 13px; font-weight: 700; color: var(--primary-color);">Lateral</span><div id="ficha-pl-lat" class="foto-placeholder">Aguardando Foto...</div><img id="ficha-img-lat" class="foto-preview"></div><div style="flex: 1; text-align: center;"><span id="ficha-label-foto-2" style="font-size: 13px; font-weight: 700; color: var(--primary-color);">Traseira</span><div id="ficha-pl-tras" class="foto-placeholder">Aguardando Foto...</div><img id="ficha-img-tras" class="foto-preview"></div></div></div>
+            <div class="card"><h3 class="card-titulo"><i class="ph ph-file-pdf"></i> Documentação</h3><button class="btn-principal" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); box-shadow: 0 6px 15px rgba(30, 58, 138, 0.25); margin-bottom: 0;" onclick="abrirDocPDF()"><i class="ph ph-download-simple"></i> Abrir PDF do Documento</button></div>
+        </div>
+
+        <!-- CHECKLIST (Formulários) -->
+        <div id="conteudo-Checklist" class="secao-conteudo">
+            <div class="card" id="lista-historico-checklist"><h3 class="card-titulo"><i class="ph ph-check-square"></i> Últimos Checklists</h3><div id="container-historico" style="margin-bottom: 15px;"></div><button class="btn-principal" onclick="iniciarNovoChecklist()" style="margin-bottom: 0;"><i class="ph ph-plus-circle"></i> Iniciar Novo Checklist</button></div>
+            
+            <div class="card" id="form-novo-checklist" style="display: none; padding: 20px 10px;"><h3 class="card-titulo"><i class="ph ph-clipboard-text"></i> Inspeção do Caminhão</h3><div class="abas-checklist"><button id="tab-chk-1" class="btn-tab-chk ativo" onclick="mudarAbaChecklist(1)">1. Básicos</button><button id="tab-chk-2" class="btn-tab-chk" onclick="mudarAbaChecklist(2)">2. Mecânica</button><button id="tab-chk-3" class="btn-tab-chk" onclick="mudarAbaChecklist(3)">3. Elétrica</button><button id="tab-chk-4" class="btn-tab-chk" onclick="mudarAbaChecklist(4)">4. Finalizar</button></div><div id="passo-chk-1"><label class="info-label">Placa do Veículo:</label><input type="text" id="chk-placa" class="input-campo" style="background-color:var(--border-color); font-weight:700; color:var(--primary-color);" readonly><div class="is-carreta"><label class="info-label">Placa da Carreta Engatada: <span style="color:red">*</span></label><select id="chk-placa-carreta" class="input-campo" style="border:2px solid #3b82f6;"><option value="">Selecione a Carreta...</option><option value="RFR5F62">RFR5F62</option><option value="RFY6I51">RFY6I51</option><option value="RFL1F19">RFL1F19</option></select></div><label class="info-label">Tipo / Modelo:</label><input type="text" id="chk-modelo" class="input-campo" style="background-color:var(--border-color); font-weight:700; color:var(--primary-color);" readonly><label class="info-label">Motorista: <span style="color:red">*</span></label>
+            <select id="chk-motorista" class="input-campo"><option value="">Selecione o Motorista...</option></select>
+            <input type="text" id="chk-motorista-novo" class="input-campo" placeholder="Digite o nome do novo motorista..." style="display:none; margin-top:-10px; border: 2px dashed var(--primary-color); font-weight: 700;">
+            <div class="esconder-cavalo-chk"><div style="display: flex; gap: 8px;"><div style="flex:1;"><label class="info-label">Carrinhos:</label><input type="number" id="chk-qtd-carrinhos" class="input-campo" style="padding: 10px 8px;"></div><div style="flex:1;"><label class="info-label">Cones:</label><input type="number" id="chk-qtd-cones" class="input-campo" style="padding: 10px 8px;"></div><div style="flex:1;"><label class="info-label">Calços:</label><input type="number" id="chk-qtd-calcos" class="input-campo" style="padding: 10px 8px;"></div></div></div><label class="info-label">KM Atual (Painel): <span style="color:red">*</span></label><input type="number" id="chk-km" class="input-campo"><label class="info-label">Próxima Troca Óleo (KM):</label><input type="number" id="chk-km-oleo" class="input-campo"><label class="info-label">Última Aferição Tacógrafo:</label><input type="date" id="chk-data-taco" class="input-campo"><label class="info-label">Última Engraxada:</label><input type="date" id="chk-data-graxa" class="input-campo"><button class="btn-principal" onclick="avancarPasso(2)">Próximo Passo <i class="ph ph-arrow-right"></i></button><button class="btn-secundario" onclick="cancelarChecklist()" style="margin-bottom:0;">Cancelar</button></div><div id="passo-chk-2" style="display:none;"><div class="grupo-checkbox"><div class="titulo-grupo-chk">1. MOTOR APRESENTA PROBLEMA? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-motor" value="MOTOR NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-motor', 'chk-motor-outro')"> NENHUM PROBLEMA</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="AQUECIMENTO NO MOTOR"> AQUECIMENTO NO MOTOR</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="CORTE DE IGNIÇÃO"> CORTE DE IGNIÇÃO</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="CORREIA DO MOTOR"> CORREIA DO MOTOR</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="FREIO MOTOR"> FREIO MOTOR</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="MOTOR FRACO"> MOTOR FRACO</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="RUÍDOS"> RUÍDOS</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="SEM PARTIDA"> SEM PARTIDA</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="VAZAMENTO DE ÓLEO"> VAZAMENTO DE ÓLEO</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="VAZAMENTO DE DIESEL"> VAZAMENTO DE DIESEL</label><label class="linha-check"><input type="checkbox" name="chk-motor" value="VAZAMENTO DE ÁGUA"> VAZAMENTO DE ÁGUA</label><input type="text" id="chk-motor-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-motor-outro')" name="chk-motor"> Outro...</label></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">2. CAMBIO APRESENTA PROBLEMA? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-cambio" value="CAMBIO NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-cambio', 'chk-cambio-outro')"> NENHUM PROBLEMA</label><label class="linha-check"><input type="checkbox" name="chk-cambio" value="ENGATA MAL"> ENGATA MAL</label><label class="linha-check"><input type="checkbox" name="chk-cambio" value="ESCAPA MARCHA"> ESCAPA MARCHA</label><label class="linha-check"><input type="checkbox" name="chk-cambio" value="RUÍDOS"> RUÍDOS</label><input type="text" id="chk-cambio-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-cambio-outro')" name="chk-cambio"> Outro...</label></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">3. EMBREAGEM APRESENTA PROBLEMA? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-embreagem" value="EMBREAGEM NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-embreagem', 'chk-emb-outro')"> NENHUM PROBLEMA</label><label class="linha-check"><input type="checkbox" name="chk-embreagem" value="EMBREAGEM DURA"> EMBREAGEM DURA</label><label class="linha-check"><input type="checkbox" name="chk-embreagem" value="PATINA"> PATINA</label><label class="linha-check"><input type="checkbox" name="chk-embreagem" value="PEDAL ALTO"> PEDAL ALTO</label><label class="linha-check"><input type="checkbox" name="chk-embreagem" value="PEDAL BAIXO"> PEDAL BAIXO</label><label class="linha-check"><input type="checkbox" name="chk-embreagem" value="RUÍDOS"> RUÍDOS</label><input type="text" id="chk-emb-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-emb-outro')" name="chk-embreagem"> Outro...</label></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">4. DIREÇÃO APRESENTA PROBLEMA? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-direcao" value="DIREÇÃO NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-direcao', 'chk-dir-outro')"> NENHUM PROBLEMA</label><label class="linha-check"><input type="checkbox" name="chk-direcao" value="FOLGA"> FOLGA</label><label class="linha-check"><input type="checkbox" name="chk-direcao" value="NÃO ALINHADO"> NÃO ALINHADO</label><label class="linha-check"><input type="checkbox" name="chk-direcao" value="PESADA"> PESADA</label><label class="linha-check"><input type="checkbox" name="chk-direcao" value="RUÍDOS"> RUÍDOS</label><label class="linha-check"><input type="checkbox" name="chk-direcao" value="TREPIDAÇÃO"> TREPIDAÇÃO</label><label class="linha-check"><input type="checkbox" name="chk-direcao" value="VAZAMENTO HIDRÁULICO"> VAZAMENTO HIDRÁULICO</label><input type="text" id="chk-dir-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-dir-outro')" name="chk-direcao"> Outro...</label></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">5. FREIOS APRESENTA PROBLEMA? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-freios" value="FREIOS NÃO APRESENTAM NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-freios', 'chk-freio-outro')"> NENHUM PROBLEMA</label><label class="linha-check"><input type="checkbox" name="chk-freios" value="LUZ DE FREIO ACESA A TODO MOMENTO"> LUZ DE FREIO ACESA A TODO MOMENTO</label><label class="linha-check"><input type="checkbox" name="chk-freios" value="PEDAL BAIXO"> PEDAL BAIXO</label><label class="linha-check"><input type="checkbox" name="chk-freios" value="RUÍDOS NA FRENAGEM"> RUÍDOS NA FRENAGEM</label><label class="linha-check"><input type="checkbox" name="chk-freios" value="VIBRAÇÕES NO PEDAL"> VIBRAÇÕES NO PEDAL</label><input type="text" id="chk-freio-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-freio-outro')" name="chk-freios"> Outro...</label></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">6. SUSPENSÃO APRESENTA PROBLEMA? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-suspensao" value="SUSPENSÃO NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-suspensao', 'chk-susp-outro')"> NENHUM PROBLEMA</label><label class="linha-check"><input type="checkbox" name="chk-suspensao" value="BARULHOS FORTES"> BARULHOS FORTES</label><label class="linha-check"><input type="checkbox" name="chk-suspensao" value="INSTABILIDADE NA DIREÇÃO"> INSTABILIDADE NA DIREÇÃO</label><label class="linha-check"><input type="checkbox" name="chk-suspensao" value="VIBRAÇÕES INTENSAS NA CARROCERIA"> VIBRAÇÕES INTENSAS NA CARROCERIA</label><input type="text" id="chk-susp-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-susp-outro')" name="chk-suspensao"> Outro...</label></div><div class="grupo-checkbox is-carreta" style="border: 1.5px solid #3b82f6; background-color: #eff6ff;"><div class="titulo-grupo-chk" style="color: #1e3a8a; border-bottom: 1px dashed #93c5fd;">INSPEÇÃO DA CARRETA <span style="color:red">*</span></div><label class="info-label" style="font-size:12px;">Sistema Asa Delta funciona?</label><select id="chk-asa" class="input-campo" onchange="verificarOutroSelect(this, 'chk-asa-outro')"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option><option value="OUTRO">Outro (Descreva)</option></select><input type="text" id="chk-asa-outro" class="input-campo" style="display:none;" placeholder="Descreva o problema..."><label class="info-label" style="font-size:12px;">Freio da lona funciona?</label><select id="chk-freio-lona" class="input-campo" onchange="verificarOutroSelect(this, 'chk-freio-lona-outro')"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option><option value="OUTRO">Outro (Descreva)</option></select><input type="text" id="chk-freio-lona-outro" class="input-campo" style="display:none;" placeholder="Descreva o problema..."><label class="info-label" style="font-size:12px;">Faixas refletivas OK?</label><select id="chk-faixas" class="input-campo" onchange="verificarOutroSelect(this, 'chk-faixas-outro')"><option value="">Selecione...</option><option value="Sim">Sim</option><option value="Não">Não</option><option value="OUTRO">Outro (Descreva)</option></select><input type="text" id="chk-faixas-outro" class="input-campo" style="display:none;" placeholder="Descreva o problema..."></div><button class="btn-principal" onclick="avancarPasso(3)">Próximo Passo <i class="ph ph-arrow-right"></i></button><button class="btn-secundario" onclick="mudarAbaChecklist(1)" style="margin-bottom:0;"><i class="ph ph-arrow-left"></i> Voltar</button></div><div id="passo-chk-3" style="display:none;"><div class="grupo-checkbox"><div class="titulo-grupo-chk">7. PROBLEMAS GERAIS NOS PNEUS? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-pneus_geral" value="PNEUS NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-pneus_geral', 'chk-pneu-outro')"> NENHUM PROBLEMA</label><label class="linha-check"><input type="checkbox" name="chk-pneus_geral" value="FALTA DE ESTABILIDADE"> FALTA DE ESTABILIDADE</label><label class="linha-check"><input type="checkbox" name="chk-pneus_geral" value="PNEUS RESSECADOS"> PNEUS RESSECADOS</label><label class="linha-check"><input type="checkbox" name="chk-pneus_geral" value="PERDA DE CALIBRAÇÃO"> PERDA DE CALIBRAÇÃO</label><label class="linha-check"><input type="checkbox" name="chk-pneus_geral" value="VIBRAÇÕES NO VOLANTE"> VIBRAÇÕES NO VOLANTE</label><input type="text" id="chk-pneu-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-pneu-outro')" name="chk-pneus_geral"> Outro...</label></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">8. SISTEMA ELÉTRICO APRESENTA PROBLEMA? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="SISTEMA ELÉTRICO NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-eletrica', 'chk-elet-outro')"> NENHUM PROBLEMA</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA MOTOR DE ARRANQUE"> FALHA MOTOR DE ARRANQUE</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NO ALTERNADOR"> FALHA NO ALTERNADOR</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NO LIMPADOR DO PARABRISA"> FALHA NO LIMPADOR DO PARABRISA</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NO RÁDIO / LEITOR"> FALHA NO RÁDIO / LEITOR</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NOS FAROIS"> FALHA NOS FAROIS</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NO FAROL DE NEBLINA"> FALHA NO FAROL DE NEBLINA</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NAS SETAS"> FALHA NAS SETAS</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NA LUZ DE FREIO / PLACA"> FALHA NA LUZ DE FREIO / PLACA</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA LUZ PRESENÇA/GIROFLEX"> FALHA LUZ DE PRESENÇA/GIROFLEX</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="SEM CONDUÇÃO DE ENERGIA"> SEM CONDUÇÃO DE ENERGIA (BATERIA)</label><label class="linha-check"><input type="checkbox" name="chk-eletrica" value="FALHA NA BUZINA"> FALHA NA BUZINA</label><input type="text" id="chk-elet-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-elet-outro')" name="chk-eletrica"> Outro...</label></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">9. INDICADORES APRESENTAM PROBLEMA? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-indicadores" value="INDICADORES NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-indicadores', 'chk-ind-outro')"> NENHUM PROBLEMA</label><label class="linha-check"><input type="checkbox" name="chk-indicadores" value="FALHA NO VELOCÍMETRO / CONTA-GIROS"> FALHA NO VELOCÍMETRO / CONTA-GIROS</label><label class="linha-check"><input type="checkbox" name="chk-indicadores" value="FALHA PRESSÃO DO ÓLEO / AR"> FALHA PRESSÃO DO ÓLEO / AR</label><label class="linha-check"><input type="checkbox" name="chk-indicadores" value="FALHA CARGA DA BATERIA / TEMPERATURA"> FALHA CARGA DA BATERIA / TEMPERATURA</label><label class="linha-check"><input type="checkbox" name="chk-indicadores" value="FALHA MARCADOR DE COMBUSTÍVEL"> FALHA MARCADOR DE COMBUSTÍVEL</label><input type="text" id="chk-ind-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-ind-outro')" name="chk-indicadores"> Outro...</label></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">10. A CABINE APRESENTA PROBLEMA? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-cabine" value="CABINE NÃO APRESENTA NENHUM PROBLEMA" onchange="verificarTudoOk(this, 'chk-cabine', 'chk-cab-outro')"> NENHUM PROBLEMA</label><label class="linha-check"><input type="checkbox" name="chk-cabine" value="BANCOS DANIFICADOS"> BANCOS DANIFICADOS</label><label class="linha-check"><input type="checkbox" name="chk-cabine" value="CHAVES E FECHADURAS QUEBRADAS"> CHAVES E FECHADURAS QUEBRADAS</label><label class="linha-check"><input type="checkbox" name="chk-cabine" value="CINTO DE SEGURANÇA RASGADO"> CINTO DE SEGURANÇA RASGADO</label><label class="linha-check"><input type="checkbox" name="chk-cabine" value="ESPELHOS / VIDROS QUEBRADOS"> ESPELHOS / VIDROS QUEBRADOS</label><label class="linha-check"><input type="checkbox" name="chk-cabine" value="FALHA NO AR COND. / CLIMATIZADOR"> FALHA NO AR COND. / CLIMATIZADOR</label><label class="linha-check"><input type="checkbox" name="chk-cabine" value="PAINEL QUEBRADO / TRINCADO"> PAINEL QUEBRADO / TRINCADO</label><label class="linha-check"><input type="checkbox" name="chk-cabine" value="RUÍDOS NAS PORTAS"> RUÍDOS NAS PORTAS</label><label class="linha-check"><input type="checkbox" name="chk-cabine" value="SUPORTE EXTINTORES DANIFICADOS"> SUPORTE EXTINTORES DANIFICADOS</label><input type="text" id="chk-cab-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-cab-outro')" name="chk-cabine"> Outro...</label></div><button class="btn-principal" onclick="avancarPasso(4)">Próximo Passo <i class="ph ph-arrow-right"></i></button><button class="btn-secundario" onclick="mudarAbaChecklist(2)" style="margin-bottom:0;"><i class="ph ph-arrow-left"></i> Voltar</button></div><div id="passo-chk-4" style="display:none;"><div class="grupo-checkbox"><div class="titulo-grupo-chk">11. ITENS FALTANTES NO CAMINHÃO? <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="TODOS OS ITENS ESTÃO NO CAMINHÃO" onchange="verificarTudoOk(this, 'chk-faltantes', 'chk-falta-outro')"> TODOS ESTÃO PRESENTES</label><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="AVISOS SONOROS DE RÉ"> AVISOS SONOROS DE RÉ</label><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="ADESIVO VELOCIDADE / DOCUMENTAÇÃO"> ADESIVO DE VELOCIDADE / DOC.</label><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="CATRACA / CINTA / CANTONEIRA"> CATRACA / CINTA / CANTONEIRA</label><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="CHAVE FENDA / RODA / MACACO"> CHAVE DE FENDA / RODA / MACACO</label><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="CONES SINALIZAÇÃO / TRIÂNGULO"> CONES SINALIZAÇÃO / TRIÂNGULO</label><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="EXTINTOR 2 KG (Ausência/Vencido/Vazio)"> EXTINTOR 2 KG (Falta/Vencido)</label><label class="linha-check"><input type="checkbox" name="chk-faltantes" value="STEP / PEGA MÃO / CINTOS"> STEP / PEGA MÃO / CINTOS</label><input type="text" id="chk-falta-outro" class="input-campo" placeholder="Descreva o que falta..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-falta-outro')" name="chk-faltantes"> Outro...</label></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">12. EXTINTORES DO VEÍCULO <span style="color:red">*</span></div><label class="info-label" style="font-size:12px;">Data de Validade:</label><input type="date" id="chk-extintor-data" class="input-campo"><label class="info-label" style="font-size:12px; margin-top:5px;">Status da Pressão:</label><select id="chk-extintor-pressao" class="input-campo" style="margin-bottom:0;"><option value="Pressão OK">✅ Pressão OK</option><option value="Despressurizado">❌ Despressurizado / Vazio</option></select></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">13. MEDIDAS TWI DOS PNEUS <span style="color:red">*</span></div><img src="https://i.postimg.cc/tT7bBkgb/24.png" style="width:100%; border-radius:12px; margin-bottom:15px; border: 1px solid var(--border-color);"><div id="chk-pneus-caminhao-container" style="display: grid; grid-template-columns: 1fr; gap: 10px;"></div></div><div class="grupo-checkbox is-carreta" style="border: 1.5px solid #3b82f6; background-color: #eff6ff;"><div class="titulo-grupo-chk" style="color:#1e3a8a; border-bottom: 1px dashed #93c5fd;">14. TWI DA CARRETA <span style="color:red">*</span></div><img src="https://i.postimg.cc/RF8Byt3x/25.png" style="width:100%; border-radius:12px; margin-bottom:15px; border: 1px solid var(--border-color);"><div id="chk-pneus-carreta-container" style="display: grid; grid-template-columns: 1fr; gap: 10px;"></div></div><div class="grupo-checkbox sessao-fotos-checklist"><div class="titulo-grupo-chk">15. FOTOS DO MÊS <span style="color:red">*</span></div><p id="aviso-fotos-ok" style="display:none; color:#10b981; font-weight:700; text-align:center;"><i class="ph ph-check-circle"></i> Fotos deste mês já foram enviadas!</p><div id="container-inputs-fotos"><label class="info-label" style="font-size:12px;">Foto Lateral:</label><input type="file" id="foto-lat-input" accept="image/*" capture="environment" class="input-campo" style="padding: 10px;" onchange="processarFoto(this, 'preview-lat')"><img id="preview-lat" class="foto-preview"><label class="info-label" style="font-size:12px; margin-top:10px;">Foto Traseira:</label><input type="file" id="foto-tras-input" accept="image/*" capture="environment" class="input-campo" style="padding: 10px;" onchange="processarFoto(this, 'preview-tras')"><img id="preview-tras" class="foto-preview"></div></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">16. ASSINATURAS E OBSERVAÇÕES <span style="color:red">*</span></div><label class="info-label" style="border-top: 1px dashed var(--border-color); padding-top: 15px;">Necessário Parada para Revisão?</label><select id="chk-parada" class="input-campo" style="border: 1.5px solid #ef4444; color: #dc2626; font-weight: 600;"><option value="Não">Não</option><option value="Sim">Sim, Urgente</option></select><label class="info-label">Considerações Finais:</label><textarea id="chk-obs" class="input-campo" rows="3" placeholder="Digite alguma observação extra..."></textarea><label class="info-label" style="font-size:12px; margin-top:10px;">Assinatura do Motorista: <span style="color:red">*</span></label><canvas id="ass-mot-cam" width="600" height="200" style="border:1.5px dashed var(--primary-color); border-radius:12px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas><button type="button" class="btn-secundario" style="margin-top:8px; padding:8px; font-size:12px;" onclick="limparPad('ass-mot-cam')"><i class="ph ph-eraser"></i> Limpar Assinatura Motorista</button><label class="info-label" style="font-size:12px; margin-top:15px;">Assinatura do Gerente (Antônio F. Gimenez): <span style="color:red">*</span></label><canvas id="ass-ger-cam" width="600" height="200" style="border:1.5px dashed var(--primary-color); border-radius:12px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas><button type="button" class="btn-secundario" style="margin-top:8px; padding:8px; font-size:12px;" onclick="limparPad('ass-ger-cam')"><i class="ph ph-eraser"></i> Limpar Assinatura Gerente</button></div><button class="btn-principal" id="btn-enviar-chk" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); box-shadow: 0 6px 15px rgba(30, 58, 138, 0.25);" onclick="enviarChecklist()"><i class="ph ph-floppy-disk"></i> Enviar Checklist e PDF</button><button class="btn-secundario" onclick="mudarAbaChecklist(3)" style="margin-bottom:0;"><i class="ph ph-arrow-left"></i> Voltar</button></div></div>
+
+            <!-- CHECKLIST NOVO CARRO -->
+            <div class="card" id="form-novo-checklist-carro" style="display: none; padding: 20px 10px;"><h3 class="card-titulo"><i class="ph ph-clipboard-text"></i> Inspeção Utilitário</h3><div style="padding: 0 5px;"><label class="info-label">Placa do Veículo:</label><input type="text" id="chk-carro-placa" class="input-campo" style="background-color:var(--border-color); font-weight:700; color:var(--primary-color);" readonly><label class="info-label">Modelo:</label><input type="text" id="chk-carro-modelo" class="input-campo" style="background-color:var(--border-color); font-weight:700; color:var(--primary-color);" readonly><label class="info-label">Motorista: <span style="color:red">*</span></label>
+            <select id="chk-carro-motorista" class="input-campo"><option value="">Selecione o Motorista...</option></select>
+            <input type="text" id="chk-carro-motorista-novo" class="input-campo" placeholder="Digite o nome do novo motorista..." style="display:none; margin-top:-10px; border: 2px dashed var(--primary-color); font-weight: 700;">
+            <label class="info-label">KM Atual (Painel): <span style="color:red">*</span></label><input type="number" id="chk-carro-km" class="input-campo"><label class="info-label">Próxima Troca Óleo (KM):</label><input type="number" id="chk-carro-oleo" class="input-campo"><div class="grupo-checkbox"><div class="titulo-grupo-chk">ITENS DO CARRO (FALTANDO / COM PROBLEMA) <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-carro-itens" value="TODOS OS ITENS ESTÃO NO CARRO" onchange="verificarTudoOk(this, 'chk-carro-itens', 'chk-carro-outro')"> TODOS ESTÃO PRESENTES</label><label class="linha-check"><input type="checkbox" name="chk-carro-itens" value="LUZ DE FREIO"> LUZ DE FREIO</label><label class="linha-check"><input type="checkbox" name="chk-carro-itens" value="LUZ DE ALERTA E SETAS"> LUZ DE ALERTA E SETAS</label><label class="linha-check"><input type="checkbox" name="chk-carro-itens" value="BUZINA"> BUZINA</label><label class="linha-check"><input type="checkbox" name="chk-carro-itens" value="LUZ DE RÉ"> LUZ DE RÉ</label><label class="linha-check"><input type="checkbox" name="chk-carro-itens" value="STEP"> STEP</label><label class="linha-check"><input type="checkbox" name="chk-carro-itens" value="FREIO DE MÃO"> FREIO DE MÃO</label><label class="linha-check"><input type="checkbox" name="chk-carro-itens" value="CINTO DE SEGURANÇA"> CINTO DE SEGURANÇA</label><label class="linha-check"><input type="checkbox" name="chk-carro-itens" value="PNEUS CALIBRADOS"> PNEUS CALIBRADOS</label><input type="text" id="chk-carro-outro" class="input-campo" placeholder="Outro problema..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-carro-outro')" name="chk-carro-itens"> Outro...</label></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">EXTINTOR <span style="color:red">*</span></div><label class="info-label" style="font-size:12px;">Data de Validade:</label><input type="date" id="chk-carro-extintor-data" class="input-campo"><label class="info-label" style="font-size:12px; margin-top:5px;">Status da Pressão:</label><select id="chk-carro-extintor-pressao" class="input-campo" style="margin-bottom:0;"><option value="Pressão OK">✅ Pressão OK</option><option value="Despressurizado">❌ Despressurizado / Vazio</option></select></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">MEDIDAS TWI DOS PNEUS <span style="color:red">*</span></div><div id="chk-pneus-carro-container" style="display: grid; grid-template-columns: 1fr; gap: 10px;"></div></div><div class="grupo-checkbox sessao-fotos-checklist"><div class="titulo-grupo-chk">FOTOS DO MÊS (FRENTE E VERSO) <span style="color:red">*</span></div><p id="aviso-fotos-ok-carro" style="display:none; color:#10b981; font-weight:700; text-align:center;"><i class="ph ph-check-circle"></i> Fotos deste mês já foram enviadas!</p><div id="container-inputs-fotos-carro"><label class="info-label" style="font-size:12px;">Foto da Frente:</label><input type="file" id="foto-frente-input" accept="image/*" capture="environment" class="input-campo" style="padding: 10px;" onchange="processarFoto(this, 'preview-frente')"><img id="preview-frente" class="foto-preview"><label class="info-label" style="font-size:12px; margin-top:10px;">Foto do Verso (Traseira):</label><input type="file" id="foto-verso-input" accept="image/*" capture="environment" class="input-campo" style="padding: 10px;" onchange="processarFoto(this, 'preview-verso')"><img id="preview-verso" class="foto-preview"></div></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">ASSINATURAS E OBSERVAÇÕES <span style="color:red">*</span></div><label class="info-label" style="border-top: 1px dashed var(--border-color); padding-top: 15px;">Necessário Parada Urgente?</label><select id="chk-carro-parada" class="input-campo" style="border: 1.5px solid #ef4444; color: #dc2626; font-weight: 600;"><option value="Não">Não</option><option value="Sim">Sim, Urgente</option></select><label class="info-label">Considerações Finais:</label><textarea id="chk-carro-obs" class="input-campo" rows="3" placeholder="Digite alguma observação..."></textarea><label class="info-label" style="font-size:12px; margin-top:10px;">Assinatura do Motorista: <span style="color:red">*</span></label><canvas id="ass-mot-car" width="600" height="200" style="border:1.5px dashed var(--primary-color); border-radius:12px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas><button type="button" class="btn-secundario" style="margin-top:8px; padding:8px; font-size:12px;" onclick="limparPad('ass-mot-car')"><i class="ph ph-eraser"></i> Limpar Assinatura Motorista</button><label class="info-label" style="font-size:12px; margin-top:15px;">Assinatura do Gerente (Antônio F. Gimenez): <span style="color:red">*</span></label><canvas id="ass-ger-car" width="600" height="200" style="border:1.5px dashed var(--primary-color); border-radius:12px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas><button type="button" class="btn-secundario" style="margin-top:8px; padding:8px; font-size:12px;" onclick="limparPad('ass-ger-car')"><i class="ph ph-eraser"></i> Limpar Assinatura Gerente</button></div><button class="btn-principal" id="btn-enviar-chk-carro" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); box-shadow: 0 6px 15px rgba(30, 58, 138, 0.25);" onclick="enviarChecklistCarro()"><i class="ph ph-floppy-disk"></i> Enviar Inspeção e PDF</button><button class="btn-secundario" onclick="cancelarChecklist()" style="margin-bottom:0;">Cancelar</button></div></div>
+
+            <!-- CHECKLIST NOVO EMPILHADEIRA -->
+            <div class="card" id="form-novo-checklist-empilhadeira" style="display: none; padding: 20px 10px;"><h3 class="card-titulo"><i class="ph ph-clipboard-text"></i> Inspeção da Empilhadeira</h3><div style="padding: 0 5px;"><label class="info-label">Identificação da Empilhadeira:</label><input type="text" id="chk-emp-placa" class="input-campo" style="background-color:var(--border-color); font-weight:700; color:var(--primary-color);" readonly><label class="info-label">Empilhadeirista do Dia: <span style="color:red">*</span></label>
+            <select id="chk-emp-motorista" class="input-campo"><option value="">Selecione o Operador...</option></select>
+            <input type="text" id="chk-emp-motorista-novo" class="input-campo" placeholder="Digite o nome do novo operador..." style="display:none; margin-top:-10px; border: 2px dashed var(--primary-color); font-weight: 700;">
+            <label class="info-label">Horímetro Atual (Horas): <span style="color:red">*</span></label><input type="number" id="chk-emp-km" class="input-campo" placeholder="Ex: 1250"><div class="grupo-checkbox"><div class="titulo-grupo-chk">ITENS AUSENTES OU COM DEFEITO <span style="color:red">*</span></div><label class="linha-check"><input type="checkbox" name="chk-emp-itens" value="TODOS OS ITENS ESTÃO NA EMPILHADEIRA" onchange="verificarTudoOk(this, 'chk-emp-itens', 'chk-emp-outro')"> TODOS OS ITENS ESTÃO OK</label><label class="linha-check"><input type="checkbox" name="chk-emp-itens" value="ACRÍLICO TRASEIRO"> ACRÍLICO TRASEIRO</label><label class="linha-check"><input type="checkbox" name="chk-emp-itens" value="BUZINA"> BUZINA</label><label class="linha-check"><input type="checkbox" name="chk-emp-itens" value="CINTO DE SEGURANÇA"> CINTO DE SEGURANÇA</label><label class="linha-check"><input type="checkbox" name="chk-emp-itens" value="EXTINTOR"> EXTINTOR</label><label class="linha-check"><input type="checkbox" name="chk-emp-itens" value="GIROFLEX"> GIROFLEX</label><label class="linha-check"><input type="checkbox" name="chk-emp-itens" value="PARA BRISA DIANTEIRO"> PARA BRISA DIANTEIRO</label><input type="text" id="chk-emp-outro" class="input-campo" placeholder="Outro..." style="display:none; margin-top:5px;"><label class="linha-check"><input type="checkbox" value="OUTRO" onchange="verificarOutro(this, 'chk-emp-outro')" name="chk-emp-itens"> Outro...</label></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">PLANO DE AÇÃO <span style="color:red">*</span></div><label class="info-label" style="font-size:12px;">Descrever plano de ação para os itens que não estão presentes ou funcionando:</label><textarea id="chk-emp-obs" class="input-campo" rows="4" placeholder="Descreva a ação a ser tomada..."></textarea></div><div class="grupo-checkbox"><div class="titulo-grupo-chk">ASSINATURAS <span style="color:red">*</span></div><label class="info-label" style="font-size:12px; margin-top:10px;">Assinatura do Empilhadeirista: <span style="color:red">*</span></label><canvas id="ass-mot-emp" width="600" height="200" style="border:1.5px dashed var(--primary-color); border-radius:12px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas><button type="button" class="btn-secundario" style="margin-top:8px; padding:8px; font-size:12px;" onclick="limparPad('ass-mot-emp')"><i class="ph ph-eraser"></i> Limpar Assinatura</button><label class="info-label" style="font-size:12px; margin-top:15px;">Assinatura do Gerente (Antônio F. Gimenez): <span style="color:red">*</span></label><canvas id="ass-ger-emp" width="600" height="200" style="border:1.5px dashed var(--primary-color); border-radius:12px; width:100%; height:100px; background:#fff; touch-action:none; cursor:crosshair;"></canvas><button type="button" class="btn-secundario" style="margin-top:8px; padding:8px; font-size:12px;" onclick="limparPad('ass-ger-emp')"><i class="ph ph-eraser"></i> Limpar Assinatura</button></div><button class="btn-principal" id="btn-enviar-chk-emp" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); box-shadow: 0 6px 15px rgba(30, 58, 138, 0.25);" onclick="enviarChecklistEmpilhadeira()"><i class="ph ph-floppy-disk"></i> Enviar Inspeção e PDF</button><button class="btn-secundario" onclick="cancelarChecklist()" style="margin-bottom:0;">Cancelar</button></div></div>
+        </div>
+
+        <!-- ABASTECIMENTO -->
+        <div id="conteudo-Abastecimento" class="secao-conteudo"><div class="card" style="background-color: #ecfdf5; border: 1.5px solid var(--primary-color); padding: 15px;"><div style="font-weight: 700; color: var(--primary-color); text-align: center; margin-bottom: 12px; font-size: 15px; letter-spacing: -0.2px;"><i class="ph ph-chart-bar"></i> Resumo do Tanque (L)</div><div style="display: flex; justify-content: space-around; font-size: 13px; text-align: center; color: var(--text-muted); font-weight: 500;"><div><b style="color:#1e40af; font-size: 17px;" id="estoque-diesel-geral">0 L</b><br>Combustível</div><div class="esconder-carro"><b style="color:#1e40af; font-size: 17px;" id="estoque-arla-geral">0 L</b><br>Arla</div><div><b style="color:#dc2626; font-size: 17px;" id="gasto-mes-geral">0 L</b><br>Gasto Frota</div></div></div><div class="card"><h3 class="card-titulo"><i class="ph ph-gas-pump"></i> Novo Lançamento</h3><select id="tipo-abast" class="input-campo" onchange="mudarFormAbast()" style="background-color: var(--primary-color); color: white; font-weight: 700; border: none;"></select><div id="form-abast-veiculo"><label class="info-label">Data e Hora:</label><input type="datetime-local" id="abast-data" class="input-campo"><label class="info-label">KM Atual da Bomba: <span style="color:red">*</span></label><p style="font-size: 12px; color: #dc2626; margin-top: -10px; font-weight: 500;">Último KM cadastrado: <span id="aviso-ultimo-km" style="font-weight:700;">0</span></p><input type="number" id="abast-km-novo" class="input-campo" placeholder="Não pode ser menor que o Último KM"><label class="info-label">Litros Abastecidos: <span style="color:red">*</span></label><input type="number" id="abast-litros-bomba" class="input-campo" placeholder="Ex: 150"><label class="info-label">Motorista: <span style="color:red">*</span></label><select id="abast-motorista" class="input-campo" onchange="verificarNovoMotoristaAbast(this)"><option value="">Selecione o Motorista...</option></select><input type="text" id="abast-motorista-novo" class="input-campo" placeholder="Digite o nome do novo motorista..." style="display:none; margin-top:-10px; border: 2px dashed var(--primary-color); font-weight: 700;"><label class="info-label">Responsável (Frentista): <span style="color:red">*</span></label><input type="text" id="abast-resp" class="input-campo" placeholder="Seu nome"></div><div id="form-abast-chegada" style="display:none; padding: 15px; border: 1.5px dashed #3b82f6; border-radius: 12px; background: #eff6ff; margin-bottom: 10px;"><label class="info-label">Data/Hora Chegada:</label><input type="datetime-local" id="chegada-data" class="input-campo"><label class="info-label">Litros do Tanque: <span style="color:red">*</span></label><input type="number" id="chegada-litros" class="input-campo" placeholder="Ex: 5000"><label class="info-label">NF: <span style="color:red">*</span></label><input type="text" id="chegada-nf" class="input-campo" placeholder="Nota Fiscal"></div><button class="btn-principal" id="btn-salvar-abast-nuvem" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); box-shadow: 0 6px 15px rgba(30, 58, 138, 0.25); margin-top: 5px;" onclick="salvarAbastecimentoNuvem()"><i class="ph ph-floppy-disk"></i> Salvar Lançamento</button></div><div class="card"><h3 class="card-titulo"><i class="ph ph-clipboard-text"></i> Histórico</h3><details style="margin-bottom: 8px;"><summary style="font-size: 14px;"><i class="ph ph-truck"></i> Últimos 24 (Combustível)</summary><div id="hist-abast-diesel" style="margin-top:10px;">Aguardando...</div></details><details class="esconder-carro" style="margin-bottom: 8px;"><summary style="font-size: 14px;"><i class="ph ph-drop"></i> Últimos 24 (Arla)</summary><div id="hist-abast-arla" style="margin-top:10px;">Aguardando...</div></details><details style="margin-bottom: 8px;"><summary style="font-size: 14px;"><i class="ph ph-tray-arrow-down"></i> Últimas 3 Chegadas (Combust.)</summary><div id="hist-cheg-diesel" style="margin-top:10px;">Aguardando...</div></details><details class="esconder-carro" style="margin-bottom: 8px;"><summary style="font-size: 14px;"><i class="ph ph-tray-arrow-down"></i> Últimas 3 Chegadas (Arla)</summary><div id="hist-cheg-arla" style="margin-top:10px;">Aguardando...</div></details></div></div>
+
+        <!-- ESTOQUE (SUBDIVIDIDO) -->
+        <div id="conteudo-Estoque" class="secao-conteudo"><div class="card" id="card-est-posicao"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; margin-bottom: 15px; padding-bottom: 10px;"><h3 class="card-titulo" style="margin: 0; padding: 0; border: none;"><i class="ph ph-package"></i> Posição do Estoque</h3><button id="btn-editar-estoque" onclick="alternarEdicaoEstoque()" style="background: transparent; border: 1px solid #1a4d2e; color: #1a4d2e; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; font-weight: bold;"><i class="ph ph-pencil-simple"></i> Editar</button></div><div id="lista-estoque-atual"><p style="text-align:center; color:var(--text-muted);">Carregando peças...</p></div></div><div class="card" id="card-est-movimentacao"><h3 class="card-titulo"><i class="ph ph-arrows-left-right"></i> Lançar Entrada ou Saída</h3><label class="info-label">Selecione o Item:</label><select id="est-item" class="input-campo"></select><label class="info-label">Tipo de Movimento:</label><select id="est-tipo" class="input-campo" onchange="mudarFormEstoque()"><option value="SAÍDA">Saída (Uso na frota)</option><option value="ENTRADA">Entrada (Chegou mercadoria nova)</option></select><label class="info-label">Quantidade:</label><input type="number" id="est-qtd" class="input-campo" placeholder="Ex: 5"><div id="div-est-placa"><label class="info-label">Placa / Observação:</label><input type="text" id="est-placa" class="input-campo" placeholder="Placa do caminhão ou onde foi usado"></div><div id="div-est-compra" style="display:none; border: 1.5px dashed var(--primary-color); padding: 15px; border-radius: 12px; margin-bottom: 15px; background: #ecfdf5;"><p style="margin-top:0; font-size:13px; color:var(--primary-color); font-weight:700;"><i class="ph ph-info"></i> Dados da Compra (Para o Histórico)</p><label class="info-label">Valor Total Pago (R$):</label><input type="number" id="est-valor" class="input-campo" placeholder="Ex: 1500.00" style="background:#fff;"><label class="info-label">Link de Referência / NF:</label><input type="text" id="est-link" class="input-campo" placeholder="Link do Mercado Livre, número da NF..." style="background:#fff;"></div><button class="btn-principal" id="btn-salvar-mov-est" onclick="salvarMovimentacaoEstoque()"><i class="ph ph-floppy-disk"></i> Salvar Movimentação</button></div><div class="card" id="card-est-compra" style="border: 1.5px solid #dc2626; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.08);"><h3 class="card-titulo" style="color: #dc2626; border-left-color: #dc2626;"><i class="ph ph-shopping-cart"></i> Solicitar Compra</h3><label class="info-label">Item que precisa comprar:</label><input type="text" id="compra-item" class="input-campo" list="lista-pecas" placeholder="Selecione na lista ou digite..."><datalist id="lista-pecas"></datalist><label class="info-label">Quantidade Necessária:</label><input type="number" id="compra-qtd" class="input-campo"><label class="info-label">Urgência:</label><select id="compra-urgencia" class="input-campo" style="border: 1.5px solid #fca5a5;"><option value="Baixa">Baixa (Pode esperar)</option><option value="Média">Média (Para a próxima semana)</option><option value="ALTA">ALTA (Caminhão parado/sem estoque)</option></select><button class="btn-principal" id="btn-gerar-compra" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); box-shadow: 0 6px 15px rgba(220, 38, 38, 0.25);" onclick="gerarSolicitacaoCompra()"><i class="ph ph-file-pdf"></i> Gerar Pedido de Compra</button></div></div>
+    </div>
+
+    <!-- Modal Confirmação Abastecimento -->
+    <div id="modal-confirmar-abast" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h3 class="modal-titulo">Confirme o Lançamento</h3>
+            <div class="modal-body">
+                <p><b>Placa:</b> <span id="conf-abast-placa"></span></p>
+                <p><b>Tipo:</b> <span id="conf-abast-tipo"></span></p>
+                <p><b>KM:</b> <span id="conf-abast-km"></span></p>
+                <p><b>Litros:</b> <span id="conf-abast-litros"></span></p>
+                <p><b>Motorista:</b> <span id="conf-abast-mot"></span></p>
+                <p><b>Responsável:</b> <span id="conf-abast-resp"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secundario" style="margin:0; flex:1;" onclick="fecharModalAbast()">Cancelar</button>
+                <button class="btn-principal" style="margin:0; flex:1; background:var(--primary-color);" onclick="confirmarEEnviarAbastecimento()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Abastecimento -->
+    <div id="modal-editar-abast" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h3 class="modal-titulo">Editar Lançamento (<span id="edit-abast-placa"></span>)</h3>
+            <div class="modal-body">
+                <label class="info-label">Novo KM:</label>
+                <input type="number" id="edit-abast-km" class="input-campo">
+                <label class="info-label">Novos Litros:</label>
+                <input type="number" id="edit-abast-litros" class="input-campo">
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secundario" style="margin:0; flex:1;" onclick="fecharModalEditAbast()">Cancelar</button>
+                <button class="btn-principal" style="margin:0; flex:1; background:#1e40af;" onclick="salvarEdicaoAbast()">Salvar Edição</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js?v=5"></script>
+</body>
+</html>
