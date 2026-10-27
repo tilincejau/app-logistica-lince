@@ -203,6 +203,9 @@ function atualizarVariaveisGlobais(res) {
     window.listaMotoristas = res.motoristas || [];
     window.historicoChecklist = res.historico || [];
 
+    registrarCategoriasExtras();
+    renderizarPlacas();
+    renderizarAlertas();
     renderizarMotoristas();
     renderizarHistorico(window.historicoChecklist);
     renderizarHistoricoAbast();
@@ -271,7 +274,7 @@ window.onload = function() {
     htmlFichaCarreta = construtorFicha(pneusCarreta, false); htmlChkCarreta = construtorChk(pneusCarreta, false);
     htmlFichaCarro = construtorFicha(pneusCarro, true); htmlChkCarro = construtorChk(pneusCarro, true);
     
-    document.querySelectorAll('.img-placa').forEach(img => { let onclickVal = img.getAttribute('onclick'); if(onclickVal) { let match = onclickVal.match(/'([^']+)'/); if(match && match[1] !== 'OUTROS') { let placa = match[1]; let wrapper = document.createElement('div'); wrapper.style.position = 'relative'; img.parentNode.insertBefore(wrapper, img); wrapper.appendChild(img); let check = document.createElement('div'); check.id = 'check-' + placa; check.innerHTML = '<i class="ph-fill ph-check-circle" style="color:#10b981;"></i>'; check.style.cssText = 'display:none; align-items:center; justify-content:center; position:absolute; top:-5px; right:-5px; font-size:24px; background:#fff; border-radius:50%; box-shadow:0 2px 4px rgba(0,0,0,0.3); z-index:10;'; wrapper.appendChild(check); } } });
+    renderizarPlacas(); // placas desenhadas em CSS (inclui veículos cadastrados em OUTROS)
 
     let bdSalvo = localStorage.getItem('lince_logistica_bd');
     if (bdSalvo) {
@@ -319,7 +322,7 @@ function sairDaConta() {
 } 
 
 function voltarParaPlacas() { aplicarDadosAguardando(); esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex'; } 
-function voltarParaMenu() { aplicarDadosAguardando(); esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; atualizarBotaoSyncManual(); }
+function voltarParaMenu() { aplicarDadosAguardando(); esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; atualizarBotaoSyncManual(); renderizarAlertas(); }
 
 function escolherModulo(modulo) { 
     window.moduloAtual = modulo; 
@@ -357,19 +360,8 @@ function abrirModuloEstoque(sub) {
 
 async function selecionarPlaca(placa, bypassTrava = false) { 
     if (placa === 'OUTROS') { 
-        if (typeof Swal === 'undefined') { alert("Erro ao carregar bibliotecas."); return; }
-        const { value: pC } = await Swal.fire({ title: 'Outro Veículo', input: 'text', inputLabel: 'Digite a placa:', showCancelButton: true, confirmButtonColor: '#1a4d2e' });
-        if (!pC) return; 
-        placa = pC.toUpperCase().replace(/[^A-Z0-9]/g, ''); 
-
-        const { value: cat } = await Swal.fire({ title: 'Categoria', input: 'select', inputOptions: { '1': 'Caminhão', '2': 'Cavalo', '3': 'Utilitário/Carro', '4': 'Empilhadeira' }, showCancelButton: true, confirmButtonColor: '#1a4d2e' });
-        if(!cat) return;
-        let tipoVeiculo = "CAMINHAO";
-        if(cat === "2") { tipoVeiculo = "CAVALO"; CAVALOS.push(placa); }
-        else if(cat === "3") { tipoVeiculo = "CARRO"; CARROS.push(placa); }
-        else if(cat === "4") { tipoVeiculo = "EMPILHADEIRA"; EMPILHADEIRAS.push(placa); }
-        else { TRUCKS.push(placa); }
-        if (!window.frota[placa]) { window.frota[placa] = { km_atual: 0, gasto_mes: 0, pneus: {}, tipo: tipoVeiculo, categoria_temp: tipoVeiculo, abast_atual: { km_atual: 0, litros: 0, km_ant: 0 } }; } 
+        placa = await cadastrarVeiculoOutros();
+        if (!placa) return;
     } 
 
     if (window.moduloAtual === 'Checklist' && !bypassTrava) {
@@ -407,7 +399,7 @@ async function selecionarPlaca(placa, bypassTrava = false) {
         if(ctCarro) ctCarro.innerHTML = ""; if(chkCarro) chkCarro.innerHTML = ""; 
     } 
     document.querySelectorAll('.is-carreta').forEach(el => { el.style.display = window.isCavalo ? 'block' : 'none'; }); document.querySelectorAll('.esconder-carro').forEach(el => { el.style.display = (window.isCarro || window.isEmpilhadeira) ? 'none' : 'block'; }); document.querySelectorAll('.mostrar-carro').forEach(el => { el.style.display = window.isCarro ? 'block' : 'none'; }); document.querySelectorAll('.esconder-cavalo-chk').forEach(el => { el.style.display = (window.isCavalo || window.isEmpilhadeira) ? 'none' : 'block'; }); 
-    let selAbast = document.getElementById('tipo-abast'); if (window.isCarro) { selAbast.innerHTML = `<option value="DIESEL">Abastecer COMBUSTÍVEL no Veículo</option><option value="CHEGADA DE DIESEL">📥 Receber COMBUSTÍVEL (Estoque)</option>`; } else { selAbast.innerHTML = `<option value="DIESEL">Abastecer DIESEL no Caminhão</option><option value="ARLA">Abastecer ARLA no Caminhão</option><option value="CHEGADA DE DIESEL">📥 Receber CHEGADA DE DIESEL</option><option value="CHEGADA DE ARLA">📥 Receber CHEGADA DE ARLA</option>`; } 
+    let selAbast = document.getElementById('tipo-abast'); let nomeComb = window.isCarro ? "COMBUSTÍVEL" : "DIESEL"; selAbast.innerHTML = `<option value="DIESEL">Abastecer ${nomeComb}</option><option value="ARLA">Abastecer ARLA</option><option value="CHEGADA DE DIESEL">📥 Receber CHEGADA DE ${nomeComb}</option><option value="CHEGADA DE ARLA">📥 Receber CHEGADA DE ARLA</option>`; mudarFormAbast();
     let elTipo = document.getElementById('tipo-veiculo'); if(elTipo) elTipo.value = dados.tipo || ""; let elMotorista = document.getElementById('nome-motorista'); if(elMotorista) elMotorista.value = dados.motorista || ""; let formatNum = v => v ? String(v).replace(/[^0-9]/g, '') : ""; let elKm = document.getElementById('km-master'); if(elKm) elKm.value = formatNum(dados.km_atual); let elO = document.getElementById('km-proxima-troca'); if(elO) elO.value = formatNum(dados.km_oleo); let elT = document.getElementById('data-ultima-afericao'); if(elT) elT.value = dados.data_tacografo || ""; let elG = document.getElementById('data-engraxada'); if(elG) elG.value = dados.data_graxa || ""; let elCar = document.getElementById('qtd-carrinhos'); if(elCar) elCar.value = dados.qtd_carrinhos || 0; let elCon = document.getElementById('qtd-cones'); if(elCon) elCon.value = dados.qtd_cones || 0; let elCal = document.getElementById('qtd-calcos'); if(elCal) elCal.value = dados.qtd_calcos || 0; let elExt = document.getElementById('data-extintor-ficha'); if(elExt) elExt.value = dados.data_extintor || ""; urlDocAtual = dados.link_documento || ""; 
     let abData = dados.abast_atual || {km_ant: 0, km_atual: 0, litros: 0};
     document.getElementById('abast-km-ant').value = abData.km_ant; document.getElementById('abast-km-atual').value = abData.km_atual; document.getElementById('abast-litros').value = abData.litros;
@@ -599,7 +591,7 @@ function salvarEdicaoAbast() {
     let p = { acao: "editar_abastecimento", id_transacao: editAbastId, litros: nLitros, km: nKm, usuario: window.usuarioLogado };
     adicionarNaFila(p);
     
-    window.histAbast.diesel.forEach(h => { if(h.id_transacao === editAbastId) { h.litros = nLitros; h.km = nKm; } });
+    window.histAbast.diesel.concat(window.histAbast.arla || []).forEach(h => { if(h.id_transacao === editAbastId) { h.litros = nLitros; h.km = nKm; } });
     renderizarHistoricoAbast(); salvarCacheLocal();
     Swal.fire("Sucesso", "Edição salva! Será enviada na próxima sincronização.", "success");
     fecharModalEditAbast();
@@ -827,6 +819,7 @@ async function enviarChecklist() {
     btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Preparando..."; 
     btn.disabled = true; 
 
+    atualizarFrotaLocal(pl.placa, { km_atual: pl.km_atual, km_oleo: pl.km_oleo, data_tacografo: pl.data_tacografo, data_graxa: pl.data_graxa, data_extintor: pl.data_extintor });
     adicionarNaFila(pl);
     window.historicoChecklist.unshift({data: new Date().toISOString(), placa: pl.placa}); 
     salvarCacheLocal();
@@ -851,4 +844,255 @@ async function enviarChecklistEmpilhadeira() {
     Swal.fire("Blindado!", "Inspeção salva localmente!<br>Será sincronizada em 2º plano automaticamente.", "success"); 
     voltarParaPlacas();
     btn.innerHTML = "<i class='ph ph-floppy-disk'></i> Enviar Inspeção e PDF"; btn.disabled = false;
+}
+
+/* =========================================================
+   PLACAS (desenhadas em CSS no padrão Mercosul) + CADASTRO DE "OUTROS"
+   ========================================================= */
+const CATEGORIAS_VEICULO = {
+    TOCO:         { lista: TOCOS,         nome: 'Caminhão Toco', secao: 'caminhoes' },
+    CAMINHAO:     { lista: TRUCKS,        nome: 'Caminhão Truck', secao: 'caminhoes' },
+    CAVALO:       { lista: CAVALOS,       nome: 'Cavalo',        secao: 'cavalos' },
+    CARRO:        { lista: CARROS,        nome: 'Utilitário',    secao: 'utilitarios' },
+    EMPILHADEIRA: { lista: EMPILHADEIRAS, nome: 'Empilhadeira',  secao: 'empilhadeiras' }
+};
+
+function escHtml(t) { return String(t == null ? "" : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+// Veículos cadastrados pelo botão OUTROS vêm da planilha com a coluna "categoria" preenchida
+function registrarCategoriasExtras() {
+    for (let placa in (window.frota || {})) {
+        let cat = String(window.frota[placa].categoria || "").trim().toUpperCase();
+        let def = CATEGORIAS_VEICULO[cat];
+        if (!def) continue;
+        let jaListada = Object.values(CATEGORIAS_VEICULO).some(c => c.lista.includes(placa));
+        if (!jaListada) def.lista.push(placa);
+    }
+}
+
+function htmlPlaca(placa) {
+    let p = escHtml(placa);
+    return `<div class="placa-wrap"><button type="button" class="placa-mercosul${placa.length > 7 ? ' placa-longa' : ''}" onclick="selecionarPlaca('${p}')" aria-label="Placa ${p}"><span class="placa-faixa"><span class="placa-pais">BRASIL</span><span class="placa-bandeira"></span></span><span class="placa-corpo"><span class="placa-br">BR</span><span class="placa-num">${p}</span></span></button><div class="placa-check" id="check-${p}"><i class="ph-fill ph-check-circle" style="color:#10b981;"></i></div></div>`;
+}
+
+function renderizarPlacas() {
+    let alvo = document.getElementById('secoes-placas');
+    if (!alvo) return;
+    let ordenar = arr => [...new Set(arr)].sort();
+    let secoes = [
+        { titulo: 'Caminhões',     icone: 'ph-truck',         placas: ordenar(TOCOS.concat(TRUCKS)) },
+        { titulo: 'Cavalos',       icone: 'ph-truck-trailer', placas: ordenar(CAVALOS) },
+        { titulo: 'Utilitários',   icone: 'ph-car',           placas: ordenar(CARROS) },
+        { titulo: 'Empilhadeiras', icone: 'ph-stack',         placas: ordenar(EMPILHADEIRAS) }
+    ];
+    // guarda quais checks (checklist da semana) estavam visíveis para não piscar ao redesenhar
+    let visiveis = new Set([...document.querySelectorAll('.placa-check')].filter(e => e.style.display === 'flex').map(e => e.id));
+    alvo.innerHTML = secoes.filter(s => s.placas.length).map((s, i) =>
+        `<h3 class="card-titulo titulo-secao-placa"${i === 0 ? ' style="margin-top:10px !important;"' : ''}><i class="ph ${s.icone}"></i> ${s.titulo}</h3><div class="grid-placas">${s.placas.map(htmlPlaca).join('')}</div>`
+    ).join('');
+    visiveis.forEach(id => { let el = document.getElementById(id); if (el) el.style.display = 'flex'; });
+}
+
+async function cadastrarVeiculoOutros() {
+    if (typeof Swal === 'undefined') { alert("Erro ao carregar bibliotecas."); return null; }
+    const { value: pC } = await Swal.fire({ title: 'Outro Veículo', input: 'text', inputLabel: 'Digite a placa:', inputPlaceholder: 'Ex: ABC1D23', inputAttributes: { autocapitalize: 'characters', maxlength: 12 }, showCancelButton: true, confirmButtonColor: '#1a4d2e', confirmButtonText: 'Continuar', cancelButtonText: 'Cancelar',
+        inputValidator: v => { let l = String(v || "").toUpperCase().replace(/[^A-Z0-9]/g, ''); if (l.length < 5) return 'Digite uma placa válida!'; } });
+    if (!pC) return null;
+    let placa = pC.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+    // Placa já existe: só abre o veículo
+    let jaListada = Object.values(CATEGORIAS_VEICULO).some(c => c.lista.includes(placa));
+    if (jaListada && window.frota[placa]) return placa;
+
+    const { value: cat } = await Swal.fire({ title: 'Categoria', text: `Em qual grupo a placa ${placa} deve ficar?`, input: 'select',
+        inputOptions: { CAMINHAO: 'Caminhão Truck', TOCO: 'Caminhão Toco', CAVALO: 'Cavalo', CARRO: 'Utilitário / Carro', EMPILHADEIRA: 'Empilhadeira' },
+        showCancelButton: true, confirmButtonColor: '#1a4d2e', confirmButtonText: 'Salvar Placa', cancelButtonText: 'Cancelar' });
+    if (!cat) return null;
+    let def = CATEGORIAS_VEICULO[cat];
+
+    if (!def.lista.includes(placa)) def.lista.push(placa);
+    if (!window.frota[placa]) window.frota[placa] = { placa: placa, km_atual: 0, gasto_mes: 0, pneus: {}, tipo: def.nome, abast_atual: { km_atual: 0, litros: 0, km_ant: 0 } };
+    window.frota[placa].categoria = cat;
+    if (!window.frota[placa].tipo) window.frota[placa].tipo = def.nome;
+
+    // Salva na planilha (aba Veiculos) para a placa aparecer para todos os usuários
+    adicionarNaFila({ acao: "cadastrar_veiculo", usuario: window.usuarioLogado, placa: placa, categoria: cat, tipo: window.frota[placa].tipo });
+    salvarCacheLocal();
+    renderizarPlacas();
+    mostrarToast(`<i class='ph ph-check-circle'></i> Placa ${placa} salva em ${def.nome}`, "#059669");
+    return placa;
+}
+
+function atualizarFrotaLocal(placa, campos) {
+    let v = window.frota[placa]; if (!v) return;
+    for (let k in campos) { if (campos[k] !== undefined && campos[k] !== null && String(campos[k]).trim() !== "") v[k] = campos[k]; }
+}
+
+/* =========================================================
+   PAINEL DE ALERTAS (SEMÁFORO): ÓLEO, TACÓGRAFO, EXTINTOR, GRAXA
+   Vermelho = vencido | Amarelo = prestes a vencer | Verde = em dia | Cinza = sem registro
+   ========================================================= */
+const LIMITE_OLEO_KM = 1500;     // amarelo quando faltar até 1.500 km
+const LIMITE_TACOGRAFO_DIAS = 30; // amarelo quando faltar até 30 dias (validade da aferição = 2 anos)
+const LIMITE_EXTINTOR_DIAS = 30;  // amarelo quando faltar até 30 dias
+const INTERVALO_GRAXA_DIAS = 30;  // próxima graxa = última + 30 dias
+const LIMITE_GRAXA_DIAS = 5;      // amarelo quando faltar até 5 dias
+
+const ehPesado = p => !CARROS.includes(p) && !EMPILHADEIRAS.includes(p);
+const ALERTAS = {
+    oleo:      { nome: 'Óleo do Motor', icone: 'ph-drop',             aplica: p => !EMPILHADEIRAS.includes(p) },
+    tacografo: { nome: 'Tacógrafo',     icone: 'ph-timer',            aplica: ehPesado },
+    extintor:  { nome: 'Extintor',      icone: 'ph-fire-extinguisher', aplica: p => !EMPILHADEIRAS.includes(p) },
+    graxa:     { nome: 'Graxa',         icone: 'ph-wrench',           aplica: ehPesado }
+};
+let alertaAberto = null; let filtroAlertaAtual = 'atencao';
+
+function numKm(v) { let n = parseFloat(String(v == null ? "" : v).replace(/[^\d.,-]/g, '').replace(',', '.')); return isNaN(n) ? 0 : n; }
+function fmtKm(n) { return Math.round(n).toLocaleString('pt-BR'); }
+function lerDataISO(s) { if (!s || !/^\d{4}-\d{2}-\d{2}/.test(String(s))) return null; let p = String(s).substring(0, 10).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function fmtData(d) { return d ? `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` : '--/--/----'; }
+function isoData(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+function diasAte(d) { let h = new Date(); h.setHours(0, 0, 0, 0); return Math.round((d.getTime() - h.getTime()) / 86400000); }
+function txtDias(n) { return n === 1 ? '1 dia' : n + ' dias'; }
+
+function statusPorPrazo(dataVenc, limite, rotulo) {
+    let d = diasAte(dataVenc);
+    if (d < 0) return { nivel: 'vencido', ordem: d, texto: `Vencido há ${txtDias(-d)}`, detalhe: `${rotulo} ${fmtData(dataVenc)}` };
+    if (d <= limite) return { nivel: 'alerta', ordem: d, texto: d === 0 ? 'Vence hoje' : `Vence em ${txtDias(d)}`, detalhe: `${rotulo} ${fmtData(dataVenc)}` };
+    return { nivel: 'ok', ordem: d, texto: `Em dia · ${txtDias(d)}`, detalhe: `${rotulo} ${fmtData(dataVenc)}` };
+}
+
+function calcularStatusAlerta(tipo, placa) {
+    let v = window.frota[placa] || {};
+    if (tipo === 'oleo') {
+        let prox = numKm(v.km_oleo), atual = numKm(v.km_atual);
+        if (!prox) return { nivel: 'sem', ordem: 0, texto: 'Sem KM da próxima troca', detalhe: atual ? `KM atual ${fmtKm(atual)}` : '' };
+        let f = prox - atual, det = `KM atual ${fmtKm(atual)} · Troca em ${fmtKm(prox)}`;
+        if (f <= 0) return { nivel: 'vencido', ordem: f, texto: `Vencido há ${fmtKm(-f)} km`, detalhe: det };
+        if (f <= LIMITE_OLEO_KM) return { nivel: 'alerta', ordem: f, texto: `Faltam ${fmtKm(f)} km`, detalhe: det };
+        return { nivel: 'ok', ordem: f, texto: `Em dia · faltam ${fmtKm(f)} km`, detalhe: det };
+    }
+    if (tipo === 'tacografo') {
+        let u = lerDataISO(v.data_tacografo); if (!u) return { nivel: 'sem', ordem: 0, texto: 'Sem data da última aferição', detalhe: '' };
+        let px = new Date(u); px.setFullYear(px.getFullYear() + 2);
+        return statusPorPrazo(px, LIMITE_TACOGRAFO_DIAS, `Aferido ${fmtData(u)} · Próxima`);
+    }
+    if (tipo === 'extintor') {
+        let d = lerDataISO(v.data_extintor); if (!d) return { nivel: 'sem', ordem: 0, texto: 'Sem data de validade', detalhe: '' };
+        return statusPorPrazo(d, LIMITE_EXTINTOR_DIAS, 'Validade');
+    }
+    if (tipo === 'graxa') {
+        let u = lerDataISO(v.data_graxa); if (!u) return { nivel: 'sem', ordem: 0, texto: 'Sem data da última graxa', detalhe: '' };
+        let px = new Date(u); px.setDate(px.getDate() + INTERVALO_GRAXA_DIAS);
+        return statusPorPrazo(px, LIMITE_GRAXA_DIAS, `Última ${fmtData(u)} · Próxima`);
+    }
+}
+
+function placasDaFrota() {
+    let todas = [...new Set(TOCOS.concat(TRUCKS, CAVALOS, CARROS, EMPILHADEIRAS))];
+    return todas.filter(p => window.frota && window.frota[p]);
+}
+
+function itensDoAlerta(tipo) {
+    const peso = { vencido: 0, alerta: 1, ok: 2, sem: 3 };
+    return placasDaFrota().filter(p => ALERTAS[tipo].aplica(p)).map(p => Object.assign({ placa: p }, calcularStatusAlerta(tipo, p)))
+        .sort((a, b) => (peso[a.nivel] - peso[b.nivel]) || (a.ordem - b.ordem) || a.placa.localeCompare(b.placa));
+}
+
+function renderizarAlertas() {
+    let grid = document.getElementById('grid-alertas'); if (!grid) return;
+    let totV = 0, totA = 0;
+    if (!placasDaFrota().length) { grid.innerHTML = `<p class="lista-alertas-vazia" style="grid-column:1/-1;">Sincronize para carregar os alertas.</p>`; document.getElementById('alertas-resumo').textContent = ''; return; }
+    grid.innerHTML = Object.keys(ALERTAS).map(tipo => {
+        let a = ALERTAS[tipo], it = itensDoAlerta(tipo);
+        let c = { vencido: 0, alerta: 0, ok: 0, sem: 0 }; it.forEach(i => c[i.nivel]++);
+        totV += c.vencido; totA += c.alerta;
+        let nivel = c.vencido ? 'vencido' : (c.alerta ? 'alerta' : (c.ok ? 'ok' : 'sem'));
+        let status = c.vencido ? `${c.vencido} vencido${c.vencido > 1 ? 's' : ''}` : (c.alerta ? `${c.alerta} a vencer` : (c.ok ? 'Tudo em dia' : 'Sem registros'));
+        return `<button type="button" class="card-alerta nivel-${nivel}" onclick="abrirModalAlertas('${tipo}')">
+            <div class="card-alerta-topo"><span class="card-alerta-icone"><i class="ph ${a.icone}"></i></span><div><div class="card-alerta-nome">${a.nome}</div><div class="card-alerta-status">${status}</div></div></div>
+            <div class="semaforo" aria-label="Vencidos ${c.vencido}, a vencer ${c.alerta}, em dia ${c.ok}">
+                <div class="semaforo-luz verm${c.vencido ? ' acesa' : ''}"><span></span><b>${c.vencido}</b></div>
+                <div class="semaforo-luz amar${c.alerta ? ' acesa' : ''}"><span></span><b>${c.alerta}</b></div>
+                <div class="semaforo-luz verde${c.ok ? ' acesa' : ''}"><span></span><b>${c.ok}</b></div>
+            </div>
+            ${c.sem ? `<div class="card-alerta-sem">${c.sem} sem registro</div>` : ''}
+        </button>`;
+    }).join('');
+    let r = document.getElementById('alertas-resumo');
+    if (r) r.innerHTML = (totV || totA) ? `<span style="color:var(--sem-verm)">${totV} vencido${totV !== 1 ? 's' : ''}</span> · <span style="color:#b45309">${totA} a vencer</span>` : '<span style="color:var(--sem-verde)">Tudo em dia</span>';
+}
+
+function abrirModalAlertas(tipo) {
+    alertaAberto = tipo;
+    let it = itensDoAlerta(tipo);
+    filtroAlertaAtual = it.some(i => i.nivel === 'vencido' || i.nivel === 'alerta') ? 'atencao' : 'todos';
+    document.getElementById('modal-alertas-titulo').innerHTML = `<i class="ph ${ALERTAS[tipo].icone}"></i> ${ALERTAS[tipo].nome}`;
+    renderizarListaAlertas();
+    document.getElementById('modal-alertas').style.display = 'flex';
+}
+function fecharModalAlertas() { document.getElementById('modal-alertas').style.display = 'none'; alertaAberto = null; }
+function filtrarAlertas(f) { filtroAlertaAtual = f; renderizarListaAlertas(); }
+
+function renderizarListaAlertas() {
+    if (!alertaAberto) return;
+    let it = itensDoAlerta(alertaAberto);
+    let c = { vencido: 0, alerta: 0, ok: 0, sem: 0 }; it.forEach(i => c[i.nivel]++);
+    let filtros = [['atencao', `Atenção (${c.vencido + c.alerta})`], ['vencido', `Vencidos (${c.vencido})`], ['alerta', `A vencer (${c.alerta})`], ['ok', `Em dia (${c.ok})`], ['sem', `Sem registro (${c.sem})`], ['todos', `Todos (${it.length})`]]
+        .filter(f => f[0] === 'todos' || f[0] === 'atencao' || c[f[0]] > 0);
+    document.getElementById('filtro-alertas').innerHTML = filtros.map(f => `<button type="button" class="${f[0] === filtroAlertaAtual ? 'ativo' : ''}" onclick="filtrarAlertas('${f[0]}')">${f[1]}</button>`).join('');
+    let vis = it.filter(i => filtroAlertaAtual === 'todos' || (filtroAlertaAtual === 'atencao' ? (i.nivel === 'vencido' || i.nivel === 'alerta') : i.nivel === filtroAlertaAtual));
+    let lista = document.getElementById('lista-alertas');
+    if (!vis.length) { lista.innerHTML = `<div class="lista-alertas-vazia"><i class="ph-fill ph-check-circle" style="color:var(--sem-verde); font-size:28px; display:block; margin:0 auto 6px;"></i>Nenhum veículo nesta lista.</div>`; return; }
+    lista.innerHTML = vis.map(i => {
+        let v = window.frota[i.placa] || {};
+        let sub = [v.tipo, v.motorista].filter(x => x && String(x).trim()).map(escHtml).join(' · ');
+        let rot = i.nivel === 'sem' ? 'Cadastrar' : 'Atualizar';
+        return `<div class="item-alerta ${i.nivel}"><span class="bolinha"></span><div class="item-alerta-info"><b>${escHtml(i.placa)}</b><small class="txt-status">${i.texto}</small>${i.detalhe ? `<small>${i.detalhe}</small>` : ''}${sub ? `<small>${sub}</small>` : ''}</div><button type="button" class="btn-atualizar-alerta" onclick="editarItemAlerta('${alertaAberto}','${escHtml(i.placa)}')"><i class="ph ph-pencil-simple"></i>${rot}</button></div>`;
+    }).join('');
+}
+
+async function editarItemAlerta(tipo, placa) {
+    let v = window.frota[placa]; if (!v) return;
+    let hojeISO = isoData(new Date());
+    let html = '', foco = '';
+    if (tipo === 'oleo') {
+        html = `<p style="font-size:13px; color:#6b7280; margin:0 0 4px;">Fez a troca? Informe o KM atual e o KM da <b>próxima</b> troca.</p>
+            <label class="swal-campo-label">KM atual do veículo</label><input id="sw-km-atual" type="number" inputmode="numeric" class="swal2-input swal-campo" value="${numKm(v.km_atual) || ''}">
+            <label class="swal-campo-label">Próxima troca (KM)</label><input id="sw-km-oleo" type="number" inputmode="numeric" class="swal2-input swal-campo" value="${numKm(v.km_oleo) || ''}" placeholder="Ex: ${fmtKm(numKm(v.km_atual) + 10000).replace(/\./g, '')}">`;
+        foco = 'sw-km-oleo';
+    } else if (tipo === 'tacografo') {
+        html = `<label class="swal-campo-label">Data da última aferição</label><input id="sw-data" type="date" class="swal2-input swal-campo" value="${hojeISO}" max="${hojeISO}"><p style="font-size:12px; color:#6b7280; margin:8px 0 0;">A próxima aferição é calculada automaticamente (+2 anos).</p>`;
+    } else if (tipo === 'extintor') {
+        html = `<label class="swal-campo-label">Nova data de validade do extintor</label><input id="sw-data" type="date" class="swal2-input swal-campo" value="${v.data_extintor || ''}">`;
+    } else if (tipo === 'graxa') {
+        html = `<label class="swal-campo-label">Data da engraxada</label><input id="sw-data" type="date" class="swal2-input swal-campo" value="${hojeISO}" max="${hojeISO}"><p style="font-size:12px; color:#6b7280; margin:8px 0 0;">A próxima é calculada automaticamente (+${INTERVALO_GRAXA_DIAS} dias).</p>`;
+    }
+    const r = await Swal.fire({
+        title: `${ALERTAS[tipo].nome} · ${placa}`, html: html, showCancelButton: true, confirmButtonText: 'Salvar', cancelButtonText: 'Cancelar', confirmButtonColor: '#1a4d2e', focusConfirm: false,
+        didOpen: () => { let f = document.getElementById(foco); if (f) f.focus(); },
+        preConfirm: () => {
+            if (tipo === 'oleo') {
+                let ka = numKm(document.getElementById('sw-km-atual').value), ko = numKm(document.getElementById('sw-km-oleo').value);
+                if (!ko) { Swal.showValidationMessage('Informe o KM da próxima troca'); return false; }
+                if (ka && ko <= ka) { Swal.showValidationMessage('A próxima troca precisa ser maior que o KM atual'); return false; }
+                return { km_atual: ka ? String(Math.round(ka)) : '', km_oleo: String(Math.round(ko)) };
+            }
+            let d = document.getElementById('sw-data').value;
+            if (!d) { Swal.showValidationMessage('Informe a data'); return false; }
+            if (tipo === 'tacografo') return { data_tacografo: d };
+            if (tipo === 'extintor') return { data_extintor: d };
+            if (tipo === 'graxa') return { data_graxa: d };
+        }
+    });
+    if (!r.isConfirmed || !r.value) return;
+
+    atualizarFrotaLocal(placa, r.value);
+    // Só os campos alterados vão para a planilha (os outros ficam como estão)
+    let payload = Object.assign({ acao: "salvar_ficha_tecnica", usuario: window.usuarioLogado, placa: placa, pneus: {} }, r.value);
+    if (!payload.km_atual) delete payload.km_atual;
+    adicionarNaFila(payload);
+    salvarCacheLocal();
+    renderizarAlertas(); renderizarListaAlertas();
+    mostrarToast(`<i class='ph ph-check-circle'></i> ${ALERTAS[tipo].nome} de ${placa} atualizado`, "#059669");
 }
