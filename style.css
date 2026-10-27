@@ -400,3 +400,19 @@ button[id^="btn-editar"]:hover { background: #d1fae5 !important; }
 .filtro-grupos button { border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-muted); border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 700; white-space: nowrap; font-family: 'Inter', sans-serif; cursor: pointer; }
 .filtro-grupos button.ativo { background: var(--primary-color); color: #fff; border-color: var(--primary-color); }
 .nota-gerente { font-size: 11px; color: var(--text-muted); margin: 10px 0 0; line-height: 1.4; }
+
+/* =========================================================
+   IMPRESSÃO DE CHECKLISTS
+   ========================================================= */
+.btn-imprimir { background: linear-gradient(135deg, #374151 0%, #111827 100%); box-shadow: 0 6px 15px rgba(17,24,39,0.2); }
+.item-imp { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 8px; background: #fff; cursor: pointer; }
+.item-imp input { width: 20px; height: 20px; accent-color: var(--primary-color); flex-shrink: 0; margin: 0; }
+.item-imp.marcado { border-color: var(--primary-color); background: #f0fdf4; }
+.item-imp.sem-pdf { opacity: 0.5; cursor: not-allowed; }
+.item-imp .item-alerta-info small .semana-ok { color: var(--sem-verde); font-weight: 700; }
+.item-imp .item-alerta-info small .semana-velha { color: #b45309; font-weight: 700; }
+.grupo-imp { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin: 12px 2px 6px; }
+.impressao-acoes { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border-color); margin-top: 6px; }
+.impressao-acoes .btn-principal, .impressao-acoes .btn-secundario { margin: 0; }
+.impressao-acoes .btn-principal:disabled { opacity: 0.5; }
+.filtro-alertas, .modal-alertas-cab { flex-shrink: 0; }
