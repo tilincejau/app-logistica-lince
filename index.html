@@ -25,7 +25,7 @@
     <!-- NOVO: BIBLIOTECA SWEETALERT2 (Alertas Modernos) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    <link rel="stylesheet" href="style.css?v=8">
+    <link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
@@ -65,6 +65,7 @@
         <header class="topo-app"><img src="img/logo.png" onerror="this.onerror=null;this.src='https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png'" alt="Lince" class="topo-logo"><b class="topo-titulo">Logística Lince</b><button type="button" class="status-conexao" onclick="forcarSincronizacaoManual()"></button></header>
         <button class="btn-secundario" onclick="voltarParaMenu()"><i class="ph ph-arrow-left"></i> Voltar ao Menu</button>
         <h2 class="titulo-tela">Selecione o Veículo</h2>
+        <button type="button" class="btn-principal btn-imprimir" id="btn-imprimir-chk" onclick="abrirModalImpressao()" style="display:none;"><i class="ph ph-printer"></i> Imprimir Checklists</button>
         
         <div id="secoes-placas"></div>
 
@@ -180,6 +181,17 @@
         </div>
     </div>
 
+    <!-- Modal Impressão dos últimos checklists -->
+    <div id="modal-impressao" class="modal-overlay" style="display:none;" onclick="if(event.target===this) fecharModalImpressao()">
+        <div class="modal-box modal-alertas-box">
+            <div class="modal-alertas-cab"><h3 class="modal-titulo" style="border:none; margin:0; padding:0; text-align:left;"><i class="ph ph-printer"></i> Imprimir Checklists</h3><button type="button" class="btn-fechar-modal" onclick="fecharModalImpressao()" aria-label="Fechar"><i class="ph ph-x" style="margin:0;"></i></button></div>
+            <p style="font-size:12px; color:var(--text-muted); margin:0 0 10px;">Escolha as placas. Será impresso o <b>último checklist</b> de cada uma.</p>
+            <div class="filtro-alertas" id="impressao-atalhos"></div>
+            <div id="lista-impressao" class="lista-alertas"></div>
+            <div id="impressao-acoes" class="impressao-acoes"></div>
+        </div>
+    </div>
+
     <!-- Modal Câmera (Fotos do Checklist) -->
     <div id="modal-camera" class="modal-overlay" style="display:none;">
         <div class="modal-box modal-camera-box">
@@ -194,6 +206,6 @@
     </div>
     <input type="file" id="foto-camera-fallback" accept="image/*" capture="environment" style="display:none;" onchange="processarFoto(this, fotoAlvoCamera)">
 
-    <script src="script.js?v=10"></script>
+    <script src="script.js?v=11"></script>
 </body>
 </html>
