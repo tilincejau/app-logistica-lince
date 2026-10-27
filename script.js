@@ -50,7 +50,9 @@ function salvarCacheLocal() {
         localStorage.setItem('lince_logistica_bd', JSON.stringify({
             frota: window.frota, estoque_diesel: window.estoqueDiesel, estoque_arla: window.estoqueArla,
             gasto_mes_geral: window.gastoMesGeral, hist_abast: window.histAbast,
-            estoque_pecas: window.estoquePecas, motoristas: window.listaMotoristas, historico: window.historicoChecklist
+            estoque_pecas: window.estoquePecas, motoristas: window.listaMotoristas, historico: window.historicoChecklist,
+            gasto_mes_ant_geral: (window.resumoGerente || {}).gasto_mes_ant_geral, arla_mes_geral: (window.resumoGerente || {}).arla_mes_geral,
+            media_frota_mes: (window.resumoGerente || {}).media_frota_mes, gerado_em: (window.resumoGerente || {}).gerado_em
         }));
     } catch (e) { console.warn("Cache local não salvo (sem espaço):", e); }
 }
@@ -186,7 +188,7 @@ async function migrarLoginAntigo() {
     if (!s || s.t || !s.s || !navigator.onLine) return;
     try {
         let r = await chamarAPI({ acao: 'login', usuario: s.u, senha: String(s.s) });
-        if (r.sucesso && r.token) localStorage.setItem(CHAVE_USER, JSON.stringify({ u: s.u, t: r.token }));
+        if (r.sucesso && r.token) localStorage.setItem(CHAVE_USER, JSON.stringify({ u: s.u, t: r.token, p: r.ve_painel !== false }));
         else if (r.sucesso === false) { localStorage.setItem(CHAVE_USER, JSON.stringify({ u: s.u })); tratarSessaoInvalida(); }
     } catch (e) { /* sem rede: tenta de novo depois */ }
 }
@@ -228,7 +230,7 @@ async function sincronizarSegundoPlano(manual = false) {
     let fila = [...(await carregarFila())];
     if (fila.length === 0) {
         isSyncing = false;
-        if (manual) { mostrarToast("<i class='ph ph-check-circle'></i> Tudo já está atualizado!", "#059669"); recarregarDadosSilenciosamente(); }
+        if (manual) { mostrarToast("<i class='ph ph-check-circle'></i> Tudo já está atualizado!", "#059669"); recarregarDadosSilenciosamente(true); }
         atualizarBotaoSyncManual();
         return;
     }
@@ -290,10 +292,13 @@ function atualizarVariaveisGlobais(res) {
     window.estoquePecas = res.estoque_pecas || [];
     window.listaMotoristas = res.motoristas || [];
     window.historicoChecklist = res.historico || [];
+    window.resumoGerente = { gasto_mes_ant_geral: res.gasto_mes_ant_geral || 0, arla_mes_geral: res.arla_mes_geral || 0, media_frota_mes: res.media_frota_mes || 0, gerado_em: res.gerado_em || "" };
 
     registrarCategoriasExtras();
     renderizarPlacas();
     renderizarAlertas();
+    atualizarTileGerente();
+    if (document.getElementById('tela-gerente') && document.getElementById('tela-gerente').style.display === 'flex') renderizarPainelGerente();
     renderizarMotoristas();
     renderizarHistorico(window.historicoChecklist);
     renderizarHistoricoAbast();
@@ -315,10 +320,10 @@ function atualizarVariaveisGlobais(res) {
     }
 }
 
-async function recarregarDadosSilenciosamente() {
+async function recarregarDadosSilenciosamente(forcar = false) {
     if (!tokenAtual()) return;
     try {
-        let res = await chamarAPI({ acao: 'buscar_inicial' });
+        let res = await chamarAPI({ acao: 'buscar_inicial', forcar: forcar === true });
         if (qtdPendencias() > 0) return; // não recarrega se ainda há dados locais a enviar
         if (res.sucesso) {
             try { localStorage.setItem('lince_logistica_bd', JSON.stringify(res)); } catch (e) {}
@@ -343,8 +348,7 @@ window.onload = function() {
 
     let versaoLocal = localStorage.getItem('lince_versao');
     if (versaoLocal !== APP_VERSAO) {
-        // NÃO apagamos a fila de requisições ao atualizar versão para preservar offline
-        localStorage.removeItem('lince_logistica_user');
+        // Atualização do app: NÃO desloga e NÃO apaga a fila; só descarta o cache de dados (baixa de novo)
         localStorage.removeItem('lince_logistica_bd');
         localStorage.setItem('lince_versao', APP_VERSAO);
     }
@@ -385,7 +389,7 @@ async function fazerLogin() {
         // A senha vai no corpo do POST (não aparece em link nem em histórico) e NÃO é guardada no celular
         let res1 = await chamarAPI({ acao: 'login', usuario: u, senha: s }); 
         if (res1.sucesso && res1.token) { 
-            window.usuarioLogado = u; localStorage.setItem(CHAVE_USER, JSON.stringify({ u: u, t: res1.token }));
+            window.usuarioLogado = u; localStorage.setItem(CHAVE_USER, JSON.stringify({ u: u, t: res1.token, p: res1.ve_painel !== false }));
             avisouSessaoExpirada = false;
             document.getElementById('campo-senha').value = '';
             let res2 = await chamarAPI({ acao: 'buscar_inicial' }); 
@@ -401,7 +405,7 @@ async function fazerLogin() {
 }
 
 function esconderTodasTelas() { 
-    document.getElementById('tela-login').style.display = 'none'; document.getElementById('tela-placas').style.display = 'none'; document.getElementById('tela-menu').style.display = 'none'; document.getElementById('tela-submenu-estoque').style.display = 'none'; document.getElementById('tela-interna').style.display = 'none'; 
+    document.getElementById('tela-login').style.display = 'none'; document.getElementById('tela-placas').style.display = 'none'; document.getElementById('tela-menu').style.display = 'none'; document.getElementById('tela-submenu-estoque').style.display = 'none'; document.getElementById('tela-interna').style.display = 'none'; document.getElementById('tela-gerente').style.display = 'none'; 
 } 
 
 async function sairDaConta() { 
@@ -416,7 +420,7 @@ async function sairDaConta() {
 } 
 
 function voltarParaPlacas() { aplicarDadosAguardando(); esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex'; } 
-function voltarParaMenu() { aplicarDadosAguardando(); esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; atualizarBotaoSyncManual(); renderizarAlertas(); }
+function voltarParaMenu() { aplicarDadosAguardando(); esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; atualizarBotaoSyncManual(); renderizarAlertas(); atualizarTileGerente(); }
 
 function escolherModulo(modulo) { 
     window.moduloAtual = modulo; 
@@ -563,7 +567,7 @@ async function salvarFichaNaNuvemBackground() {
     mostrarToast("<i class='ph ph-floppy-disk'></i> Ficha salva localmente");
 } 
 
-function alternarEdicaoHeader() { let c = [document.getElementById('tipo-veiculo'), document.getElementById('nome-motorista'), document.getElementById('km-master')]; let b = document.getElementById('btn-editar-header'); if (c[0].hasAttribute('readonly')) { c.forEach(x => { x.removeAttribute('readonly'); x.removeAttribute('disabled'); x.classList.remove('travado'); }); b.innerHTML = "<i class='ph ph-floppy-disk'></i> Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; c[0].focus(); } else { c.forEach(x => { x.setAttribute('readonly', 'true'); if(x.tagName === 'SELECT') x.setAttribute('disabled', 'true'); x.classList.add('travado'); }); b.innerHTML = "<i class='ph ph-pencil-simple'></i> Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; atualizarKMGeral(); salvarFichaNaNuvemBackground(); } } 
+async function alternarEdicaoHeader() { let c = [document.getElementById('tipo-veiculo'), document.getElementById('nome-motorista'), document.getElementById('km-master')]; let b = document.getElementById('btn-editar-header'); if (c[0].hasAttribute('readonly')) { c.forEach(x => { x.removeAttribute('readonly'); x.removeAttribute('disabled'); x.classList.remove('travado'); }); b.innerHTML = "<i class='ph ph-floppy-disk'></i> Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; c[0].focus(); } else { if (!(await confirmarKm(document.getElementById('texto-placa-interna').innerText, c[2].value))) { c[2].focus(); return; } c.forEach(x => { x.setAttribute('readonly', 'true'); if(x.tagName === 'SELECT') x.setAttribute('disabled', 'true'); x.classList.add('travado'); }); b.innerHTML = "<i class='ph ph-pencil-simple'></i> Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; atualizarKMGeral(); salvarFichaNaNuvemBackground(); } } 
 function alternarEdicaoOleo() { let c = document.getElementById('km-proxima-troca'); let b = document.getElementById('btn-editar-oleo'); if (c.hasAttribute('readonly')) { c.removeAttribute('readonly'); c.classList.remove('travado'); b.innerHTML = "<i class='ph ph-floppy-disk'></i> Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; } else { c.setAttribute('readonly', 'true'); c.classList.add('travado'); b.innerHTML = "<i class='ph ph-pencil-simple'></i> Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; calcularOleo(); salvarFichaNaNuvemBackground(); } } 
 function calcularOleo() { let kmA = parseFloat(document.getElementById('km-master').value) || 0; let kmP = parseFloat(document.getElementById('km-proxima-troca').value) || 0; let kmF = kmP - kmA; let txt = document.getElementById('status-oleo'); if (kmP === 0) { txt.innerHTML = "---"; return; } if (kmF <= 0) { txt.innerHTML = `VENCIDO (${Math.abs(kmF)} KM) <i class="ph-fill ph-warning-circle"></i>`; txt.style.color = "red"; } else if (kmF <= 1500) { txt.innerHTML = `Faltam ${kmF} KM <i class="ph-fill ph-warning"></i>`; txt.style.color = "#d4a017"; } else { txt.innerHTML = `Faltam ${kmF} KM <i class="ph-fill ph-check-circle"></i>`; txt.style.color = "green"; } } 
 function alternarEdicaoTacografo() { let c = document.getElementById('data-ultima-afericao'); let b = document.getElementById('btn-editar-tacografo'); if (c.hasAttribute('readonly')) { c.removeAttribute('readonly'); c.classList.remove('travado'); b.innerHTML = "<i class='ph ph-floppy-disk'></i> Salvar"; b.style.backgroundColor = "#1a4d2e"; b.style.color = "white"; } else { c.setAttribute('readonly', 'true'); c.classList.add('travado'); b.innerHTML = "<i class='ph ph-pencil-simple'></i> Editar"; b.style.backgroundColor = "transparent"; b.style.color = "#1a4d2e"; calcularTacografo(); salvarFichaNaNuvemBackground(); } } 
@@ -604,7 +608,7 @@ async function salvarAbastecimentoNuvem() {
         p.nf = ""; 
         let kU = parseFloat(document.getElementById('aviso-ultimo-km').innerText) || 0; 
         if (!p.data || !p.km || !p.litros || !p.motorista || !p.responsavel) { Swal.fire("Atenção", "Preencha todos os campos do Abastecimento!", "warning"); return; } 
-        if (p.km < kU) { Swal.fire("Atenção", `O KM digitado (${p.km}) não pode ser MENOR que o último (${kU})!`, "warning"); return; } 
+        if (!(await confirmarKm(pl, p.km))) return; 
     } 
     
     abastPendente = p;
@@ -815,11 +819,12 @@ function iniciarNovoChecklist() { let pl = document.getElementById('texto-placa-
 function cancelarChecklist() { escolherModulo('Checklist'); } 
 function mudarAbaChecklist(ps) { for(let i=1; i<=4; i++) { let pt = document.getElementById('passo-chk-'+i); if(pt) pt.style.display = 'none'; let tb = document.getElementById('tab-chk-'+i); if(tb) tb.classList.remove('ativo'); } let pA = document.getElementById('passo-chk-'+ps); if(pA) pA.style.display = 'block'; let tA = document.getElementById('tab-chk-'+ps); if(tA) tA.classList.add('ativo'); } 
 
-function avancarPasso(px) { 
+async function avancarPasso(px) { 
     let pA = px - 1; 
     if (pA === 1) { 
         if(window.isCavalo && !document.getElementById('chk-placa-carreta').value) { Swal.fire("Atenção", "Selecione a Placa da Carreta!", "warning"); return; } 
         if(!document.getElementById('chk-modelo').value || !document.getElementById('chk-motorista').value || !document.getElementById('chk-km').value) { Swal.fire("Atenção", "Preencha os campos obrigatórios!", "warning"); return; } 
+        if (!(await confirmarKm(document.getElementById('chk-placa').value, document.getElementById('chk-km').value))) { document.getElementById('chk-km').focus(); return; }
         if(!window.isCavalo) { 
             if(!document.getElementById('chk-qtd-carrinhos').value || !document.getElementById('chk-qtd-cones').value || !document.getElementById('chk-qtd-calcos').value) { Swal.fire("Atenção", "Preencha a Quantidade de Carrinhos, Cones e Calços!", "warning"); return; } 
         } 
@@ -847,6 +852,7 @@ async function enviarChecklistCarro() {
     if (!document.getElementById('chk-carro-extintor-data').value) { Swal.fire("Atenção", "Informe a Data de Validade do Extintor!", "warning"); return; } 
     for (let id of ['dd', 'de', 'td', 'te']) { if (!document.getElementById('chk-carro-twi-' + id).value) { Swal.fire("Atenção", `Preencha o TWI do Pneu ${id.toUpperCase()}!`, "warning"); return; } } 
     if (document.getElementById('container-inputs-fotos-carro').style.display !== 'none') { if (!b64Lateral || !b64Traseira) { Swal.fire("Atenção", "É obrigatório enviar a Foto Frente e Verso do veículo!", "warning"); return; } } 
+    if (!(await confirmarKm(document.getElementById('chk-carro-placa').value, document.getElementById('chk-carro-km').value))) return;
     let assMot = getPadB64('ass-mot-car'); let assGer = getPadB64('ass-ger-car'); 
     if(!assMot || !assGer) { Swal.fire("Atenção", "É obrigatório recolher a assinatura do Motorista e do Gerente!", "warning"); return; } 
     
@@ -927,6 +933,8 @@ async function enviarChecklist() {
 async function enviarChecklistEmpilhadeira() { 
     let obs = document.getElementById('chk-emp-obs').value; let checks = pegarMarcados('chk-emp-itens', 'chk-emp-outro'); let assMot = getPadB64('ass-mot-emp'); let assGer = getPadB64('ass-ger-emp'); 
     if(!assMot || !assGer) { Swal.fire("Atenção", "Assinaturas obrigatórias!", "warning"); return; } 
+    if (!document.getElementById('chk-emp-km').value) { Swal.fire("Atenção", "Informe o Horímetro!", "warning"); return; }
+    if (!(await confirmarKm(document.getElementById('chk-emp-placa').value, document.getElementById('chk-emp-km').value))) return;
     let pl = { acao: "salvar_checklist", usuario: window.usuarioLogado, placa: document.getElementById('chk-emp-placa').value, categoria: "EMPILHADEIRA", modelo: "EMPILHADEIRA", motorista: document.getElementById('chk-emp-motorista').value, chk_faltantes: checks, chk_obs: obs, assinatura_motorista_b64: assMot, assinatura_gerente_b64: assGer, km_atual: document.getElementById('chk-emp-km').value, km_oleo: "", data_tacografo: "", data_graxa: "", data_extintor: "", chk_motor: "N/A", chk_cambio: "N/A", chk_embreagem: "N/A", chk_direcao: "N/A", chk_freios: "N/A", chk_suspensao: "N/A", chk_pneus_geral: "N/A", chk_eletrica: "N/A", chk_indicadores: "N/A", chk_cabine: "N/A", chk_asa_delta: "", chk_freio_lona: "", chk_faixas: "", chk_extintores: "", chk_parada: "N/A", foto_lateral_b64: "", foto_traseira_b64: "", qtd_carrinhos: "", qtd_cones: "", qtd_calcos: "", pneus: {} }; 
     let btn = document.getElementById('btn-enviar-chk-emp'); btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Preparando..."; btn.disabled = true; 
     
@@ -953,15 +961,27 @@ const CATEGORIAS_VEICULO = {
 
 function escHtml(t) { return String(t == null ? "" : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
-// Veículos cadastrados pelo botão OUTROS vêm da planilha com a coluna "categoria" preenchida
+// A aba Veiculos (coluna P "categoria") manda: TOCO, CAMINHAO, CAVALO, CARRO, EMPILHADEIRA, CARRETA ou INATIVO.
+// Placa sem categoria na planilha usa a lista padrão abaixo (a mesma de antes).
+const LISTAS_PADRAO = { TOCO: [...TOCOS], CAMINHAO: [...TRUCKS], CAVALO: [...CAVALOS], CARRO: [...CARROS], EMPILHADEIRA: [...EMPILHADEIRAS], CARRETA: ['RFR5F62', 'RFY6I51', 'RFL1F19'] };
+window.CARRETAS = [...LISTAS_PADRAO.CARRETA];
 function registrarCategoriasExtras() {
+    let mapa = {};
+    for (let cat in LISTAS_PADRAO) LISTAS_PADRAO[cat].forEach(p => mapa[p] = cat);
     for (let placa in (window.frota || {})) {
         let cat = String(window.frota[placa].categoria || "").trim().toUpperCase();
-        let def = CATEGORIAS_VEICULO[cat];
-        if (!def) continue;
-        let jaListada = Object.values(CATEGORIAS_VEICULO).some(c => c.lista.includes(placa));
-        if (!jaListada) def.lista.push(placa);
+        if (cat) mapa[placa] = cat;
     }
+    Object.values(CATEGORIAS_VEICULO).forEach(c => c.lista.length = 0);
+    window.CARRETAS = [];
+    Object.keys(mapa).sort().forEach(p => {
+        let cat = mapa[p];
+        if (CATEGORIAS_VEICULO[cat]) CATEGORIAS_VEICULO[cat].lista.push(p);
+        else if (cat === 'CARRETA') window.CARRETAS.push(p);
+        // INATIVO (ou outro valor): some do app
+    });
+    let sel = document.getElementById('chk-placa-carreta');
+    if (sel && window.CARRETAS.length) { let atual = sel.value; sel.innerHTML = '<option value="">Selecione a Carreta...</option>' + window.CARRETAS.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join(''); sel.value = atual; }
 }
 
 function htmlPlaca(placa) {
@@ -1180,6 +1200,7 @@ async function editarItemAlerta(tipo, placa) {
         }
     });
     if (!r.isConfirmed || !r.value) return;
+    if (r.value.km_atual && !(await confirmarKm(placa, r.value.km_atual))) return;
 
     atualizarFrotaLocal(placa, r.value);
     // Só os campos alterados vão para a planilha (os outros ficam como estão)
@@ -1189,4 +1210,118 @@ async function editarItemAlerta(tipo, placa) {
     salvarCacheLocal();
     renderizarAlertas(); renderizarListaAlertas();
     mostrarToast(`<i class='ph ph-check-circle'></i> ${ALERTAS[tipo].nome} de ${placa} atualizado`, "#059669");
+}
+
+/* =========================================================
+   TRAVA DE KM: pede confirmação quando o KM (ou horímetro) sobe demais ou diminui
+   ========================================================= */
+const SALTO_KM_MAX = 5000;     // caminhões, cavalos e utilitários
+const SALTO_HORAS_MAX = 300;   // empilhadeiras (horímetro)
+async function confirmarKm(placa, valorNovo) {
+    let v = window.frota[placa]; if (!v) return true;
+    let ant = numKm(v.km_atual), novo = numKm(valorNovo);
+    if (!novo || !ant || novo === ant) return true;
+    let emp = EMPILHADEIRAS.includes(placa), un = emp ? 'horas' : 'km', rot = emp ? 'horímetro' : 'KM';
+    let msg = "";
+    if (novo < ant) msg = `O ${rot} digitado é <b>MENOR</b> que o último registrado.`;
+    else if (novo - ant > (emp ? SALTO_HORAS_MAX : SALTO_KM_MAX)) msg = `O ${rot} subiu <b>${fmtKm(novo - ant)} ${un}</b> desde o último registro.`;
+    else return true;
+    let r = await Swal.fire({ icon: 'warning', title: `Confira o ${rot}`, html: `${msg}<br><br>Último: <b>${fmtKm(ant)}</b><br>Digitado: <b style="color:#dc2626">${fmtKm(novo)}</b><br><br><small>Se o último estava errado, confirme para corrigir.</small>`, showCancelButton: true, confirmButtonText: 'Está certo', cancelButtonText: 'Corrigir', confirmButtonColor: '#1a4d2e', cancelButtonColor: '#6b7280', reverseButtons: true });
+    return r.isConfirmed;
+}
+
+/* =========================================================
+   PAINEL DO GERENTE: gasto do mês, consumo km/L por veículo e checklists da semana
+   ========================================================= */
+let filtroGrupoGerente = 'todos';
+function atualizarTileGerente() {
+    let t = document.getElementById('tile-gerente'); if (!t) return;
+    let s = lerSessao();
+    t.style.display = (s && s.p === false) ? 'none' : 'flex';
+}
+function inicioDaSemana() { let a = new Date(); let i = new Date(a.getFullYear(), a.getMonth(), a.getDate() - a.getDay()); i.setHours(0, 0, 0, 0); return i; }
+function dataDoHistorico(h) { let d = String(h.data); if (d.includes('/')) { let p = d.split(' ')[0].split('/'); return new Date(p[2], p[1] - 1, p[0]); } return new Date(d); }
+function variacao(atual, anterior, maiorEhRuim) {
+    if (!anterior || !atual) return '<span class="var neutro">—</span>';
+    let pct = Math.round((atual - anterior) / anterior * 100);
+    if (pct === 0) return '<span class="var neutro">= mês ant.</span>';
+    let ruim = maiorEhRuim ? pct > 0 : pct < 0;
+    return `<span class="var ${ruim ? 'sobe-ruim' : 'bom'}">${pct > 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span>`;
+}
+
+function abrirPainelGerente() {
+    esconderTodasTelas();
+    document.getElementById('tela-gerente').style.display = 'flex';
+    renderizarPainelGerente();
+    window.scrollTo(0, 0);
+}
+function filtrarGrupoGerente(g) { filtroGrupoGerente = g; renderizarPainelGerente(); }
+
+function renderizarPainelGerente() {
+    let alvo = document.getElementById('conteudo-gerente'); if (!alvo) return;
+    let r = window.resumoGerente || {};
+    let ger = r.gerado_em ? new Date(r.gerado_em) : null;
+    document.getElementById('gerente-atualizado').textContent = ger && !isNaN(ger) ? `Dados de ${fmtData(ger)} às ${String(ger.getHours()).padStart(2, '0')}:${String(ger.getMinutes()).padStart(2, '0')}` : '';
+    let diaMes = new Date().getDate(), diasMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+    let projecao = window.gastoMesGeral ? Math.round(window.gastoMesGeral / diaMes * diasMes) : 0;
+
+    // Checklists da semana
+    let ativos = [...new Set(TOCOS.concat(TRUCKS, CAVALOS, CARROS, EMPILHADEIRAS))].sort();
+    let ini = inicioDaSemana(); let feitos = new Set();
+    (window.historicoChecklist || []).forEach(h => { if (dataDoHistorico(h) >= ini) feitos.add(String(h.placa).trim().toUpperCase()); });
+    let pend = ativos.filter(p => !feitos.has(p)); let qtdFeitos = ativos.length - pend.length;
+    let pct = ativos.length ? Math.round(qtdFeitos / ativos.length * 100) : 0;
+
+    // Consumo
+    const grupos = { todos: 'Todos', caminhoes: 'Caminhões', cavalos: 'Cavalos', utilitarios: 'Utilitários' };
+    const doGrupo = p => (TOCOS.includes(p) || TRUCKS.includes(p)) ? 'caminhoes' : (CAVALOS.includes(p) ? 'cavalos' : (CARROS.includes(p) ? 'utilitarios' : ''));
+    let linhas = ativos.filter(p => doGrupo(p) && window.frota[p]).map(p => {
+        let v = window.frota[p], c = v.consumo || { mes: {}, ant: {} };
+        let mes = c.mes || {}, ant = c.ant || {};
+        let comparavel = (mes.n || 0) >= 3 && (ant.n || 0) >= 3; // só compara com pelo menos 3 abastecimentos em cada mês
+        let queda = comparavel && mes.media && ant.media ? (mes.media - ant.media) / ant.media : 0;
+        return { placa: p, grupo: doGrupo(p), tipo: v.tipo || '', media: mes.media || 0, mediaAnt: comparavel ? (ant.media || 0) : 0, km: mes.km || 0, litros: v.gasto_mes || 0, arla: v.arla_mes || 0, queda: queda };
+    }).filter(l => filtroGrupoGerente === 'todos' || l.grupo === filtroGrupoGerente)
+      .sort((a, b) => ((a.queda <= -0.2) === (b.queda <= -0.2) ? 0 : (a.queda <= -0.2 ? -1 : 1)) || (b.litros - a.litros));
+
+    let tabela = linhas.length ? `<table class="tabela-consumo"><thead><tr><th>Veículo</th><th class="num">km/L</th><th class="num">Litros</th><th class="num">KM</th></tr></thead><tbody>${linhas.map(l => `
+        <tr class="${l.queda <= -0.2 ? 'alerta-consumo' : ''}"><td><b>${escHtml(l.placa)}</b><small>${escHtml(l.tipo)}</small></td>
+        <td class="num"><b>${l.media ? l.media.toFixed(2).replace('.', ',') : '—'}</b><small>${variacao(l.media, l.mediaAnt, false)}</small></td>
+        <td class="num">${fmtKm(l.litros)}${l.arla ? `<small>+${fmtKm(l.arla)} Arla</small>` : ''}</td>
+        <td class="num">${l.km ? fmtKm(l.km) : '—'}</td></tr>`).join('')}</tbody></table>` : '<p class="lista-alertas-vazia">Nenhum abastecimento neste mês.</p>';
+
+    alvo.innerHTML = `
+      <div class="kpis">
+        <div class="kpi"><small>Diesel no mês</small><b>${fmtKm(window.gastoMesGeral || 0)} L</b>${variacao(window.gastoMesGeral, r.gasto_mes_ant_geral, true)}</div>
+        <div class="kpi"><small>Arla no mês</small><b>${fmtKm(r.arla_mes_geral || 0)} L</b><span class="var neutro">${projecao ? 'proj. diesel ' + fmtKm(projecao) + ' L' : '&nbsp;'}</span></div>
+        <div class="kpi"><small>Média frota</small><b>${r.media_frota_mes ? String(r.media_frota_mes.toFixed(2)).replace('.', ',') : '—'}</b><span class="var neutro">km/L no mês</span></div>
+      </div>
+      <div class="card">
+        <h3 class="card-titulo"><i class="ph ph-check-square"></i> Checklists da semana</h3>
+        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:600;"><span>${qtdFeitos} de ${ativos.length} feitos</span><span style="color:${pct === 100 ? 'var(--sem-verde)' : 'var(--text-muted)'}">${pct}%</span></div>
+        <div class="barra-prog"><span style="width:${pct}%"></span></div>
+        ${pend.length ? `<p class="info-label" style="margin:0 0 8px;">Faltam (toque para fazer):</p><div class="chips-pend">${pend.map(p => `<button type="button" class="chip-pend" onclick="fazerChecklistDe('${escHtml(p)}')">${escHtml(p)}</button>`).join('')}</div>` : '<div class="chips-pend"><span class="chip-pend ok">✓ Todos os veículos fizeram o checklist</span></div>'}
+        <p class="nota-gerente">A semana começa no domingo.</p>
+      </div>
+      <div class="card">
+        <h3 class="card-titulo"><i class="ph ph-gas-pump"></i> Consumo por veículo (mês)</h3>
+        <div class="filtro-grupos">${Object.keys(grupos).map(g => `<button type="button" class="${g === filtroGrupoGerente ? 'ativo' : ''}" onclick="filtrarGrupoGerente('${g}')">${grupos[g]}</button>`).join('')}</div>
+        ${tabela}
+        <p class="nota-gerente">km/L = km rodados entre um abastecimento e outro ÷ litros. Linhas em vermelho: média caiu 20% ou mais em relação ao mês anterior (só compara quando há 3+ abastecimentos em cada mês). Saltos acima de 3.000 km são ignorados. Abastecimentos não lançados ou tanque não completado distorcem a média.</p>
+      </div>
+      <div class="card">
+        <h3 class="card-titulo"><i class="ph ph-envelope-simple"></i> Aviso de vencimentos</h3>
+        <p style="font-size:13px; color:var(--text-muted); margin:0 0 12px;">O resumo de óleo, tacógrafo, extintor e graxa é enviado todo dia às 7h para quem está na aba <b>Avisos</b> da planilha.</p>
+        <button class="btn-principal" id="btn-teste-aviso" style="margin-bottom:0;" onclick="enviarAvisoAgora()"><i class="ph ph-paper-plane-tilt"></i> Enviar aviso agora</button>
+      </div>`;
+}
+
+function fazerChecklistDe(placa) { escolherModulo('Checklist'); selecionarPlaca(placa); }
+
+async function enviarAvisoAgora() {
+    if (!navigator.onLine) { Swal.fire("Sem internet", "Conecte-se para enviar o aviso.", "warning"); return; }
+    let btn = document.getElementById('btn-teste-aviso'); btn.disabled = true; btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Enviando...";
+    try { let r = await chamarAPI({ acao: 'testar_aviso' }); Swal.fire(r.sucesso ? "Pronto" : "Atenção", r.msg || r.erro || "", r.sucesso ? "success" : "warning"); }
+    catch (e) { Swal.fire("Erro", "Não foi possível enviar agora.", "error"); }
+    btn.disabled = false; btn.innerHTML = "<i class='ph ph-paper-plane-tilt'></i> Enviar aviso agora";
 }
