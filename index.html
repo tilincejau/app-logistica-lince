@@ -59,6 +59,7 @@
         <button class="btn-secundario" style="margin-bottom: 10px; border: 1.5px dashed var(--primary-color); color: var(--primary-color); background: transparent;" onclick="forcarSincronizacaoManual()" id="btn-sync-manual"><i class="ph ph-arrows-clockwise"></i> Sincronizar Dados</button>
         <button class="btn-sair" onclick="sairDaConta()"><i class="ph ph-sign-out"></i> Sair da Conta</button>
         <div class="desenvolvedor">Desenvolvido por JM Developer</div>
+        <div class="desenvolvedor" id="versao-app" style="margin-top:-18px;"></div>
     </div>
 
     <div id="tela-placas" class="app-container" style="display: none;">
@@ -206,6 +207,6 @@
     </div>
     <input type="file" id="foto-camera-fallback" accept="image/*" capture="environment" style="display:none;" onchange="processarFoto(this, fotoAlvoCamera)">
 
-    <script src="script.js?v=11"></script>
+    <script src="script.js?v=13"></script>
 </body>
 </html>
