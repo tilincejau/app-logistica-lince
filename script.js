@@ -4,7 +4,8 @@
    ========================================================= */
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
-const APP_VERSAO = "2.1"; // Versão atualizada para forçar a limpeza da cache nos celulares
+const APP_VERSAO = "2.1";
+const APP_BUILD = "v13"; // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
@@ -292,6 +293,8 @@ function atualizarVariaveisGlobais(res) {
     window.estoquePecas = res.estoque_pecas || [];
     window.listaMotoristas = res.motoristas || [];
     window.historicoChecklist = res.historico || [];
+    window.versaoServidor = res.versao_backend || window.versaoServidor || '';
+    mostrarVersoes();
     window.resumoGerente = { gasto_mes_ant_geral: res.gasto_mes_ant_geral || 0, arla_mes_geral: res.arla_mes_geral || 0, media_frota_mes: res.media_frota_mes || 0, gerado_em: res.gerado_em || "" };
 
     registrarCategoriasExtras();
@@ -1350,7 +1353,7 @@ async function abrirModalImpressao() {
     document.getElementById('lista-impressao').innerHTML = `<div class="lista-alertas-vazia"><i class="ph ph-spinner ph-spin" style="font-size:26px; display:block; margin:0 auto 6px;"></i>Buscando os últimos checklists...</div>`;
     try {
         let r = await chamarAPI({ acao: 'listar_impressao' });
-        if (!r.sucesso) throw new Error(r.erro || 'Falha ao listar');
+        if (!r.sucesso) throw new Error(String(r.erro || '').indexOf('não encontrada') >= 0 ? 'O Apps Script ainda está na versão antiga. Publique uma Nova versão (veja o LEIA-ME).' : (r.erro || 'Falha ao listar'));
         impressoraDireta = !!r.impressora_direta;
         let ativos = new Set(TOCOS.concat(TRUCKS, CAVALOS, CARROS, EMPILHADEIRAS));
         listaImpressao = (r.lista || []).filter(i => ativos.has(i.placa));
@@ -1452,4 +1455,12 @@ function imprimirNoComputador(url, nome) {
     f.style.cssText = 'position:fixed; right:0; bottom:0; width:1px; height:1px; border:0; opacity:0;';
     f.onload = () => { setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { window.open(url, '_blank') || baixarArquivo(url, nome); } }, 400); };
     f.src = url; document.body.appendChild(f);
+}
+
+// Rodapé do menu: mostra a versão do app e do servidor (Apps Script) para conferir se a atualização entrou
+function mostrarVersoes() {
+    let el = document.getElementById('versao-app'); if (!el) return;
+    let srv = window.versaoServidor || '?';
+    let ok = srv === APP_BUILD;
+    el.innerHTML = `App ${APP_BUILD} · Servidor ${escHtml(srv)}` + (srv !== '?' && !ok ? ' <b style="color:#dc2626">⚠ servidor desatualizado</b>' : '');
 }
