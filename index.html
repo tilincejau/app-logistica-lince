@@ -25,7 +25,7 @@
     <!-- NOVO: BIBLIOTECA SWEETALERT2 (Alertas Modernos) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    <link rel="stylesheet" href="style.css?v=7">
+    <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 
@@ -54,6 +54,7 @@
             <button class="tile-menu" onclick="escolherModulo('Checklist')"><span class="tile-icone"><i class="ph ph-check-square"></i></span><b>Checklist</b><small>Inspeção semanal</small></button>
             <button class="tile-menu" onclick="escolherModulo('Abastecimento')"><span class="tile-icone"><i class="ph ph-gas-pump"></i></span><b>Abastecimento</b><small>Diesel e Arla</small></button>
             <button class="tile-menu" onclick="escolherModulo('Estoque')"><span class="tile-icone"><i class="ph ph-package"></i></span><b>Estoque</b><small>Peças e óleo</small></button>
+            <button class="tile-menu tile-largo" id="tile-gerente" onclick="abrirPainelGerente()" style="display:none;"><span class="tile-icone" style="background:#eff6ff; color:#1e40af;"><i class="ph ph-chart-line-up"></i></span><span><b>Painel do Gerente</b><small>Consumo km/L, gastos e checklists da semana</small></span></button>
         </div>
         <button class="btn-secundario" style="margin-bottom: 10px; border: 1.5px dashed var(--primary-color); color: var(--primary-color); background: transparent;" onclick="forcarSincronizacaoManual()" id="btn-sync-manual"><i class="ph ph-arrows-clockwise"></i> Sincronizar Dados</button>
         <button class="btn-sair" onclick="sairDaConta()"><i class="ph ph-sign-out"></i> Sair da Conta</button>
@@ -71,6 +72,14 @@
         <div class="grid-placas" id="btn-placa-outros" style="display: none; grid-template-columns: 1fr;">
             <button type="button" class="placa-mercosul placa-outros" onclick="selecionarPlaca('OUTROS')"><span class="placa-faixa"><span class="placa-mercosul-txt">MERCOSUL</span><span class="placa-pais">BRASIL</span><span class="placa-bandeira"></span></span><span class="placa-corpo"><span class="placa-br">BR</span><span class="placa-num"><i class="ph ph-plus-circle"></i> OUTRO VEÍCULO</span></span></button>
         </div>
+    </div>
+
+    <div id="tela-gerente" class="app-container" style="display: none;">
+        <header class="topo-app"><img src="img/logo.png" onerror="this.onerror=null;this.src='https://i.postimg.cc/x1Dpgf8n/capa-app-logistica-(400-x-400-px)-(2).png'" alt="Lince" class="topo-logo"><b class="topo-titulo">Logística Lince</b><button type="button" class="status-conexao" onclick="forcarSincronizacaoManual()"></button></header>
+        <button class="btn-secundario" onclick="voltarParaMenu()"><i class="ph ph-arrow-left"></i> Voltar ao Menu</button>
+        <h2 class="titulo-tela" style="margin-bottom:6px;"><i class="ph ph-chart-line-up"></i> Painel do Gerente</h2>
+        <p class="gerente-atualizado" id="gerente-atualizado"></p>
+        <div id="conteudo-gerente"></div>
     </div>
 
     <div id="tela-submenu-estoque" class="app-container" style="display: none;">
@@ -185,6 +194,6 @@
     </div>
     <input type="file" id="foto-camera-fallback" accept="image/*" capture="environment" style="display:none;" onchange="processarFoto(this, fotoAlvoCamera)">
 
-    <script src="script.js?v=9"></script>
+    <script src="script.js?v=10"></script>
 </body>
 </html>
