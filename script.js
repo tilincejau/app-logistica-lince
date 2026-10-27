@@ -435,6 +435,7 @@ function escolherModulo(modulo) {
             titOutros.style.display = (modulo === 'Abastecimento' || modulo === 'Checklist') ? 'block' : 'none'; 
         } 
         document.querySelectorAll('[id^="check-"]').forEach(el => el.style.display = 'none'); 
+        let bImp = document.getElementById('btn-imprimir-chk'); if (bImp) bImp.style.display = modulo === 'Checklist' ? 'block' : 'none';
         
         if (modulo === 'Checklist' && window.historicoChecklist) { 
             let agora = new Date(); 
@@ -1301,6 +1302,7 @@ function renderizarPainelGerente() {
         <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:600;"><span>${qtdFeitos} de ${ativos.length} feitos</span><span style="color:${pct === 100 ? 'var(--sem-verde)' : 'var(--text-muted)'}">${pct}%</span></div>
         <div class="barra-prog"><span style="width:${pct}%"></span></div>
         ${pend.length ? `<p class="info-label" style="margin:0 0 8px;">Faltam (toque para fazer):</p><div class="chips-pend">${pend.map(p => `<button type="button" class="chip-pend" onclick="fazerChecklistDe('${escHtml(p)}')">${escHtml(p)}</button>`).join('')}</div>` : '<div class="chips-pend"><span class="chip-pend ok">✓ Todos os veículos fizeram o checklist</span></div>'}
+        <button type="button" class="btn-principal btn-imprimir" style="margin:14px 0 0;" onclick="abrirModalImpressao()"><i class="ph ph-printer"></i> Imprimir Checklists</button>
         <p class="nota-gerente">A semana começa no domingo.</p>
       </div>
       <div class="card">
@@ -1324,4 +1326,130 @@ async function enviarAvisoAgora() {
     try { let r = await chamarAPI({ acao: 'testar_aviso' }); Swal.fire(r.sucesso ? "Pronto" : "Atenção", r.msg || r.erro || "", r.sucesso ? "success" : "warning"); }
     catch (e) { Swal.fire("Erro", "Não foi possível enviar agora.", "error"); }
     btn.disabled = false; btn.innerHTML = "<i class='ph ph-paper-plane-tilt'></i> Enviar aviso agora";
+}
+
+/* =========================================================
+   IMPRESSÃO DOS ÚLTIMOS CHECKLISTS
+   - Escolhe as placas → baixa o PDF do último checklist de cada uma (Drive)
+   - Junta tudo num PDF só e abre a impressão (computador) ou o PDF (celular)
+   - Se a impressora direta (PrintNode) estiver configurada no Apps Script, envia sem abrir nada
+   ========================================================= */
+const PDFLIB_URL = "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js";
+let listaImpressao = []; let impressoraDireta = false; let selecionadosImp = new Set();
+const ehCelular = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const ehIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+function fecharModalImpressao() { document.getElementById('modal-impressao').style.display = 'none'; }
+
+async function abrirModalImpressao() {
+    if (!navigator.onLine) { Swal.fire("Sem internet", "Para imprimir é preciso internet (os PDFs ficam no Google Drive).", "warning"); return; }
+    if (!tokenAtual()) { tratarSessaoInvalida(); return; }
+    document.getElementById('modal-impressao').style.display = 'flex';
+    document.getElementById('impressao-atalhos').innerHTML = '';
+    document.getElementById('impressao-acoes').innerHTML = '';
+    document.getElementById('lista-impressao').innerHTML = `<div class="lista-alertas-vazia"><i class="ph ph-spinner ph-spin" style="font-size:26px; display:block; margin:0 auto 6px;"></i>Buscando os últimos checklists...</div>`;
+    try {
+        let r = await chamarAPI({ acao: 'listar_impressao' });
+        if (!r.sucesso) throw new Error(r.erro || 'Falha ao listar');
+        impressoraDireta = !!r.impressora_direta;
+        let ativos = new Set(TOCOS.concat(TRUCKS, CAVALOS, CARROS, EMPILHADEIRAS));
+        listaImpressao = (r.lista || []).filter(i => ativos.has(i.placa));
+        selecionadosImp = new Set();
+        renderizarListaImpressao();
+    } catch (e) {
+        document.getElementById('lista-impressao').innerHTML = `<div class="lista-alertas-vazia">Não foi possível buscar os checklists.<br><small>${escHtml(e.message || '')}</small></div>`;
+    }
+}
+
+function dataBRparaDate(t) { let m = String(t).match(/(\d{2})\/(\d{2})\/(\d{4})/); return m ? new Date(+m[3], +m[2] - 1, +m[1]) : new Date(t); }
+function itemDaSemana(i) { return dataBRparaDate(i.data) >= inicioDaSemana(); }
+
+function atalhoImpressao(tipo) {
+    selecionadosImp = new Set(listaImpressao.filter(i => i.tem_pdf && (tipo === 'todos' || (tipo === 'semana' && itemDaSemana(i)))).map(i => i.placa));
+    renderizarListaImpressao();
+}
+function alternarImpressao(placa) {
+    let it = listaImpressao.find(i => i.placa === placa); if (!it || !it.tem_pdf) return;
+    selecionadosImp.has(placa) ? selecionadosImp.delete(placa) : selecionadosImp.add(placa);
+    renderizarListaImpressao();
+}
+
+function renderizarListaImpressao() {
+    let qSemana = listaImpressao.filter(i => i.tem_pdf && itemDaSemana(i)).length;
+    document.getElementById('impressao-atalhos').innerHTML =
+        `<button type="button" onclick="atalhoImpressao('semana')">Desta semana (${qSemana})</button><button type="button" onclick="atalhoImpressao('todos')">Todos</button><button type="button" onclick="atalhoImpressao('nenhum')">Limpar</button>`;
+    const grupos = [['Caminhões', TOCOS.concat(TRUCKS)], ['Cavalos', CAVALOS], ['Utilitários', CARROS], ['Empilhadeiras', EMPILHADEIRAS]];
+    let html = '';
+    grupos.forEach(([nome, placas]) => {
+        let itens = listaImpressao.filter(i => placas.includes(i.placa)).sort((a, b) => a.placa.localeCompare(b.placa));
+        if (!itens.length) return;
+        html += `<div class="grupo-imp">${nome}</div>` + itens.map(i => {
+            let sel = selecionadosImp.has(i.placa);
+            let semana = itemDaSemana(i);
+            return `<label class="item-imp ${sel ? 'marcado' : ''} ${i.tem_pdf ? '' : 'sem-pdf'}" onclick="event.preventDefault(); alternarImpressao('${escHtml(i.placa)}')">
+                <input type="checkbox" ${sel ? 'checked' : ''} ${i.tem_pdf ? '' : 'disabled'} tabindex="-1">
+                <div class="item-alerta-info"><b>${escHtml(i.placa)}</b><small><span class="${semana ? 'semana-ok' : 'semana-velha'}">${escHtml(i.data)}</span>${i.motorista ? ' · ' + escHtml(i.motorista) : ''}</small>${i.tem_pdf ? '' : '<small>Sem PDF salvo</small>'}</div></label>`;
+        }).join('');
+    });
+    let semChk = [...new Set(TOCOS.concat(TRUCKS, CAVALOS, CARROS, EMPILHADEIRAS))].filter(p => !listaImpressao.some(i => i.placa === p));
+    if (semChk.length) html += `<p class="nota-gerente">Ainda sem checklist: ${semChk.map(escHtml).join(', ')}</p>`;
+    document.getElementById('lista-impressao').innerHTML = html || '<div class="lista-alertas-vazia">Nenhum checklist encontrado.</div>';
+    let n = selecionadosImp.size;
+    document.getElementById('impressao-acoes').innerHTML =
+        (impressoraDireta ? `<button class="btn-principal" ${n ? '' : 'disabled'} onclick="imprimirSelecionados('impressora')"><i class="ph ph-printer"></i> Enviar para a impressora (${n})</button>` : '') +
+        `<button class="${impressoraDireta ? 'btn-secundario' : 'btn-principal'}" ${n ? '' : 'disabled'} onclick="imprimirSelecionados('navegador')"><i class="ph ${ehCelular() ? 'ph-file-pdf' : 'ph-printer'}"></i> ${ehCelular() ? 'Gerar PDF para imprimir' : 'Imprimir'} (${n})</button>`;
+}
+
+function carregarPdfLib() {
+    if (window.PDFLib) return Promise.resolve(window.PDFLib);
+    return new Promise((ok, erro) => { let sc = document.createElement('script'); sc.src = PDFLIB_URL; sc.onload = () => ok(window.PDFLib); sc.onerror = () => erro(new Error('Não foi possível carregar o gerador de PDF')); document.head.appendChild(sc); });
+}
+function base64ParaBytes(b64) { let bin = atob(b64); let u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+
+async function imprimirSelecionados(destino) {
+    let placas = [...selecionadosImp]; if (!placas.length) return;
+    // iPhone bloqueia janela aberta depois de esperar a internet: abre antes e preenche depois
+    let janela = (destino === 'navegador' && ehIOS()) ? window.open('', '_blank') : null;
+    if (janela) janela.document.write('<p style="font-family:sans-serif;padding:20px">Gerando PDF dos checklists...</p>');
+    Swal.fire({ title: destino === 'impressora' ? 'Enviando para a impressora...' : 'Preparando os PDFs...', html: `${placas.length} checklist(s)`, allowOutsideClick: false, didOpen: () => Swal.showLoading && Swal.showLoading() });
+    try {
+        let r = await chamarAPI({ acao: 'imprimir_checklists', placas: placas, destino: destino });
+        if (r.erro) throw new Error(r.erro);
+        let aviso = r.faltando && r.faltando.length ? `<br><br><small>Sem PDF: ${r.faltando.join(', ')}</small>` : '';
+        if (destino === 'impressora') {
+            Swal.fire(r.enviados ? 'Enviado!' : 'Atenção', `${r.enviados} checklist(s) enviado(s) para a impressora.` + (r.erros && r.erros.length ? `<br><small>Erro: ${r.erros.join(', ')}</small>` : '') + aviso, r.enviados ? 'success' : 'warning');
+            if (r.enviados) fecharModalImpressao();
+            return;
+        }
+        if (!r.pdfs || !r.pdfs.length) throw new Error('Nenhum PDF encontrado para as placas escolhidas.');
+        const PDFLib = await carregarPdfLib();
+        let final = await PDFLib.PDFDocument.create();
+        for (let pdf of r.pdfs) {
+            let doc = await PDFLib.PDFDocument.load(base64ParaBytes(pdf.base64), { ignoreEncryption: true });
+            (await final.copyPages(doc, doc.getPageIndices())).forEach(pg => final.addPage(pg));
+        }
+        let blob = new Blob([await final.save()], { type: 'application/pdf' });
+        let url = URL.createObjectURL(blob);
+        let hoje = new Date(); let nome = `Checklists_${String(hoje.getDate()).padStart(2, '0')}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${hoje.getFullYear()}.pdf`;
+        Swal.close();
+        if (janela) { janela.location.href = url; }                       // iPhone: abre o PDF → Compartilhar → Imprimir
+        else if (ehCelular()) { baixarArquivo(url, nome); Swal.fire('PDF pronto', 'O arquivo foi baixado. Abra pela notificação e toque em <b>Imprimir</b> (⋮ → Imprimir).' + aviso, 'success'); }
+        else { imprimirNoComputador(url, nome); if (aviso) mostrarToast('Sem PDF: ' + r.faltando.join(', '), '#d97706'); }
+        fecharModalImpressao();
+        setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
+    } catch (e) {
+        if (janela) janela.close();
+        Swal.fire('Não foi possível imprimir', escHtml(e.message || 'Erro'), 'error');
+    }
+}
+
+function baixarArquivo(url, nome) { let a = document.createElement('a'); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove(); }
+
+// Computador: abre direto a janela de impressão (escolha a impressora uma vez; o navegador lembra)
+function imprimirNoComputador(url, nome) {
+    let antigo = document.getElementById('frame-impressao'); if (antigo) antigo.remove();
+    let f = document.createElement('iframe'); f.id = 'frame-impressao';
+    f.style.cssText = 'position:fixed; right:0; bottom:0; width:1px; height:1px; border:0; opacity:0;';
+    f.onload = () => { setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { window.open(url, '_blank') || baixarArquivo(url, nome); } }, 400); };
+    f.src = url; document.body.appendChild(f);
 }
