@@ -45,152 +45,240 @@ function mostrarToast(msg, cor = "#1f2937") {
 }
 
 function salvarCacheLocal() {
-    localStorage.setItem('lince_logistica_bd', JSON.stringify({
-        frota: window.frota, estoque_diesel: window.estoqueDiesel, estoque_arla: window.estoqueArla,
-        gasto_mes_geral: window.gastoMesGeral, hist_abast: window.histAbast,
-        estoque_pecas: window.estoquePecas, motoristas: window.listaMotoristas, historico: window.historicoChecklist
-    }));
+    // O cache só acelera a abertura do app; se o espaço acabar, não pode travar o resto do código
+    try {
+        localStorage.setItem('lince_logistica_bd', JSON.stringify({
+            frota: window.frota, estoque_diesel: window.estoqueDiesel, estoque_arla: window.estoqueArla,
+            gasto_mes_geral: window.gastoMesGeral, hist_abast: window.histAbast,
+            estoque_pecas: window.estoquePecas, motoristas: window.listaMotoristas, historico: window.historicoChecklist
+        }));
+    } catch (e) { console.warn("Cache local não salvo (sem espaço):", e); }
 }
 
-function adicionarNaFila(payload) {
-    let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
-    payload._localId = Date.now() + Math.random().toString(36).substr(2, 5);
-    
-    // CORREÇÃO: Só cria um ID de transação novo se for um formulário INÉDITO.
-    // Se for uma Edição, preserva o ID original para o Google achar a linha certa.
-    if (!payload.id_transacao) {
-        payload.id_transacao = payload._localId;
-    }
-    
-    fila.push(payload);
-    localStorage.setItem('lince_fila_requisicoes', JSON.stringify(fila));
-    
-    // Mostra indicador visual na tela que há pendências
+/* =========================================================
+   FILA DE ENVIOS OFFLINE - GUARDADA NO INDEXEDDB
+   (o localStorage só aceita ~5 MB; com fotos e assinaturas enchia rápido)
+   ========================================================= */
+const FILA_LS_ANTIGA = 'lince_fila_requisicoes';
+window.filaCache = [];          // cópia em memória da fila (para contagens rápidas)
+let dbFilaPromise = null;
+let filaUsandoLocalStorage = false; // só se o aparelho não tiver IndexedDB
+
+function abrirDBFila() {
+    if (dbFilaPromise) return dbFilaPromise;
+    dbFilaPromise = new Promise((resolve, reject) => {
+        if (!('indexedDB' in window)) { reject(new Error('IndexedDB indisponível')); return; }
+        let req = indexedDB.open('lince_app', 1);
+        req.onupgradeneeded = () => { let db = req.result; if (!db.objectStoreNames.contains('fila')) db.createObjectStore('fila', { keyPath: '_localId' }); };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+        req.onblocked = () => reject(new Error('IndexedDB bloqueado'));
+    });
+    dbFilaPromise.catch(() => { dbFilaPromise = null; });
+    return dbFilaPromise;
+}
+function txFila(modo, acao) {
+    return abrirDBFila().then(db => new Promise((resolve, reject) => {
+        let tx = db.transaction('fila', modo); let st = tx.objectStore('fila'); let resultado;
+        let r = acao(st); if (r) r.onsuccess = () => { resultado = r.result; };
+        tx.oncomplete = () => resolve(resultado);     // só confirma depois de gravado no disco
+        tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error || new Error('Gravação cancelada'));
+    }));
+}
+function lerFilaLS() { try { return JSON.parse(localStorage.getItem(FILA_LS_ANTIGA)) || []; } catch (e) { return []; } }
+const ordenarFila = arr => arr.sort((a, b) => (a._ordem || 0) - (b._ordem || 0) || String(a._localId).localeCompare(String(b._localId)));
+
+async function carregarFila() {
+    if (filaUsandoLocalStorage) { window.filaCache = ordenarFila(lerFilaLS()); return window.filaCache; }
+    try { window.filaCache = ordenarFila(await txFila('readonly', st => st.getAll()) || []); }
+    catch (e) { console.warn("Fila: usando localStorage", e); filaUsandoLocalStorage = true; window.filaCache = ordenarFila(lerFilaLS()); }
+    return window.filaCache;
+}
+
+// Leva o que estava na fila antiga (localStorage) para o IndexedDB, sem perder nada
+async function migrarFilaAntiga() {
+    let antigos = lerFilaLS();
+    if (!antigos.length) return;
+    try {
+        await txFila('readwrite', st => { antigos.forEach((it, i) => { if (!it._ordem) it._ordem = i + 1; st.put(it); }); });
+        localStorage.removeItem(FILA_LS_ANTIGA); // só apaga depois de confirmar a gravação
+    } catch (e) { filaUsandoLocalStorage = true; }
+}
+
+async function iniciarFila() {
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); // pede para o navegador não apagar os dados
+    await migrarFilaAntiga();
+    await carregarFila();
     atualizarBotaoSyncManual();
-    
-    sincronizarSegundoPlano(false); 
+}
+
+// Retorna true só quando o envio está gravado com segurança no aparelho
+async function adicionarNaFila(payload) {
+    payload._localId = Date.now() + Math.random().toString(36).substr(2, 5);
+    payload._ordem = Date.now() + Math.random();
+    // Só cria um ID de transação novo se for um formulário INÉDITO (edições preservam o ID original)
+    if (!payload.id_transacao) payload.id_transacao = payload._localId;
+    delete payload.token; // o código de acesso é colocado na hora do envio
+
+    let gravou = false;
+    if (!filaUsandoLocalStorage) {
+        try { await txFila('readwrite', st => st.put(payload)); gravou = true; }
+        catch (e) { console.error("Fila IndexedDB:", e); }
+    }
+    if (!gravou) {
+        try { let f = lerFilaLS(); f.push(payload); localStorage.setItem(FILA_LS_ANTIGA, JSON.stringify(f)); gravou = true; filaUsandoLocalStorage = true; }
+        catch (e) { console.error("Fila localStorage:", e); }
+    }
+    if (!gravou) {
+        Swal.fire({ icon: "error", title: "NÃO FOI SALVO!", html: "O celular está sem espaço para guardar este lançamento.<br><br><b>Não feche esta tela.</b> Conecte-se à internet e toque em <b>Sincronizar Dados</b>, ou libere espaço no aparelho, e tente de novo.", confirmButtonColor: "#1a4d2e" });
+        return false;
+    }
+    await carregarFila();
+    atualizarBotaoSyncManual();
+    sincronizarSegundoPlano(false);
+    return true;
+}
+
+async function removerDaFila(localId) {
+    if (filaUsandoLocalStorage) { localStorage.setItem(FILA_LS_ANTIGA, JSON.stringify(lerFilaLS().filter(i => i._localId !== localId))); }
+    else { await txFila('readwrite', st => st.delete(localId)); }
+    await carregarFila();
+}
+function qtdPendencias() { return window.filaCache.length; }
+
+/* =========================================================
+   SESSÃO (CÓDIGO DE ACESSO). A senha nunca fica guardada no celular.
+   ========================================================= */
+const CHAVE_USER = 'lince_logistica_user';
+function lerSessao() { try { return JSON.parse(localStorage.getItem(CHAVE_USER)) || null; } catch (e) { return null; } }
+function tokenAtual() { let s = lerSessao(); return s && s.t ? s.t : ""; }
+let avisouSessaoExpirada = false;
+
+async function chamarAPI(payload) {
+    let corpo = Object.assign({}, payload);
+    delete corpo._localId; delete corpo._ordem;
+    if (corpo.acao !== 'login') corpo.token = tokenAtual();
+    let resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify(corpo), headers: { "Content-Type": "text/plain;charset=utf-8" } });
+    let json = await resp.json();
+    if (json && json.sessao_invalida) tratarSessaoInvalida();
+    return json;
+}
+
+function tratarSessaoInvalida() {
+    let s = lerSessao(); if (s) { delete s.t; localStorage.setItem(CHAVE_USER, JSON.stringify(s)); }
+    atualizarStatusConexao();
+    if (avisouSessaoExpirada) return;
+    avisouSessaoExpirada = true;
+    let pend = qtdPendencias();
+    Swal.fire({ icon: "warning", title: "Entre novamente", html: "Seu acesso expirou." + (pend ? `<br><br>Os <b>${pend} lançamento(s)</b> continuam guardados no celular e serão enviados assim que você entrar.` : ""), showCancelButton: true, confirmButtonText: "Entrar agora", cancelButtonText: "Depois", confirmButtonColor: "#1a4d2e" })
+        .then(r => { if (r.isConfirmed) irParaLogin(); });
+}
+function irParaLogin() {
+    let s = lerSessao(); esconderTodasTelas();
+    document.getElementById('campo-usuario').value = (s && s.u) || window.usuarioLogado || '';
+    document.getElementById('campo-senha').value = '';
+    document.getElementById('tela-login').style.display = 'flex';
+}
+
+// Celulares que já estavam logados na versão antiga (senha salva): troca a senha por um código de acesso, sem pedir login de novo
+async function migrarLoginAntigo() {
+    let s = lerSessao();
+    if (!s || s.t || !s.s || !navigator.onLine) return;
+    try {
+        let r = await chamarAPI({ acao: 'login', usuario: s.u, senha: String(s.s) });
+        if (r.sucesso && r.token) localStorage.setItem(CHAVE_USER, JSON.stringify({ u: s.u, t: r.token }));
+        else if (r.sucesso === false) { localStorage.setItem(CHAVE_USER, JSON.stringify({ u: s.u })); tratarSessaoInvalida(); }
+    } catch (e) { /* sem rede: tenta de novo depois */ }
 }
 
 function atualizarBotaoSyncManual() {
-    let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
+    let pend = qtdPendencias();
     let btn = document.getElementById('btn-sync-manual');
-    if (btn) {
-        if (fila.length > 0) {
-            btn.innerHTML = `<i class="ph ph-warning-circle"></i> Enviando ${fila.length} pendências...`;
-            btn.style.color = "#d97706";
-            btn.style.borderColor = "#d97706";
-            btn.style.backgroundColor = "#fffbeb";
+    if (btn && !btn.disabled) {
+        if (pend > 0) {
+            btn.innerHTML = `<i class="ph ph-warning-circle"></i> Enviando ${pend} pendências...`;
+            btn.style.color = "#d97706"; btn.style.borderColor = "#d97706"; btn.style.backgroundColor = "#fffbeb";
         } else {
             btn.innerHTML = `<i class="ph ph-arrows-clockwise"></i> Sincronizar Dados`;
-            btn.style.color = "var(--primary-color)";
-            btn.style.borderColor = "var(--primary-color)";
-            btn.style.backgroundColor = "transparent";
+            btn.style.color = "var(--primary-color)"; btn.style.borderColor = "var(--primary-color)"; btn.style.backgroundColor = "transparent";
         }
     }
     atualizarStatusConexao();
 }
 
-// Indicador da barra do topo: Online / pendências aguardando envio / Offline
+// Indicador da barra do topo: Online / pendências aguardando envio / Offline / sessão expirada
 function atualizarStatusConexao() {
-    let pend = (JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || []).length;
+    let pend = qtdPendencias();
     let txtPend = pend + (pend > 1 ? " pendentes" : " pendente");
-    let classe = !navigator.onLine ? "offline" : (pend > 0 ? "pendente" : "online");
-    let txt = !navigator.onLine ? ("Offline" + (pend > 0 ? " · " + pend : "")) : (pend > 0 ? txtPend : "Online");
+    let semSessao = lerSessao() && !tokenAtual() && !(lerSessao() || {}).s;
+    let classe = !navigator.onLine ? "offline" : (semSessao ? "offline" : (pend > 0 ? "pendente" : "online"));
+    let txt = !navigator.onLine ? ("Offline" + (pend > 0 ? " · " + pend : "")) : (semSessao ? "Entrar de novo" : (pend > 0 ? txtPend : "Online"));
     document.querySelectorAll('.status-conexao').forEach(el => { el.className = "status-conexao " + classe; el.textContent = txt; });
 }
 
 async function sincronizarSegundoPlano(manual = false) {
     if (!navigator.onLine) { if(manual) mostrarToast("<i class='ph ph-wifi-x'></i> Sem conexão à internet", "#dc2626"); return; }
     if (isSyncing) { if(manual) mostrarToast("<i class='ph ph-spinner ph-spin'></i> Sincronização em andamento...", "#d97706"); return; }
-
-    let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
-    if (fila.length === 0) { 
-        if (manual) { 
-            mostrarToast("<i class='ph ph-check-circle'></i> Tudo já está atualizado!", "#059669"); 
-            recarregarDadosSilenciosamente(); 
-        } 
-        atualizarBotaoSyncManual();
-        return; 
+    if (!tokenAtual()) {
+        await migrarLoginAntigo();
+        if (!tokenAtual()) { if (manual) { avisouSessaoExpirada = false; tratarSessaoInvalida(); } return; }
     }
 
     isSyncing = true;
+    let fila = [...(await carregarFila())];
+    if (fila.length === 0) {
+        isSyncing = false;
+        if (manual) { mostrarToast("<i class='ph ph-check-circle'></i> Tudo já está atualizado!", "#059669"); recarregarDadosSilenciosamente(); }
+        atualizarBotaoSyncManual();
+        return;
+    }
     let processouAlgo = false;
-    let novaFila = [...fila]; // Cópia segura da fila para não perder dados
-    
     if(manual) mostrarToast(`<i class='ph ph-arrows-clockwise ph-spin'></i> Processando ${fila.length} envios...`, "#d97706");
 
     for (let i = 0; i < fila.length; i++) {
         let reqPayload = fila[i];
         try {
-            let p = {...reqPayload}; delete p._localId;
-            
-            let resp = await fetch(API_URL, { 
-                method: 'POST', 
-                body: JSON.stringify(p),
-                headers: { "Content-Type": "text/plain;charset=utf-8" }
-            });
-            
             let resJSON;
-            try {
-                resJSON = await resp.json();
-            } catch(e) {
-                if (manual) Swal.fire("Erro Crítico (Google)", "O link não retornou dados válidos. O sistema tentará novamente mais tarde.", "error");
-                break; // Interrompe para não deletar os dados
+            try { resJSON = await chamarAPI(reqPayload); }
+            catch (e) {
+                if (e instanceof SyntaxError) { if (manual) Swal.fire("Erro Crítico (Google)", "O link não retornou dados válidos. O sistema tentará novamente mais tarde.", "error"); break; }
+                throw e;
             }
-
+            if (resJSON.sessao_invalida) break; // mantém tudo na fila até a pessoa entrar de novo
             if (resJSON.erro) {
                 console.error("Erro reportado pelo Google:", resJSON.erro);
                 if(manual) Swal.fire("Erro na Planilha", resJSON.erro, "error");
-                // Remove o break para que o sistema pule o formulário defeituoso e tente enviar o restante da fila
-                // Mas NÃO remove o item com erro da novaFila, para garantir que o programador consiga corrigir depois.
-                continue; 
+                continue; // pula o item com erro, mas NÃO o apaga
             }
-
-            if (resJSON.sucesso) {
-                // Apenas remove da fila local quando o Google retorna sucesso = true
-                // Relê a fila salva: um formulário enviado DURANTE esta sincronização também está nela e não pode ser perdido
-                let filaAtual = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
-                novaFila = filaAtual.filter(item => item._localId !== reqPayload._localId);
-                localStorage.setItem('lince_fila_requisicoes', JSON.stringify(novaFila));
-                processouAlgo = true;
-            }
-        } catch (e) { 
+            if (resJSON.sucesso) { await removerDaFila(reqPayload._localId); processouAlgo = true; atualizarBotaoSyncManual(); }
+        } catch (e) {
             console.error("Erro de comunicação local:", e);
             if(manual) Swal.fire("Erro de Conexão", "Sinal instável. Os dados estão seguros no celular e serão enviados depois.", "warning");
-            break; // Se caiu a internet, para tudo e mantém na fila
+            break; // caiu a internet: para tudo e mantém na fila
         }
     }
-    
-    atualizarBotaoSyncManual();
 
+    await carregarFila();
+    atualizarBotaoSyncManual();
     if (processouAlgo) {
-        if (novaFila.length === 0) { 
-            if(manual || processouAlgo) mostrarToast("<i class='ph ph-check-circle'></i> Tudo sincronizado com sucesso!", "#059669"); 
-        } else { 
-            mostrarToast(`<i class='ph ph-warning'></i> Restam ${novaFila.length} itens aguardando rede`, "#dc2626"); 
-        }
+        if (qtdPendencias() === 0) mostrarToast("<i class='ph ph-check-circle'></i> Tudo sincronizado com sucesso!", "#059669");
+        else mostrarToast(`<i class='ph ph-warning'></i> Restam ${qtdPendencias()} itens aguardando rede`, "#dc2626");
         recarregarDadosSilenciosamente();
     }
     isSyncing = false;
     // Algo entrou na fila enquanto enviava: manda logo, sem esperar os 30s
-    let filaFinal = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
-    if (navigator.onLine && filaFinal.some(item => !fila.some(f => f._localId === item._localId))) sincronizarSegundoPlano(false);
+    if (navigator.onLine && tokenAtual() && window.filaCache.some(item => !fila.some(f => f._localId === item._localId))) sincronizarSegundoPlano(false);
 }
 
 async function forcarSincronizacaoManual() {
     let btn = document.getElementById('btn-sync-manual');
-    if(!btn) return;
-    let originalHTML = btn.innerHTML;
-    btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Sincronizando...";
-    btn.disabled = true;
-    await sincronizarSegundoPlano(true);
-    atualizarBotaoSyncManual();
-    btn.disabled = false;
+    if (btn) { btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Sincronizando..."; btn.disabled = true; }
+    try { await sincronizarSegundoPlano(true); } finally { if (btn) btn.disabled = false; atualizarBotaoSyncManual(); }
 }
 
-setInterval(() => sincronizarSegundoPlano(false), 30000); // Reduzido para tentar a cada 30 segundos
+setInterval(() => sincronizarSegundoPlano(false), 30000);
 document.addEventListener("visibilitychange", function() { if (document.visibilityState === 'visible') sincronizarSegundoPlano(false); });
-window.addEventListener("online", function() { atualizarStatusConexao(); sincronizarSegundoPlano(false); }); // Voltou o sinal: envia as pendências na hora
+window.addEventListener("online", function() { atualizarStatusConexao(); sincronizarSegundoPlano(false); });
 window.addEventListener("offline", atualizarStatusConexao);
 
 function atualizarVariaveisGlobais(res) {
@@ -228,17 +316,13 @@ function atualizarVariaveisGlobais(res) {
 }
 
 async function recarregarDadosSilenciosamente() {
+    if (!tokenAtual()) return;
     try {
-        let req = await fetch(`${API_URL}?acao=buscar_inicial`);
-        let res = await req.json();
-        
-        let fila = JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || [];
-        if (fila.length > 0) return; // Não recarrega visualmente se tiver dados pendentes locais
-
+        let res = await chamarAPI({ acao: 'buscar_inicial' });
+        if (qtdPendencias() > 0) return; // não recarrega se ainda há dados locais a enviar
         if (res.sucesso) {
-            localStorage.setItem('lince_logistica_bd', JSON.stringify(res));
-            // Não redesenha a tela de formulário aberta (checklist, abastecimento, estoque): apagaria o que está sendo preenchido.
-            // Os dados novos entram quando o usuário sai dessa tela (aplicarDadosAguardando).
+            try { localStorage.setItem('lince_logistica_bd', JSON.stringify(res)); } catch (e) {}
+            // Não redesenha a tela de formulário aberta: apagaria o que está sendo preenchido.
             if (document.getElementById('tela-interna').style.display === 'flex') { dadosAguardandoTela = res; return; }
             atualizarVariaveisGlobais(res);
         }
@@ -249,7 +333,7 @@ let dadosAguardandoTela = null;
 function aplicarDadosAguardando() {
     let d = dadosAguardandoTela; dadosAguardandoTela = null;
     if (!d) return;
-    if ((JSON.parse(localStorage.getItem('lince_fila_requisicoes')) || []).length > 0) return; // há envios pendentes: a próxima sincronização recarrega
+    if (qtdPendencias() > 0) return; // há envios pendentes: a próxima sincronização recarrega
     atualizarVariaveisGlobais(d);
 }
 
@@ -264,8 +348,6 @@ window.onload = function() {
         localStorage.removeItem('lince_logistica_bd');
         localStorage.setItem('lince_versao', APP_VERSAO);
     }
-    
-    atualizarBotaoSyncManual();
 
     let construtorFicha = (arr, isCar) => arr.map(p => `<details><summary>${p.n}</summary><div class="pneu-detalhes"><div class="linha-info"><span class="info-label" style="margin:0;">Estado:</span> <span class="info-valor" id="${isCar?'carro-':''}estado-${p.id}" style="font-weight:bold;">---</span></div><div class="linha-info"><span class="info-label" style="margin:0;">TWI:</span> <span class="info-valor" id="${isCar?'carro-':''}twi-${p.id}">---</span></div><div class="linha-info" style="margin-top:10px;"><span class="info-label" style="margin:0;">KM Troca:</span> <input type="number" id="${isCar?'carro-':''}km-troca-${p.id}" class="input-editavel travado" value="0" readonly></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Data Troca:</span> <input type="date" id="${isCar?'carro-':''}data-troca-${p.id}" class="input-editavel travado" readonly></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Pneu Colocado:</span> <select id="${isCar?'carro-':''}pneu-colocado-${p.id}" class="input-editavel travado" disabled style="background-color: transparent;"><option value="NOVO">NOVO</option><option value="1 RESSOLAGEM">1 RESSOLAGEM</option><option value="2 RESSOLAGEM">2 RESSOLAGEM</option><option value="3 RESSOLAGEM">3 RESSOLAGEM</option></select></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Últ. Rodízio:</span> <input type="date" id="${isCar?'carro-':''}data-rodizio-${p.id}" class="input-editavel travado" readonly></div><div class="linha-info" style="margin-top:5px;"><span class="info-label" style="margin:0;">Próx Rodízio (KM):</span> <input type="number" id="${isCar?'carro-':''}prox-rodizio-${p.id}" class="input-editavel travado" value="0" readonly oninput="calcularRodizioPneus()"></div><div class="linha-info" style="margin-top:5px; border-top:1px dashed #ccc; padding-top:5px;"><span class="info-label" style="margin:0;">Status Rodízio:</span> <span id="${isCar?'carro-':''}status-rod-${p.id}" style="font-weight:bold;">---</span></div></div></details>`).join('');
     let construtorChk = (arr, isCar) => arr.map(p => `<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;"><span style="font-weight: bold; width: 50px; color:${arr===pneusCarreta?'#0056b3':'#333'};">${p.n}</span><input type="number" id="${isCar?'chk-carro-twi-':'chk-twi-'}${p.id}" placeholder="mm" class="input-campo" style="margin:0; width: 80px; padding: 10px; text-align:center;" oninput="calcularStatusTwi(this, '${isCar?'badge-carro-estado-':'badge-estado-'}${p.id}')"><span id="${isCar?'badge-carro-estado-':'badge-estado-'}${p.id}" class="twi-estado-badge" style="flex: 1;">Aguardando...</span></div>`).join('');
@@ -284,41 +366,53 @@ window.onload = function() {
         } catch(e) {}
     }
 
-    let userSalvo = localStorage.getItem('lince_logistica_user');
-    if (userSalvo) {
-        let userObj = JSON.parse(userSalvo);
-        window.usuarioLogado = userObj.u;
+    let sessao = lerSessao();
+    if (sessao && sessao.u) {
+        window.usuarioLogado = sessao.u;
         esconderTodasTelas();
         document.getElementById('tela-menu').style.display = 'flex';
-        recarregarDadosSilenciosamente();
     }
+    // Fila offline: migra do formato antigo, conta pendências e depois tenta enviar
+    iniciarFila().then(async () => { await migrarLoginAntigo(); atualizarStatusConexao(); if (tokenAtual()) { recarregarDadosSilenciosamente(); sincronizarSegundoPlano(false); } });
 };
 
 async function fazerLogin() { 
-    let u = document.getElementById('campo-usuario').value; let s = document.getElementById('campo-senha').value; let msg = document.getElementById('mensagem-erro'); let btn = document.getElementById('btn-login'); 
+    let u = document.getElementById('campo-usuario').value.trim(); let s = document.getElementById('campo-senha').value; let msg = document.getElementById('mensagem-erro'); let btn = document.getElementById('btn-login'); 
     if (!u || !s) { msg.innerHTML = "<i class='ph ph-warning'></i> Preencha usuário e senha!"; msg.style.display = 'block'; return; } 
-    if (API_URL === "COLE_AQUI_O_NOVO_LINK_QUE_GEROU_AGORA" || !API_URL) { msg.innerHTML = "<i class='ph ph-warning'></i> A URL do Sistema não foi configurada!"; msg.style.display = 'block'; return; }
-    btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Baixando..."; msg.style.display = 'none'; 
+    if (!navigator.onLine) { msg.innerHTML = "<i class='ph ph-wifi-x'></i> Para entrar é preciso internet."; msg.style.display = 'block'; return; }
+    btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Entrando..."; btn.disabled = true; msg.style.display = 'none'; 
     try { 
-        let req1 = await fetch(`${API_URL}?acao=login&usuario=${u}&senha=${s}`); let res1 = await req1.json(); 
-        if (res1.sucesso) { 
-            window.usuarioLogado = u; localStorage.setItem('lince_logistica_user', JSON.stringify({u: u, s: s}));
-            let req2 = await fetch(`${API_URL}?acao=buscar_inicial`); let res2 = await req2.json(); 
+        // A senha vai no corpo do POST (não aparece em link nem em histórico) e NÃO é guardada no celular
+        let res1 = await chamarAPI({ acao: 'login', usuario: u, senha: s }); 
+        if (res1.sucesso && res1.token) { 
+            window.usuarioLogado = u; localStorage.setItem(CHAVE_USER, JSON.stringify({ u: u, t: res1.token }));
+            avisouSessaoExpirada = false;
+            document.getElementById('campo-senha').value = '';
+            let res2 = await chamarAPI({ acao: 'buscar_inicial' }); 
             if (res2.sucesso) { 
-                atualizarVariaveisGlobais(res2); localStorage.setItem('lince_logistica_bd', JSON.stringify(res2));
-                esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; 
+                atualizarVariaveisGlobais(res2); try { localStorage.setItem('lince_logistica_bd', JSON.stringify(res2)); } catch (e) {}
+                esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; renderizarAlertas();
             } else { msg.innerHTML = "<i class='ph ph-x-circle'></i> Erro: " + res2.erro; msg.style.display = 'block'; } 
-        } else { msg.innerHTML = "<i class='ph ph-x-circle'></i> Credenciais incorretas!"; msg.style.display = 'block'; } 
+            sincronizarSegundoPlano(false); // envia o que ficou guardado enquanto estava sem acesso
+        } else if (res1.sucesso && !res1.token) { msg.innerHTML = "<i class='ph ph-warning'></i> Atualize o Apps Script (nova versão) antes de usar este app."; msg.style.display = 'block'; }
+        else { msg.innerHTML = "<i class='ph ph-x-circle'></i> " + (res1.erro || "Credenciais incorretas!"); msg.style.display = 'block'; } 
     } catch (e) { msg.innerHTML = "<i class='ph ph-wifi-x'></i> Erro de comunicação."; msg.style.display = 'block'; console.error(e); } 
-    btn.innerHTML = "<i class='ph ph-sign-in'></i> Entrar"; 
+    btn.innerHTML = "<i class='ph ph-sign-in'></i> Entrar"; btn.disabled = false; atualizarStatusConexao();
 }
 
 function esconderTodasTelas() { 
     document.getElementById('tela-login').style.display = 'none'; document.getElementById('tela-placas').style.display = 'none'; document.getElementById('tela-menu').style.display = 'none'; document.getElementById('tela-submenu-estoque').style.display = 'none'; document.getElementById('tela-interna').style.display = 'none'; 
 } 
 
-function sairDaConta() { 
-    localStorage.removeItem('lince_logistica_user'); window.usuarioLogado = ""; esconderTodasTelas(); document.getElementById('campo-senha').value = ''; document.getElementById('tela-login').style.display = 'flex'; 
+async function sairDaConta() { 
+    let pend = qtdPendencias();
+    if (pend > 0) {
+        let r = await Swal.fire({ icon: "warning", title: "Há envios pendentes", html: `Existem <b>${pend}</b> lançamento(s) ainda não enviados.<br><br>Eles continuam guardados neste celular e serão enviados quando alguém entrar novamente.`, showCancelButton: true, confirmButtonText: "Sair mesmo assim", cancelButtonText: "Ficar", confirmButtonColor: "#dc2626" });
+        if (!r.isConfirmed) return;
+    }
+    let tk = tokenAtual();
+    if (tk && navigator.onLine) chamarAPI({ acao: 'logout' }).catch(() => {}); // invalida o código no servidor
+    localStorage.removeItem(CHAVE_USER); window.usuarioLogado = ""; esconderTodasTelas(); document.getElementById('campo-senha').value = ''; document.getElementById('tela-login').style.display = 'flex'; atualizarStatusConexao();
 } 
 
 function voltarParaPlacas() { aplicarDadosAguardando(); esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex'; } 
@@ -455,7 +549,7 @@ function verificarNovoMotorista(sel) {
 function verificarNovoMotoristaAbast(sel) { let inputNovo = document.getElementById('abast-motorista-novo'); if(sel.value === "NOVO") { inputNovo.style.display = 'block'; inputNovo.focus(); } else { inputNovo.style.display = 'none'; inputNovo.value = ''; } }
 function atualizarKMGeral() { document.getElementById('km-atual-oleo').innerText = document.getElementById('km-master').value; calcularOleo(); calcularRodizioPneus(); } 
 
-function salvarFichaNaNuvemBackground() { 
+async function salvarFichaNaNuvemBackground() { 
     let payload = { acao: "salvar_ficha_tecnica", usuario: window.usuarioLogado, placa: document.getElementById('texto-placa-interna').innerText, tipo: document.getElementById('tipo-veiculo').value, motorista: document.getElementById('nome-motorista').value, km_atual: document.getElementById('km-master').value, km_oleo: document.getElementById('km-proxima-troca').value, data_tacografo: window.isCarro ? "" : document.getElementById('data-ultima-afericao').value, data_graxa: window.isCarro ? "" : document.getElementById('data-engraxada').value, qtd_carrinhos: window.isCarro ? "" : document.getElementById('qtd-carrinhos').value, qtd_cones: window.isCarro ? "" : document.getElementById('qtd-cones').value, qtd_calcos: window.isCarro ? "" : document.getElementById('qtd-calcos').value, data_extintor: document.getElementById('data-extintor-ficha').value, pneus: {} }; 
     let tIds = window.isCarro ? ['dd','de','td','te'] : (window.isToco ? ['dd','de','tde','tdi','tee','tei','1step'] : ['dd','de','tde','tdi','tee','tei','tkde','tkdi','tkee','tkei','1step','c1','c2','c3','c4','c5','c6','c7','c8','c9','c10','c11','c12','2step']); let pref = window.isCarro ? 'carro-' : ''; 
     tIds.forEach(id => { let km = document.getElementById(pref+'km-troca-'+id); if(km) { payload.pneus[id] = { km_ultima_troca: km.value, data_ultima_troca: document.getElementById(pref+'data-troca-'+id).value, data_ultimo_rodizio: document.getElementById(pref+'data-rodizio-'+id).value, pneu_colocado: document.getElementById(pref+'pneu-colocado-'+id).value, km_proximo_rodizio: document.getElementById(pref+'prox-rodizio-'+id).value }; } }); 
@@ -464,8 +558,8 @@ function salvarFichaNaNuvemBackground() {
     for(let id in payload.pneus) { if(!window.frota[payload.placa].pneus[id]) window.frota[payload.placa].pneus[id] = {}; window.frota[payload.placa].pneus[id].km_ultima_troca = payload.pneus[id].km_ultima_troca; window.frota[payload.placa].pneus[id].data_ultima_troca = payload.pneus[id].data_ultima_troca; window.frota[payload.placa].pneus[id].data_ultimo_rodizio = payload.pneus[id].data_ultimo_rodizio; window.frota[payload.placa].pneus[id].pneu_colocado = payload.pneus[id].pneu_colocado; window.frota[payload.placa].pneus[id].km_proximo_rodizio = payload.pneus[id].km_proximo_rodizio; }
     let elAv = document.getElementById('aviso-ultimo-km'); if(elAv) elAv.innerText = payload.km_atual;
 
-    adicionarNaFila(payload);
     salvarCacheLocal();
+    if (!(await adicionarNaFila(payload))) return;
     mostrarToast("<i class='ph ph-floppy-disk'></i> Ficha salva localmente");
 } 
 
@@ -525,11 +619,11 @@ async function salvarAbastecimentoNuvem() {
 
 function fecharModalAbast() { document.getElementById('modal-confirmar-abast').style.display = 'none'; abastPendente = null; }
 
-function confirmarEEnviarAbastecimento() {
+async function confirmarEEnviarAbastecimento() {
     if (!abastPendente) return;
     let p = abastPendente; let t = p.tipo; let pl = p.placa;
-    
-    adicionarNaFila(p);
+    abastPendente = null; // evita lançamento duplicado com dois toques
+    if (!(await adicionarNaFila(p))) { abastPendente = p; return; }
     Swal.fire("Salvo e Agendado!", "Dados blindados no aplicativo!<br><br>O lançamento será enviado para o Google automaticamente na próxima sincronização.", "success"); 
     
     document.getElementById('abast-km-novo').value = ""; document.getElementById('abast-litros-bomba').value = ""; 
@@ -583,13 +677,13 @@ function abrirModalEditAbast(id, placa, litros, km) {
 }
 function fecharModalEditAbast() { document.getElementById('modal-editar-abast').style.display = 'none'; editAbastId = ""; }
 
-function salvarEdicaoAbast() {
+async function salvarEdicaoAbast() {
     let nLitros = parseFloat(document.getElementById('edit-abast-litros').value);
     let nKm = parseFloat(document.getElementById('edit-abast-km').value);
     if(!nLitros || !nKm) { Swal.fire("Atenção", "Preencha KM e Litros corretamente.", "warning"); return; }
     
     let p = { acao: "editar_abastecimento", id_transacao: editAbastId, litros: nLitros, km: nKm, usuario: window.usuarioLogado };
-    adicionarNaFila(p);
+    if (!(await adicionarNaFila(p))) return;
     
     window.histAbast.diesel.concat(window.histAbast.arla || []).forEach(h => { if(h.id_transacao === editAbastId) { h.litros = nLitros; h.km = nKm; } });
     renderizarHistoricoAbast(); salvarCacheLocal();
@@ -602,7 +696,7 @@ async function salvarEdicaoEstoqueNuvem() {
     let pecasEditadas = {}; 
     window.estoquePecas.forEach((peca, index) => { let nQtd = document.getElementById(`est-edit-qtd-${index}`).value; let nData = document.getElementById(`est-edit-data-${index}`).value; let nValor = document.getElementById(`est-edit-valor-${index}`).value; peca.qtd = nQtd; peca.data_compra = nData; peca.valor = nValor; pecasEditadas[peca.item] = { qtd: nQtd, data_compra: nData, valor: nValor }; }); 
     let payload = { acao: "editar_estoque", usuario: window.usuarioLogado, pecas: pecasEditadas }; 
-    adicionarNaFila(payload);
+    if (!(await adicionarNaFila(payload))) return;
     salvarCacheLocal();
     mostrarToast("<i class='ph ph-floppy-disk'></i> Edições salvas localmente");
 } 
@@ -617,7 +711,7 @@ async function salvarMovimentacaoEstoque() {
     let btn = document.getElementById('btn-salvar-mov-est'); btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Salvando..."; btn.disabled = true; 
     
     try {
-        adicionarNaFila(p);
+        if (!(await adicionarNaFila(p))) return;
         
         let q = parseFloat(qtd); 
         if (tipo === "SAÍDA") { peca.qtd = parseFloat(peca.qtd) - q; } 
@@ -645,7 +739,7 @@ async function gerarSolicitacaoCompra() {
     let p = { acao: "solicitar_compra", usuario: window.usuarioLogado, data: hL, item: peca.item, qtd: qtd, urgencia: urgencia, qtd_ref: peca.qtd_compra, valor_ref: peca.valor, link_ref: peca.link }; 
     let btn = document.getElementById('btn-gerar-compra'); btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Gerando PDF..."; btn.disabled = true; 
     try { 
-        let req = await fetch(API_URL, { method: 'POST', body: JSON.stringify(p) }); let res = await req.json(); 
+        let res = await chamarAPI(p); 
         if (res.sucesso) { 
             Swal.fire("Sucesso", "Pedido de Compra gerado com sucesso!", "success"); window.open(res.link_pdf, '_blank'); 
             document.getElementById('compra-qtd').value = ""; document.getElementById('compra-item').value = ""; 
@@ -760,11 +854,10 @@ async function enviarChecklistCarro() {
     
     let dE = document.getElementById('chk-carro-extintor-data').value; let pE = document.getElementById('chk-carro-extintor-pressao').value; let pl = { acao: "salvar_checklist", usuario: window.usuarioLogado, placa: document.getElementById('chk-carro-placa').value, categoria: "CARRO", placa_carreta: "", modelo: document.getElementById('chk-carro-modelo').value, motorista: document.getElementById('chk-carro-motorista').value, km_atual: document.getElementById('chk-carro-km').value, km_oleo: document.getElementById('chk-carro-oleo').value, data_tacografo: "", data_graxa: "", data_extintor: dE, chk_motor: "N/A", chk_cambio: "N/A", chk_embreagem: "N/A", chk_direcao: "N/A", chk_freios: "N/A", chk_suspensao: "N/A", chk_pneus_geral: "N/A", chk_eletrica: "N/A", chk_indicadores: "N/A", chk_cabine: "N/A", chk_faltantes: pegarMarcados('chk-carro-itens', 'chk-carro-outro'), chk_asa_delta: "", chk_freio_lona: "", chk_faixas: "", chk_extintores: `Val: ${dE} - ${pE}`, chk_parada: document.getElementById('chk-carro-parada').value, chk_obs: document.getElementById('chk-carro-obs').value, foto_lateral_b64: b64Lateral, foto_traseira_b64: b64Traseira, assinatura_motorista_b64: assMot, assinatura_gerente_b64: assGer, qtd_carrinhos: "", qtd_cones: "", qtd_calcos: "", pneus: {} }; ['dd','de','td','te'].forEach(id => { let eT = document.getElementById('chk-carro-twi-' + id); if(eT && eT.value) pl.pneus[id] = { milimetros: eT.value, estado: document.getElementById('badge-carro-estado-' + id).innerText }; }); 
     
+    if (!(await adicionarNaFila(pl))) { btn.innerHTML = "<i class='ph ph-floppy-disk'></i> Enviar Inspeção e PDF"; btn.disabled = false; return; } // NÃO salvou: mantém o formulário preenchido
     window.frota[pl.placa].km_atual = pl.km_atual; window.frota[pl.placa].km_oleo = pl.km_oleo; window.frota[pl.placa].data_extintor = pl.data_extintor; 
     for(let i in pl.pneus) { if(!window.frota[pl.placa].pneus[i]) window.frota[pl.placa].pneus[i] = {}; window.frota[pl.placa].pneus[i].milimetros = pl.pneus[i].milimetros; window.frota[pl.placa].pneus[i].estado = pl.pneus[i].estado; } 
     let hS = new Date().toISOString(); window.historicoChecklist.unshift({data: hS, placa: pl.placa}); 
-    
-    adicionarNaFila(pl);
     salvarCacheLocal();
 
     Swal.fire("Blindado!", "Inspeção finalizada e armazenada no telemóvel!<br><br>O PDF será gerado na nuvem na próxima sincronização em 2º plano.", "success"); 
@@ -819,8 +912,8 @@ async function enviarChecklist() {
     btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Preparando..."; 
     btn.disabled = true; 
 
+    if (!(await adicionarNaFila(pl))) { btn.innerHTML = "<i class='ph ph-floppy-disk'></i> Enviar Checklist e PDF"; btn.disabled = false; return; } // NÃO salvou: mantém o formulário preenchido
     atualizarFrotaLocal(pl.placa, { km_atual: pl.km_atual, km_oleo: pl.km_oleo, data_tacografo: pl.data_tacografo, data_graxa: pl.data_graxa, data_extintor: pl.data_extintor });
-    adicionarNaFila(pl);
     window.historicoChecklist.unshift({data: new Date().toISOString(), placa: pl.placa}); 
     salvarCacheLocal();
 
@@ -837,7 +930,8 @@ async function enviarChecklistEmpilhadeira() {
     let pl = { acao: "salvar_checklist", usuario: window.usuarioLogado, placa: document.getElementById('chk-emp-placa').value, categoria: "EMPILHADEIRA", modelo: "EMPILHADEIRA", motorista: document.getElementById('chk-emp-motorista').value, chk_faltantes: checks, chk_obs: obs, assinatura_motorista_b64: assMot, assinatura_gerente_b64: assGer, km_atual: document.getElementById('chk-emp-km').value, km_oleo: "", data_tacografo: "", data_graxa: "", data_extintor: "", chk_motor: "N/A", chk_cambio: "N/A", chk_embreagem: "N/A", chk_direcao: "N/A", chk_freios: "N/A", chk_suspensao: "N/A", chk_pneus_geral: "N/A", chk_eletrica: "N/A", chk_indicadores: "N/A", chk_cabine: "N/A", chk_asa_delta: "", chk_freio_lona: "", chk_faixas: "", chk_extintores: "", chk_parada: "N/A", foto_lateral_b64: "", foto_traseira_b64: "", qtd_carrinhos: "", qtd_cones: "", qtd_calcos: "", pneus: {} }; 
     let btn = document.getElementById('btn-enviar-chk-emp'); btn.innerHTML = "<i class='ph ph-spinner ph-spin'></i> Preparando..."; btn.disabled = true; 
     
-    adicionarNaFila(pl);
+    if (!(await adicionarNaFila(pl))) { btn.innerHTML = "<i class='ph ph-floppy-disk'></i> Enviar Inspeção e PDF"; btn.disabled = false; return; }
+    atualizarFrotaLocal(pl.placa, { km_atual: pl.km_atual });
     window.historicoChecklist.unshift({data: new Date().toISOString(), placa: pl.placa}); 
     salvarCacheLocal();
 
@@ -916,7 +1010,7 @@ async function cadastrarVeiculoOutros() {
     if (!window.frota[placa].tipo) window.frota[placa].tipo = def.nome;
 
     // Salva na planilha (aba Veiculos) para a placa aparecer para todos os usuários
-    adicionarNaFila({ acao: "cadastrar_veiculo", usuario: window.usuarioLogado, placa: placa, categoria: cat, tipo: window.frota[placa].tipo });
+    await adicionarNaFila({ acao: "cadastrar_veiculo", usuario: window.usuarioLogado, placa: placa, categoria: cat, tipo: window.frota[placa].tipo });
     salvarCacheLocal();
     renderizarPlacas();
     mostrarToast(`<i class='ph ph-check-circle'></i> Placa ${placa} salva em ${def.nome}`, "#059669");
@@ -1091,7 +1185,7 @@ async function editarItemAlerta(tipo, placa) {
     // Só os campos alterados vão para a planilha (os outros ficam como estão)
     let payload = Object.assign({ acao: "salvar_ficha_tecnica", usuario: window.usuarioLogado, placa: placa, pneus: {} }, r.value);
     if (!payload.km_atual) delete payload.km_atual;
-    adicionarNaFila(payload);
+    if (!(await adicionarNaFila(payload))) return;
     salvarCacheLocal();
     renderizarAlertas(); renderizarListaAlertas();
     mostrarToast(`<i class='ph ph-check-circle'></i> ${ALERTAS[tipo].nome} de ${placa} atualizado`, "#059669");
