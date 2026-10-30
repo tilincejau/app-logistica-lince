@@ -422,3 +422,4 @@ button[id^="btn-editar"]:hover { background: #d1fae5 !important; }
 .placa-mercosul.com-imagem { aspect-ratio: auto; background: none; border: none; box-shadow: none; overflow: visible; border-radius: 12px; }
 .placa-mercosul.com-imagem > span { display: none; }
 .placa-mercosul.com-imagem .placa-foto { display: block; width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 1px solid var(--border-color); }
+.placa-wrap.placa-extra { display: none; } /* placa que veio da planilha: so aparece quando a imagem carrega */
