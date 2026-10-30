@@ -416,3 +416,9 @@ button[id^="btn-editar"]:hover { background: #d1fae5 !important; }
 .impressao-acoes .btn-principal, .impressao-acoes .btn-secundario { margin: 0; }
 .impressao-acoes .btn-principal:disabled { opacity: 0.5; }
 .filtro-alertas, .modal-alertas-cab { flex-shrink: 0; }
+
+/* Placa com a IMAGEM da pasta img (o desenho em CSS fica escondido) */
+.placa-foto { display: none; }
+.placa-mercosul.com-imagem { aspect-ratio: auto; background: none; border: none; box-shadow: none; overflow: visible; border-radius: 12px; }
+.placa-mercosul.com-imagem > span { display: none; }
+.placa-mercosul.com-imagem .placa-foto { display: block; width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 1px solid var(--border-color); }
