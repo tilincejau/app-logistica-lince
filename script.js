@@ -5,7 +5,8 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
 const APP_VERSAO = "2.1";
-const APP_BUILD = "v15"; // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
+const APP_BUILD = "v17";
+const SERVIDOR_MINIMO = "v15"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
@@ -434,8 +435,8 @@ function escolherModulo(modulo) {
         let btnOutros = document.getElementById('btn-placa-outros'); 
         let titOutros = document.getElementById('titulo-outros'); 
         if (btnOutros && titOutros) { 
-            btnOutros.style.display = (modulo === 'Abastecimento' || modulo === 'Checklist') ? 'grid' : 'none'; 
-            titOutros.style.display = (modulo === 'Abastecimento' || modulo === 'Checklist') ? 'block' : 'none'; 
+            btnOutros.style.display = (modulo === 'Abastecimento') ? 'grid' : 'none'; // OUTROS so no abastecimento (avulso, nao cria placa)
+            titOutros.style.display = (modulo === 'Abastecimento') ? 'block' : 'none'; 
         } 
         document.querySelectorAll('[id^="check-"]').forEach(el => el.style.display = 'none'); 
         let bImp = document.getElementById('btn-imprimir-chk'); if (bImp) bImp.style.display = modulo === 'Checklist' ? 'block' : 'none';
@@ -501,7 +502,7 @@ async function selecionarPlaca(placa, bypassTrava = false) {
         if(ctCarro) ctCarro.innerHTML = ""; if(chkCarro) chkCarro.innerHTML = ""; 
     } 
     document.querySelectorAll('.is-carreta').forEach(el => { el.style.display = window.isCavalo ? 'block' : 'none'; }); document.querySelectorAll('.esconder-carro').forEach(el => { el.style.display = (window.isCarro || window.isEmpilhadeira) ? 'none' : 'block'; }); document.querySelectorAll('.mostrar-carro').forEach(el => { el.style.display = window.isCarro ? 'block' : 'none'; }); document.querySelectorAll('.esconder-cavalo-chk').forEach(el => { el.style.display = (window.isCavalo || window.isEmpilhadeira) ? 'none' : 'block'; }); 
-    let selAbast = document.getElementById('tipo-abast'); let nomeComb = window.isCarro ? "COMBUSTÍVEL" : "DIESEL"; selAbast.innerHTML = `<option value="DIESEL">Abastecer ${nomeComb}</option><option value="ARLA">Abastecer ARLA</option><option value="CHEGADA DE DIESEL">📥 Receber CHEGADA DE ${nomeComb}</option><option value="CHEGADA DE ARLA">📥 Receber CHEGADA DE ARLA</option>`; mudarFormAbast();
+    let selAbast = document.getElementById('tipo-abast'); let nomeComb = (window.isCarro || dados.avulso) ? "COMBUSTÍVEL" : "DIESEL"; selAbast.innerHTML = `<option value="DIESEL">Abastecer ${nomeComb}</option><option value="ARLA">Abastecer ARLA</option><option value="CHEGADA DE DIESEL">📥 Receber CHEGADA DE ${nomeComb}</option><option value="CHEGADA DE ARLA">📥 Receber CHEGADA DE ARLA</option>`; mudarFormAbast();
     let elTipo = document.getElementById('tipo-veiculo'); if(elTipo) elTipo.value = dados.tipo || ""; let elMotorista = document.getElementById('nome-motorista'); if(elMotorista) elMotorista.value = dados.motorista || ""; let formatNum = v => v ? String(v).replace(/[^0-9]/g, '') : ""; let elKm = document.getElementById('km-master'); if(elKm) elKm.value = formatNum(dados.km_atual); let elO = document.getElementById('km-proxima-troca'); if(elO) elO.value = formatNum(dados.km_oleo); let elT = document.getElementById('data-ultima-afericao'); if(elT) elT.value = dados.data_tacografo || ""; let elG = document.getElementById('data-engraxada'); if(elG) elG.value = dados.data_graxa || ""; let elCar = document.getElementById('qtd-carrinhos'); if(elCar) elCar.value = dados.qtd_carrinhos || 0; let elCon = document.getElementById('qtd-cones'); if(elCon) elCon.value = dados.qtd_cones || 0; let elCal = document.getElementById('qtd-calcos'); if(elCal) elCal.value = dados.qtd_calcos || 0; let elExt = document.getElementById('data-extintor-ficha'); if(elExt) elExt.value = dados.data_extintor || ""; urlDocAtual = dados.link_documento || ""; 
     let abData = dados.abast_atual || {km_ant: 0, km_atual: 0, litros: 0};
     document.getElementById('abast-km-ant').value = abData.km_ant; document.getElementById('abast-km-atual').value = abData.km_atual; document.getElementById('abast-litros').value = abData.litros;
@@ -988,9 +989,23 @@ function registrarCategoriasExtras() {
     if (sel && window.CARRETAS.length) { let atual = sel.value; sel.innerHTML = '<option value="">Selecione a Carreta...</option>' + window.CARRETAS.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join(''); sel.value = atual; }
 }
 
+// Numero da imagem original de cada placa (nome do arquivo baixado do postimg: 2.png, 3.png...)
+const IMG_PLACA_NUM = { 'AXZ1D53': 2, 'FCT1J98': 3, 'FEE9E40': 4, 'FIF9A30': 5, 'FMQ8H77': 6, 'FMR4I10': 7, 'FPJ1B16': 8, 'FQY6B30': 9, 'FUH9H91': 10,
+    'IVE8J03': 11, 'NTP4G17': 12, 'TKR8I49': 13, 'TLL8H30': 14, 'TLY0G57': 15, 'UDN0J81': 16, 'UPS1J80': 17, 'UPX9D25': 18, 'URT4E79': 19, 'URU3F36': 20,
+    'FEF7C02': 21, 'GHE3E06': 22, 'FYY7G32': 23, 'CLW4E92': 24, 'UGF2G86': 25, 'FGX2A32': 26, '05025DR3290': 29, '05025DR8824': 30 };
+// Usa a IMAGEM da placa da pasta img do GitHub: primeiro img/placas/PLACA.png, depois img/PLACA.png, depois img/<numero>.png.
+// Se nenhuma existir, fica o desenho da placa em CSS (placa nova cadastrada na planilha sem imagem ainda).
 function htmlPlaca(placa) {
     let p = escHtml(placa);
-    return `<div class="placa-wrap"><button type="button" class="placa-mercosul${placa.length > 7 ? ' placa-longa' : ''}" onclick="selecionarPlaca('${p}')" aria-label="Placa ${p}"><span class="placa-faixa"><span class="placa-pais">BRASIL</span><span class="placa-bandeira"></span></span><span class="placa-corpo"><span class="placa-br">BR</span><span class="placa-num">${p}</span></span></button><div class="placa-check" id="check-${p}"><i class="ph-fill ph-check-circle" style="color:#10b981;"></i></div></div>`;
+    let tentativas = ['img/placas/' + p + '.png', 'img/' + p + '.png'];
+    if (IMG_PLACA_NUM[placa]) tentativas.push('img/' + IMG_PLACA_NUM[placa] + '.png');
+    return `<div class="placa-wrap"><button type="button" class="placa-mercosul${placa.length > 7 ? ' placa-longa' : ''}" onclick="selecionarPlaca('${p}')" aria-label="Placa ${p}"><img class="placa-foto" alt="" src="${tentativas[0]}" data-tentativas="${tentativas.slice(1).join('|')}" onload="this.parentNode.classList.add('com-imagem')" onerror="proximaImgPlaca(this)"><span class="placa-faixa"><span class="placa-pais">BRASIL</span><span class="placa-bandeira"></span></span><span class="placa-corpo"><span class="placa-br">BR</span><span class="placa-num">${p}</span></span></button><div class="placa-check" id="check-${p}"><i class="ph-fill ph-check-circle" style="color:#10b981;"></i></div></div>`;
+}
+function proximaImgPlaca(img) {
+    let resto = (img.dataset.tentativas || '').split('|').filter(Boolean);
+    if (!resto.length) { img.remove(); return; }   // sem imagem: fica o desenho em CSS
+    img.dataset.tentativas = resto.slice(1).join('|');
+    img.src = resto[0];
 }
 
 function renderizarPlacas() {
@@ -1011,33 +1026,42 @@ function renderizarPlacas() {
     visiveis.forEach(id => { let el = document.getElementById(id); if (el) el.style.display = 'flex'; });
 }
 
-async function cadastrarVeiculoOutros() {
+async function cadastrarVeiculoOutros() { // abastecimento de veiculo de fora da frota
     if (typeof Swal === 'undefined') { alert("Erro ao carregar bibliotecas."); return null; }
-    const { value: pC } = await Swal.fire({ title: 'Outro Veículo', input: 'text', inputLabel: 'Digite a placa:', inputPlaceholder: 'Ex: ABC1D23', inputAttributes: { autocapitalize: 'characters', maxlength: 12 }, showCancelButton: true, confirmButtonColor: '#1a4d2e', confirmButtonText: 'Continuar', cancelButtonText: 'Cancelar',
+    const { value: pC } = await Swal.fire({ title: 'Outro Veículo', input: 'text', inputLabel: 'Placa do veículo (abastecimento avulso, não entra na frota):', inputPlaceholder: 'Ex: ABC1D23', inputAttributes: { autocapitalize: 'characters', maxlength: 12 }, showCancelButton: true, confirmButtonColor: '#1a4d2e', confirmButtonText: 'Continuar', cancelButtonText: 'Cancelar',
         inputValidator: v => { let l = String(v || "").toUpperCase().replace(/[^A-Z0-9]/g, ''); if (l.length < 5) return 'Digite uma placa válida!'; } });
     if (!pC) return null;
     let placa = pC.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    let todasPlacas = Object.values(CATEGORIAS_VEICULO).flatMap(c => c.lista);
 
     // Placa já existe: só abre o veículo
-    let jaListada = Object.values(CATEGORIAS_VEICULO).some(c => c.lista.includes(placa));
-    if (jaListada && window.frota[placa]) return placa;
+    if (todasPlacas.includes(placa) && window.frota[placa]) return placa;
 
-    const { value: cat } = await Swal.fire({ title: 'Categoria', text: `Em qual grupo a placa ${placa} deve ficar?`, input: 'select',
-        inputOptions: { CAMINHAO: 'Caminhão Truck', TOCO: 'Caminhão Toco', CAVALO: 'Cavalo', CARRO: 'Utilitário / Carro', EMPILHADEIRA: 'Empilhadeira' },
-        showCancelButton: true, confirmButtonColor: '#1a4d2e', confirmButtonText: 'Salvar Placa', cancelButtonText: 'Cancelar' });
-    if (!cat) return null;
-    let def = CATEGORIAS_VEICULO[cat];
+    // Parecida com uma placa que já existe (O no lugar de 0, I no lugar de 1...)? Abre a existente.
+    let parecida = todasPlacas.find(p => normalizarPlaca(p) === normalizarPlaca(placa));
+    if (parecida) {
+        let r = await Swal.fire({ icon: 'question', title: 'Placa parecida', html: `Você digitou <b>${escHtml(placa)}</b>.<br>Já existe a placa <b>${escHtml(parecida)}</b>.<br><br>É esse veículo?`,
+            showCancelButton: true, confirmButtonText: `Sim, abrir ${escHtml(parecida)}`, cancelButtonText: 'Não, é outro', confirmButtonColor: '#1a4d2e' });
+        if (r.isConfirmed) return parecida;
+    }
 
-    if (!def.lista.includes(placa)) def.lista.push(placa);
-    if (!window.frota[placa]) window.frota[placa] = { placa: placa, km_atual: 0, gasto_mes: 0, pneus: {}, tipo: def.nome, abast_atual: { km_atual: 0, litros: 0, km_ant: 0 } };
-    window.frota[placa].categoria = cat;
-    if (!window.frota[placa].tipo) window.frota[placa].tipo = def.nome;
+    // Formato de placa brasileira: ABC1234 (antiga) ou ABC1D23 (Mercosul)
+    let corrigida = corrigirFormatoPlaca(placa);
+    if (corrigida && corrigida !== placa) {
+        let r = await Swal.fire({ icon: 'warning', title: 'Confira a placa', html: `<b>${escHtml(placa)}</b> não está no formato de placa.<br>Você quis dizer <b>${escHtml(corrigida)}</b>?<br><br><small>Letra O e número 0, letra I e número 1 são fáceis de confundir.</small>`,
+            showCancelButton: true, showDenyButton: true, confirmButtonText: `Usar ${escHtml(corrigida)}`, denyButtonText: `Manter ${escHtml(placa)}`, cancelButtonText: 'Cancelar', confirmButtonColor: '#1a4d2e' });
+        if (r.isDismissed) return null;
+        if (r.isConfirmed) {
+            placa = corrigida;
+            if (todasPlacas.includes(placa) && window.frota[placa]) return placa;
+        }
+    }
 
-    // Salva na planilha (aba Veiculos) para a placa aparecer para todos os usuários
-    await adicionarNaFila({ acao: "cadastrar_veiculo", usuario: window.usuarioLogado, placa: placa, categoria: cat, tipo: window.frota[placa].tipo });
-    salvarCacheLocal();
-    renderizarPlacas();
-    mostrarToast(`<i class='ph ph-check-circle'></i> Placa ${placa} salva em ${def.nome}`, "#059669");
+    // Veiculo AVULSO: serve so para este abastecimento. NAO e salvo como placa da frota,
+    // nao aparece na tela de placas nem no checklist (a frota oficial e a da planilha/imagens).
+    if (!window.frota[placa]) window.frota[placa] = { placa: placa, km_atual: 0, gasto_mes: 0, pneus: {}, tipo: 'Veículo avulso', avulso: true, abast_atual: { km_atual: 0, litros: 0, km_ant: 0 } };
+    window.frota[placa].avulso = true;
+    mostrarToast(`<i class='ph ph-info'></i> ${placa}: abastecimento avulso (não entra na frota)`, "#1e40af");
     return placa;
 }
 
@@ -1461,6 +1485,23 @@ function imprimirNoComputador(url, nome) {
 function mostrarVersoes() {
     let el = document.getElementById('versao-app'); if (!el) return;
     let srv = window.versaoServidor || '?';
-    let ok = srv === APP_BUILD;
+    let num = v => parseInt(String(v).replace(/\D/g, ''), 10) || 0;
+    let ok = num(srv) >= num(SERVIDOR_MINIMO); // o app pode ser mais novo que o servidor sem problema
     el.innerHTML = `App ${APP_BUILD} · Servidor ${escHtml(srv)}` + (srv !== '?' && !ok ? ' <b style="color:#dc2626">⚠ servidor desatualizado</b>' : '');
+}
+
+// Placa "normalizada" para comparar: O vira 0, I vira 1 (as confusões mais comuns ao digitar)
+function normalizarPlaca(p) { return String(p || '').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/O/g, '0').replace(/I/g, '1'); }
+// Corrige para o formato brasileiro (ABC1234 ou ABC1D23) trocando O/0, I/1 na posição certa.
+// Devolve a própria placa se já estiver certa, ou null se não der para encaixar (ex: empilhadeira 05025DR3290).
+function corrigirFormatoPlaca(p) {
+    p = String(p || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(p)) return p;
+    if (p.length !== 7) return null;
+    const paraLetra = { '0': 'O', '1': 'I', '5': 'S', '8': 'B' }, paraNum = { 'O': '0', 'Q': '0', 'D': '0', 'I': '1', 'L': '1', 'S': '5', 'B': '8', 'Z': '2' };
+    let c = p.split('');
+    for (let i = 0; i < 3; i++) if (/[0-9]/.test(c[i])) c[i] = paraLetra[c[i]] || c[i];
+    for (let i of [3, 5, 6]) if (/[A-Z]/.test(c[i])) c[i] = paraNum[c[i]] || c[i];
+    let r = c.join('');
+    return /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(r) ? r : null;
 }
