@@ -5,7 +5,7 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
 const APP_VERSAO = "2.1";
-const APP_BUILD = "v17";
+const APP_BUILD = "v18";
 const SERVIDOR_MINIMO = "v15"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
@@ -981,7 +981,7 @@ function registrarCategoriasExtras() {
     window.CARRETAS = [];
     Object.keys(mapa).sort().forEach(p => {
         let cat = mapa[p];
-        if (CATEGORIAS_VEICULO[cat]) CATEGORIAS_VEICULO[cat].lista.push(p);
+        if (CATEGORIAS_VEICULO[cat] && !window.placasSemImagem.has(p)) CATEGORIAS_VEICULO[cat].lista.push(p);
         else if (cat === 'CARRETA') window.CARRETAS.push(p);
         // INATIVO (ou outro valor): some do app
     });
@@ -997,13 +997,27 @@ const IMG_PLACA_NUM = { 'AXZ1D53': 2, 'FCT1J98': 3, 'FEE9E40': 4, 'FIF9A30': 5, 
 // Se nenhuma existir, fica o desenho da placa em CSS (placa nova cadastrada na planilha sem imagem ainda).
 function htmlPlaca(placa) {
     let p = escHtml(placa);
+    let padrao = Object.values(LISTAS_PADRAO).some(l => l.includes(placa));
     let tentativas = ['img/placas/' + p + '.png', 'img/' + p + '.png'];
     if (IMG_PLACA_NUM[placa]) tentativas.push('img/' + IMG_PLACA_NUM[placa] + '.png');
-    return `<div class="placa-wrap"><button type="button" class="placa-mercosul${placa.length > 7 ? ' placa-longa' : ''}" onclick="selecionarPlaca('${p}')" aria-label="Placa ${p}"><img class="placa-foto" alt="" src="${tentativas[0]}" data-tentativas="${tentativas.slice(1).join('|')}" onload="this.parentNode.classList.add('com-imagem')" onerror="proximaImgPlaca(this)"><span class="placa-faixa"><span class="placa-pais">BRASIL</span><span class="placa-bandeira"></span></span><span class="placa-corpo"><span class="placa-br">BR</span><span class="placa-num">${p}</span></span></button><div class="placa-check" id="check-${p}"><i class="ph-fill ph-check-circle" style="color:#10b981;"></i></div></div>`;
+    // Placa que NAO e da frota original so aparece se tiver a imagem na pasta img (segue as imagens, nao cria placa sozinho)
+    return `<div class="placa-wrap${padrao ? '' : ' placa-extra'}" data-placa="${p}"><button type="button" class="placa-mercosul${placa.length > 7 ? ' placa-longa' : ''}" onclick="selecionarPlaca('${p}')" aria-label="Placa ${p}"><img class="placa-foto" alt="" src="${tentativas[0]}" data-tentativas="${tentativas.slice(1).join('|')}" onload="this.parentNode.classList.add('com-imagem'); this.closest('.placa-wrap').classList.remove('placa-extra')" onerror="proximaImgPlaca(this)"><span class="placa-faixa"><span class="placa-pais">BRASIL</span><span class="placa-bandeira"></span></span><span class="placa-corpo"><span class="placa-br">BR</span><span class="placa-num">${p}</span></span></button><div class="placa-check" id="check-${p}"><i class="ph-fill ph-check-circle" style="color:#10b981;"></i></div></div>`;
+}
+window.placasSemImagem = new Set();
+// Placa extra (veio da planilha) sem imagem: sai da tela, dos alertas e do painel
+function esconderPlacaSemImagem(placa) {
+    if (window.placasSemImagem.has(placa)) return;
+    window.placasSemImagem.add(placa);
+    Object.values(CATEGORIAS_VEICULO).forEach(c => { let i = c.lista.indexOf(placa); if (i >= 0) c.lista.splice(i, 1); });
+    clearTimeout(window._timerAlertas); window._timerAlertas = setTimeout(() => { renderizarAlertas(); }, 300);
 }
 function proximaImgPlaca(img) {
     let resto = (img.dataset.tentativas || '').split('|').filter(Boolean);
-    if (!resto.length) { img.remove(); return; }   // sem imagem: fica o desenho em CSS
+    if (!resto.length) {
+        let wrap = img.closest('.placa-wrap');
+        if (wrap && wrap.classList.contains('placa-extra')) { esconderPlacaSemImagem(wrap.dataset.placa); wrap.remove(); return; }
+        img.remove(); return;   // placa da frota original sem imagem: fica o desenho em CSS
+    }
     img.dataset.tentativas = resto.slice(1).join('|');
     img.src = resto[0];
 }
