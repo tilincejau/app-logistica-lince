@@ -7,7 +7,7 @@
    - Imagens das placas (i.postimg.cc): não mudam, então depois de salvas não são baixadas de novo.
    - Chamadas à planilha (Google Apps Script) e envios (POST) nunca passam pelo cache.
    ========================================================= */
-const CACHE = 'lince-app-v9';
+const CACHE = 'lince-app-v11';
 const ARQUIVOS_APP = ['./', 'index.html', 'script.js', 'style.css', 'manifest.json'];
 const HOSTS_ESTATICOS = ['unpkg.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com', 'i.postimg.cc'];  // imagens agora ficam na pasta img/ do próprio GitHub (mesma origem)
 const HOSTS_CORS = ['unpkg.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com']; // aceitam CORS: dá para ver se a resposta veio OK
