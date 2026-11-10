@@ -423,3 +423,11 @@ button[id^="btn-editar"]:hover { background: #d1fae5 !important; }
 .placa-mercosul.com-imagem > span { display: none; }
 .placa-mercosul.com-imagem .placa-foto { display: block; width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 1px solid var(--border-color); }
 .placa-wrap.placa-extra { display: none; } /* placa que veio da planilha: so aparece quando a imagem carrega */
+
+/* Card de óleos (motor, câmbio, diferencial) */
+.bloco-oleo { border-top: 1px dashed #d1d5db; padding-top: 10px; margin-top: 10px; }
+.titulo-oleo { font-size: 13px; font-weight: 700; color: var(--primary-color); margin-bottom: 8px; }
+.titulo-oleo small, .titulo-oleos-sub { font-weight: 500; color: var(--text-muted); font-size: 11px; }
+.titulo-oleos-sub { display: block; margin-top: 2px; }
+.tag-oleo { display: inline-block; font-size: 10px; font-weight: 700; color: var(--primary-color); background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 1px 7px; margin-left: 4px; vertical-align: middle; letter-spacing: 0; }
+.btn-sugestao-km { margin-top: 10px; width: 100%; border: 1.5px dashed var(--primary-color); background: #f0fdf4; color: var(--primary-color); border-radius: 10px; padding: 9px; font-size: 12px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; }
