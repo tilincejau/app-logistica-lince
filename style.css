@@ -431,3 +431,31 @@ button[id^="btn-editar"]:hover { background: #d1fae5 !important; }
 .titulo-oleos-sub { display: block; margin-top: 2px; }
 .tag-oleo { display: inline-block; font-size: 10px; font-weight: 700; color: var(--primary-color); background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 1px 7px; margin-left: 4px; vertical-align: middle; letter-spacing: 0; }
 .btn-sugestao-km { margin-top: 10px; width: 100%; border: 1.5px dashed var(--primary-color); background: #f0fdf4; color: var(--primary-color); border-radius: 10px; padding: 9px; font-size: 12px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; }
+
+/* =========================================================
+   PROBLEMAS ENCONTRADOS
+   ========================================================= */
+.tile-problemas-qtd { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.badge-prob { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #fef3c7; color: #92400e; }
+.badge-prob.alta { background: #fee2e2; color: #b91c1c; }
+.badge-prob.ok { background: #dcfce7; color: #15803d; }
+.card-pontos ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.45; color: var(--text-main); }
+.card-pontos li { margin-bottom: 6px; }
+.card-pontos { border: 1.5px solid #bfdbfe; background: #f8fbff; }
+.grupo-prob .card-titulo small { color: var(--text-muted); font-weight: 600; }
+.item-prob { border: 1px solid var(--border-color); border-left: 5px solid var(--sem-cinza); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; background: #fff; }
+.item-prob.pri-alta { border-left-color: var(--sem-verm); background: #fffafa; }
+.item-prob.pri-media { border-left-color: var(--sem-amar); }
+.item-prob.pri-baixa { border-left-color: #93c5fd; }
+.item-prob-topo { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+.placa-tag { font-size: 13px; letter-spacing: 0.5px; background: #111827; color: #fff; padding: 2px 8px; border-radius: 6px; }
+.pri-tag, .st-tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+.pri-alta .pri-tag { background: #fee2e2; color: #b91c1c; } .pri-media .pri-tag { background: #fef3c7; color: #92400e; } .pri-baixa .pri-tag { background: #dbeafe; color: #1e40af; }
+.st-tag.st-sem { background: #f3f4f6; color: #6b7280; } .st-tag.st-and { background: #e0f2fe; color: #075985; } .st-tag.st-ok { background: #dcfce7; color: #15803d; }
+.st-tag.st-reaberto, .st-tag.st-atrasado { background: #dc2626; color: #fff; }
+.item-prob-titulo { font-size: 14px; font-weight: 700; color: var(--text-main); }
+.item-prob-det { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.item-prob-plano { font-size: 12px; margin-top: 8px; padding: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: var(--text-main); }
+.item-prob-plano small { color: var(--text-muted); }
+.btn-plano { margin-top: 8px; border: 1px solid var(--primary-color); background: #fff; color: var(--primary-color); border-radius: 10px; padding: 7px 10px; font-size: 12px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; }
+.btn-plano i.ph { margin-right: 4px; }
