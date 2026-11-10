@@ -5,8 +5,8 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
 const APP_VERSAO = "2.1";
-const APP_BUILD = "v19";
-const SERVIDOR_MINIMO = "v16"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
+const APP_BUILD = "v20";
+const SERVIDOR_MINIMO = "v17"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
@@ -54,7 +54,8 @@ function salvarCacheLocal() {
             gasto_mes_geral: window.gastoMesGeral, hist_abast: window.histAbast,
             estoque_pecas: window.estoquePecas, motoristas: window.listaMotoristas, historico: window.historicoChecklist,
             gasto_mes_ant_geral: (window.resumoGerente || {}).gasto_mes_ant_geral, arla_mes_geral: (window.resumoGerente || {}).arla_mes_geral,
-            media_frota_mes: (window.resumoGerente || {}).media_frota_mes, gerado_em: (window.resumoGerente || {}).gerado_em
+            media_frota_mes: (window.resumoGerente || {}).media_frota_mes, gerado_em: (window.resumoGerente || {}).gerado_em,
+            ultimos_checklists: window.ultimosChecklists || {}, planos: window.planos || {}
         }));
     } catch (e) { console.warn("Cache local não salvo (sem espaço):", e); }
 }
@@ -296,12 +297,15 @@ function atualizarVariaveisGlobais(res) {
     window.historicoChecklist = res.historico || [];
     window.versaoServidor = res.versao_backend || window.versaoServidor || '';
     mostrarVersoes();
+    window.ultimosChecklists = res.ultimos_checklists || window.ultimosChecklists || {};
+    window.planos = res.planos || window.planos || {};
     window.resumoGerente = { gasto_mes_ant_geral: res.gasto_mes_ant_geral || 0, arla_mes_geral: res.arla_mes_geral || 0, media_frota_mes: res.media_frota_mes || 0, gerado_em: res.gerado_em || "" };
 
     registrarCategoriasExtras();
     renderizarPlacas();
     renderizarAlertas();
-    atualizarTileGerente();
+    atualizarTileGerente(); renderizarTileProblemas();
+    if (document.getElementById('tela-problemas') && document.getElementById('tela-problemas').style.display === 'flex') renderizarProblemas();
     if (document.getElementById('tela-gerente') && document.getElementById('tela-gerente').style.display === 'flex') renderizarPainelGerente();
     renderizarMotoristas();
     renderizarHistorico(window.historicoChecklist);
@@ -409,7 +413,7 @@ async function fazerLogin() {
 }
 
 function esconderTodasTelas() { 
-    document.getElementById('tela-login').style.display = 'none'; document.getElementById('tela-placas').style.display = 'none'; document.getElementById('tela-menu').style.display = 'none'; document.getElementById('tela-submenu-estoque').style.display = 'none'; document.getElementById('tela-interna').style.display = 'none'; document.getElementById('tela-gerente').style.display = 'none'; 
+    document.getElementById('tela-login').style.display = 'none'; document.getElementById('tela-placas').style.display = 'none'; document.getElementById('tela-menu').style.display = 'none'; document.getElementById('tela-submenu-estoque').style.display = 'none'; document.getElementById('tela-interna').style.display = 'none'; document.getElementById('tela-gerente').style.display = 'none'; document.getElementById('tela-problemas').style.display = 'none'; 
 } 
 
 async function sairDaConta() { 
@@ -424,7 +428,7 @@ async function sairDaConta() {
 } 
 
 function voltarParaPlacas() { aplicarDadosAguardando(); esconderTodasTelas(); document.getElementById('tela-placas').style.display = 'flex'; } 
-function voltarParaMenu() { aplicarDadosAguardando(); esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; atualizarBotaoSyncManual(); renderizarAlertas(); atualizarTileGerente(); }
+function voltarParaMenu() { aplicarDadosAguardando(); esconderTodasTelas(); document.getElementById('tela-menu').style.display = 'flex'; atualizarBotaoSyncManual(); renderizarAlertas(); atualizarTileGerente(); renderizarTileProblemas(); }
 
 function escolherModulo(modulo) { 
     window.moduloAtual = modulo; 
@@ -869,7 +873,7 @@ async function enviarChecklistCarro() {
     if (!(await adicionarNaFila(pl))) { btn.innerHTML = "<i class='ph ph-floppy-disk'></i> Enviar Inspeção e PDF"; btn.disabled = false; return; } // NÃO salvou: mantém o formulário preenchido
     window.frota[pl.placa].km_atual = pl.km_atual; window.frota[pl.placa].km_oleo = pl.km_oleo; window.frota[pl.placa].data_extintor = pl.data_extintor; 
     for(let i in pl.pneus) { if(!window.frota[pl.placa].pneus[i]) window.frota[pl.placa].pneus[i] = {}; window.frota[pl.placa].pneus[i].milimetros = pl.pneus[i].milimetros; window.frota[pl.placa].pneus[i].estado = pl.pneus[i].estado; } 
-    let hS = new Date().toISOString(); window.historicoChecklist.unshift({data: hS, placa: pl.placa}); 
+    let hS = new Date().toISOString(); window.historicoChecklist.unshift({data: hS, placa: pl.placa}); registrarUltimoChecklistLocal(pl); 
     salvarCacheLocal();
 
     Swal.fire("Blindado!", "Inspeção finalizada e armazenada no telemóvel!<br><br>O PDF será gerado na nuvem na próxima sincronização em 2º plano.", "success"); 
@@ -927,7 +931,7 @@ async function enviarChecklist() {
 
     if (!(await adicionarNaFila(pl))) { btn.innerHTML = "<i class='ph ph-floppy-disk'></i> Enviar Checklist e PDF"; btn.disabled = false; return; } // NÃO salvou: mantém o formulário preenchido
     atualizarFrotaLocal(pl.placa, { km_atual: pl.km_atual, km_oleo: pl.km_oleo, km_cambio: pl.km_cambio, km_diferencial: pl.km_diferencial, data_tacografo: pl.data_tacografo, data_graxa: pl.data_graxa, data_extintor: pl.data_extintor });
-    window.historicoChecklist.unshift({data: new Date().toISOString(), placa: pl.placa}); 
+    window.historicoChecklist.unshift({data: new Date().toISOString(), placa: pl.placa}); registrarUltimoChecklistLocal(pl);
     salvarCacheLocal();
 
     Swal.fire("Blindado!", "O checklist foi guardado com segurança no aparelho. O envio será feito automaticamente em plano de fundo.", "success"); 
@@ -947,7 +951,7 @@ async function enviarChecklistEmpilhadeira() {
     
     if (!(await adicionarNaFila(pl))) { btn.innerHTML = "<i class='ph ph-floppy-disk'></i> Enviar Inspeção e PDF"; btn.disabled = false; return; }
     atualizarFrotaLocal(pl.placa, { km_atual: pl.km_atual });
-    window.historicoChecklist.unshift({data: new Date().toISOString(), placa: pl.placa}); 
+    window.historicoChecklist.unshift({data: new Date().toISOString(), placa: pl.placa}); registrarUltimoChecklistLocal(pl);
     salvarCacheLocal();
 
     Swal.fire("Blindado!", "Inspeção salva localmente!<br>Será sincronizada em 2º plano automaticamente.", "success"); 
@@ -1546,3 +1550,240 @@ function mascaraTwi(el) {
 }
 function lerMm(v) { let n = parseFloat(String(v == null ? '' : v).replace(/\./g, '').replace(',', '.')); return isNaN(n) ? NaN : n; }
 function fmtMm(v) { let n = typeof v === 'number' ? v : parseFloat(String(v).replace(',', '.')); return isNaN(n) ? String(v) : n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+/* =========================================================
+   PROBLEMAS ENCONTRADOS + PLANO DE AÇÃO
+   Junta só o que está com problema: equipamentos, óleos, tacógrafo, graxa,
+   mecânica, elétrica/cabine, itens faltantes, extintores, pneus e observações.
+   O plano de ação de cada problema fica na aba "Plano_Acao" da planilha.
+   ========================================================= */
+const EQUIP_PADRAO = [['qtd_carrinhos', 2, 'carrinho', 'carrinhos'], ['qtd_cones', 3, 'cone', 'cones'], ['qtd_calcos', 2, 'calço', 'calços']];
+const CAT_PROB = { equip: 'Carrinhos, cones e calços', oleo: 'Trocas de óleo', tacografo: 'Tacógrafo', graxa: 'Engraxada', mecanica: 'Mecânica',
+                   eletrica: 'Elétrica, cabine e pneus (geral)', faltantes: 'Itens faltantes', extintor: 'Extintores', pneus: 'Pneus no limite', obs: 'Observações e paradas' };
+const ICONE_PROB = { equip: 'ph-traffic-cone', oleo: 'ph-drop', tacografo: 'ph-timer', graxa: 'ph-wrench', mecanica: 'ph-engine', eletrica: 'ph-lightning',
+                     faltantes: 'ph-list-checks', extintor: 'ph-fire-extinguisher', pneus: 'ph-tire', obs: 'ph-chat-text' };
+const SUGESTAO_PROB = {
+    equip: 'Repor os itens que faltam (padrão: 2 carrinhos, 3 cones e 2 calços) e conferir na saída do veículo.',
+    oleo: 'Agendar a troca com a oficina e, depois de trocar, atualizar o KM da próxima troca no app.',
+    tacografo: 'Agendar a aferição do tacógrafo em posto credenciado e atualizar a data no app.',
+    graxa: 'Engraxar o veículo e registrar a data no app (Alertas da Frota > Graxa).',
+    mecanica: 'Encaminhar para a oficina para diagnóstico e reparo; avaliar se o veículo pode rodar.',
+    eletrica: 'Encaminhar para o eletricista/manutenção e conferir no próximo checklist.',
+    faltantes: 'Repor os itens faltantes antes da próxima viagem e conferir no próximo checklist.',
+    extintor: 'Recarregar ou trocar o extintor e atualizar a validade no app.',
+    pneus: 'Programar troca/rodízio dos pneus no limite e verificar estoque de pneus.',
+    obs: 'Conversar com o motorista, avaliar o ponto relatado e definir a solução.'
+};
+let filtroProblemas = 'abertos'; let filtroPlacaProb = '';
+
+function chkOk(v) {
+    v = String(v == null ? '' : v).trim().toUpperCase();
+    return !v || v === 'N/A' || v === 'NÃO AVALIADO' || v.indexOf('NÃO APRESENTA') >= 0 || v.indexOf('NAO APRESENTA') >= 0 || v.indexOf('TODOS OS ITENS') >= 0;
+}
+function obsVazia(v) { v = String(v == null ? '' : v).trim(); return !v || /^(ok|okay|nada|nenhum[a]?( observa[cç][aã]o)?( informada)?\.?|sem obs.*|-+|n\/a|tudo (ok|certo|bem)\.?)$/i.test(v); }
+function dataISOde(t) { let m = String(t || '').match(/(\d{2})\/(\d{2})\/(\d{4})/); return m ? `${m[3]}-${m[2]}-${m[1]}` : String(t || '').substring(0, 10); }
+
+function registrarUltimoChecklistLocal(pl) {
+    window.ultimosChecklists = window.ultimosChecklists || {};
+    let a = new Date(); let pad = n => String(n).padStart(2, '0');
+    window.ultimosChecklists[String(pl.placa).toUpperCase()] = { data: `${pad(a.getDate())}/${pad(a.getMonth() + 1)}/${a.getFullYear()} ${pad(a.getHours())}:${pad(a.getMinutes())}`, ts: a.getTime(),
+        motorista: pl.motorista, km: pl.km_atual, motor: pl.chk_motor, cambio: pl.chk_cambio, embreagem: pl.chk_embreagem, direcao: pl.chk_direcao, freios: pl.chk_freios,
+        suspensao: pl.chk_suspensao, pneus_geral: pl.chk_pneus_geral, eletrica: pl.chk_eletrica, indicadores: pl.chk_indicadores, cabine: pl.chk_cabine,
+        faltantes: pl.chk_faltantes, extintores: pl.chk_extintores, parada: pl.chk_parada, obs: pl.chk_obs, placa_carreta: pl.placa_carreta,
+        asa_delta: pl.chk_asa_delta, freio_lona: pl.chk_freio_lona, faixas: pl.chk_faixas };
+}
+
+function coletarProblemas() {
+    let lista = [];
+    let add = (placa, cat, chave, titulo, detalhe, prioridade, ts) => lista.push({ id: placa + '|' + chave, placa, cat, categoria: CAT_PROB[cat], titulo, detalhe: detalhe || '', prioridade, ts: ts || 0 });
+    placasDaFrota().forEach(p => {
+        let v = window.frota[p] || {}, c = (window.ultimosChecklists || {})[p];
+        // 1) Carrinhos, cones e calços (só caminhões toco/truck)
+        if (TOCOS.includes(p) || TRUCKS.includes(p)) EQUIP_PADRAO.forEach(([campo, min, s1, sN]) => {
+            let tem = parseInt(v[campo], 10) || 0;
+            if (tem < min) add(p, 'equip', campo, `Faltam ${min - tem} ${min - tem > 1 ? sN : s1}`, `Tem ${tem} de ${min} (padrão: 2 carrinhos, 3 cones, 2 calços)`, 'Média');
+        });
+        // 2) Óleos (motor, câmbio, diferencial)
+        Object.keys(OLEOS).filter(k => OLEOS[k].aplica(p)).forEach(k => {
+            let st = calcularStatusAlerta('oleo', p, k);
+            if (st.nivel === 'vencido' || st.nivel === 'alerta') add(p, 'oleo', 'oleo_' + k, `Óleo do ${OLEOS[k].nome}: ${st.texto}`, st.detalhe, st.nivel === 'vencido' ? 'Alta' : 'Média');
+        });
+        // 3) Tacógrafo, graxa e extintor (vencidos ou perto de vencer)
+        ['tacografo', 'graxa', 'extintor'].forEach(t => {
+            if (!ALERTAS[t].aplica(p)) return;
+            let st = calcularStatusAlerta(t, p);
+            if (st.nivel === 'vencido' || st.nivel === 'alerta') add(p, t, t, `${ALERTAS[t].nome}: ${st.texto}`, st.detalhe, st.nivel === 'vencido' ? 'Alta' : 'Média');
+        });
+        // 4) Respostas do ÚLTIMO checklist
+        if (c) {
+            let origem = `Checklist de ${c.data}${c.motorista ? ' · ' + c.motorista : ''}`;
+            [['mecanica', 'motor', 'Motor'], ['mecanica', 'cambio', 'Câmbio'], ['mecanica', 'embreagem', 'Embreagem'], ['mecanica', 'direcao', 'Direção'],
+             ['mecanica', 'freios', 'Freios'], ['mecanica', 'suspensao', 'Suspensão'], ['eletrica', 'pneus_geral', 'Pneus (geral)'], ['eletrica', 'eletrica', 'Sistema elétrico'],
+             ['eletrica', 'indicadores', 'Indicadores do painel'], ['eletrica', 'cabine', 'Cabine'], ['faltantes', 'faltantes', 'Itens faltantes']].forEach(([cat, campo, nome]) => {
+                if (chkOk(c[campo])) return;
+                let alta = campo === 'freios' || campo === 'direcao';
+                add(p, cat, 'chk_' + campo, `${nome}: ${String(c[campo]).replace(/ \| /g, ', ').replace(/^OUTROS: /, '')}`, origem, alta ? 'Alta' : 'Média', c.ts);
+            });
+            if (c.placa_carreta) [['asa_delta', 'Asa delta da carreta'], ['freio_lona', 'Freio da lona da carreta'], ['faixas', 'Faixas refletivas da carreta']].forEach(([campo, nome]) => {
+                let val = String(c[campo] || '').trim();
+                if (val && val !== 'Sim') add(p, 'mecanica', 'chk_' + campo, `${nome}: ${val === 'Não' ? 'não funciona' : val}`, origem + ' · carreta ' + c.placa_carreta, 'Média', c.ts);
+            });
+            if (/despressuriz/i.test(String(c.extintores || ''))) add(p, 'extintor', 'chk_extintor_pressao', 'Extintor despressurizado / vazio', origem, 'Alta', c.ts);
+            if (String(c.parada || '') === 'Sim') add(p, 'obs', 'chk_parada', 'Motorista pediu PARADA URGENTE para revisão', origem, 'Alta', c.ts);
+            if (!obsVazia(c.obs)) add(p, 'obs', 'chk_obs', 'Observação do motorista', `"${c.obs}" · ${origem}`, 'Baixa', c.ts);
+        }
+        // 5) Pneus no limite (última medição)
+        let ruins = Object.entries(v.pneus || {}).filter(([pos, pn]) => { let mm = lerMm(pn.milimetros); return /LIMITE/i.test(pn.estado || '') || (mm > 0 && mm < 5); });
+        if (ruins.length) add(p, 'pneus', 'pneus', `${ruins.length} pneu${ruins.length > 1 ? 's' : ''} no limite`, ruins.map(([pos, pn]) => `${pos.toUpperCase()} (${pn.milimetros && pn.milimetros !== '---' ? fmtMm(pn.milimetros) + ' mm' : pn.estado})`).join(', '), 'Alta');
+    });
+    // Junta com os planos salvos
+    let hoje = isoData(new Date());
+    lista.forEach(i => {
+        let pl = (window.planos || {})[i.id] || null; i.plano = pl;
+        i.status = pl ? (pl.status || 'Pendente') : 'Sem plano';
+        // problema do checklist que voltou a aparecer num checklist DEPOIS de concluído
+        if (pl && pl.status === 'Concluído' && i.ts && pl.atualizado_em && i.ts > new Date(pl.atualizado_em).getTime()) i.status = 'Reaberto';
+        i.atrasado = !!(pl && pl.data_prevista && pl.data_prevista < hoje && i.status !== 'Concluído');
+        i.aberto = i.status !== 'Concluído';
+    });
+    const peso = { Alta: 0, 'Média': 1, Baixa: 2 }, ordemCat = Object.keys(CAT_PROB);
+    return lista.sort((a, b) => (ordemCat.indexOf(a.cat) - ordemCat.indexOf(b.cat)) || (peso[a.prioridade] - peso[b.prioridade]) || a.placa.localeCompare(b.placa));
+}
+
+function pontosDeMelhoria(lista) {
+    let ab = lista.filter(i => i.aberto), dicas = [];
+    let porCat = {}; ab.forEach(i => porCat[i.cat] = (porCat[i.cat] || 0) + 1);
+    let porPlaca = {}; ab.forEach(i => porPlaca[i.placa] = (porPlaca[i.placa] || 0) + 1);
+    let semPlano = ab.filter(i => i.status === 'Sem plano').length, atrasados = ab.filter(i => i.atrasado).length, altas = ab.filter(i => i.prioridade === 'Alta').length;
+    if (altas) dicas.push(`Resolva primeiro os ${altas} problema(s) de prioridade ALTA (vencidos, freios, direção, pneus no limite, paradas urgentes).`);
+    if (semPlano) dicas.push(`${semPlano} problema(s) ainda sem plano de ação: defina o que fazer, quem faz e a data.`);
+    if (atrasados) dicas.push(`${atrasados} plano(s) com a data vencida: cobre o responsável ou remarque a data.`);
+    if ((porCat.graxa || 0) >= 2) dicas.push('Várias graxas vencidas: defina um dia fixo da semana para engraxar a frota toda.');
+    if ((porCat.oleo || 0) >= 2) dicas.push('Várias trocas de óleo pendentes: agende em lote com a oficina e, após cada troca, use Atualizar nos Alertas.');
+    if (porCat.equip) dicas.push('Falta de carrinhos/cones/calços: monte um kit padrão por caminhão e confira na saída e na volta.');
+    if (porCat.pneus) dicas.push('Pneus no limite são risco de acidente e multa: programe a troca e mantenha estoque mínimo de pneus.');
+    if ((porCat.extintor || 0) >= 2) dicas.push('Vários extintores vencendo: faça a recarga de todos na mesma data para simplificar o controle.');
+    if ((porCat.mecanica || 0) + (porCat.eletrica || 0) >= 3) dicas.push('Muitos problemas mecânicos/elétricos: reserve um horário fixo semanal com a oficina para os reparos do checklist.');
+    let top = Object.entries(porPlaca).sort((a, b) => b[1] - a[1]).slice(0, 3).filter(x => x[1] >= 3);
+    if (top.length) dicas.push('Veículos com mais problemas: ' + top.map(x => `${x[0]} (${x[1]})`).join(', ') + '. Avalie uma revisão geral neles.');
+    let ini = inicioDaSemana(); let feitos = new Set((window.historicoChecklist || []).filter(h => dataDoHistorico(h) >= ini).map(h => String(h.placa).toUpperCase()));
+    let semChk = placasDaFrota().filter(p => !EMPILHADEIRAS.includes(p) && !feitos.has(p));
+    if (semChk.length) dicas.push(`${semChk.length} veículo(s) sem checklist nesta semana: os problemas deles podem não estar aparecendo aqui.`);
+    if (!dicas.length) dicas.push('Nenhum ponto crítico. Continue com os checklists semanais em dia.');
+    return dicas;
+}
+
+function renderizarTileProblemas() {
+    let t = document.getElementById('tile-problemas-qtd'); if (!t) return;
+    if (!placasDaFrota().length) { t.textContent = ''; return; }
+    let ab = coletarProblemas().filter(i => i.aberto); let altas = ab.filter(i => i.prioridade === 'Alta').length;
+    t.innerHTML = ab.length ? `<span class="badge-prob">${ab.length} aberto${ab.length > 1 ? 's' : ''}</span>${altas ? `<span class="badge-prob alta">${altas} alta</span>` : ''}` : '<span class="badge-prob ok">Nenhum problema</span>';
+}
+
+function abrirProblemas() {
+    esconderTodasTelas(); document.getElementById('tela-problemas').style.display = 'flex';
+    renderizarProblemas(); window.scrollTo(0, 0);
+}
+function filtrarProblemas(f) { filtroProblemas = f; renderizarProblemas(); }
+function filtrarPlacaProblemas(p) { filtroPlacaProb = p; renderizarProblemas(); }
+
+function problemasFiltrados(lista) {
+    return lista.filter(i => (!filtroPlacaProb || i.placa === filtroPlacaProb) && (
+        filtroProblemas === 'todos' ? true :
+        filtroProblemas === 'concluidos' ? !i.aberto :
+        !i.aberto ? false :
+        filtroProblemas === 'alta' ? i.prioridade === 'Alta' :
+        filtroProblemas === 'semplano' ? i.status === 'Sem plano' :
+        filtroProblemas === 'atrasados' ? i.atrasado : true));
+}
+
+function renderizarProblemas() {
+    let alvo = document.getElementById('conteudo-problemas'); if (!alvo) return;
+    let lista = coletarProblemas(), ab = lista.filter(i => i.aberto);
+    let k = { total: ab.length, alta: ab.filter(i => i.prioridade === 'Alta').length, semPlano: ab.filter(i => i.status === 'Sem plano').length, atrasados: ab.filter(i => i.atrasado).length };
+    let vis = problemasFiltrados(lista);
+    let filtros = [['abertos', `Abertos (${k.total})`], ['alta', `Alta (${k.alta})`], ['semplano', `Sem plano (${k.semPlano})`], ['atrasados', `Atrasados (${k.atrasados})`], ['concluidos', `Concluídos (${lista.length - ab.length})`], ['todos', `Todos (${lista.length})`]];
+    let placas = [...new Set(lista.map(i => i.placa))].sort();
+    let grupos = {}; vis.forEach(i => (grupos[i.cat] = grupos[i.cat] || []).push(i));
+    let fmtBR = d => d ? d.split('-').reverse().join('/') : '';
+    let corpo = Object.keys(CAT_PROB).filter(c => grupos[c]).map(c => `
+        <div class="card grupo-prob"><h3 class="card-titulo"><i class="ph ${ICONE_PROB[c]}"></i> ${CAT_PROB[c]} <small>(${grupos[c].length})</small></h3>
+        ${grupos[c].map(i => {
+            let pl = i.plano, stCls = i.status === 'Concluído' ? 'ok' : (i.status === 'Sem plano' ? 'sem' : (i.status === 'Reaberto' ? 'reaberto' : 'and'));
+            return `<div class="item-prob pri-${i.prioridade === 'Alta' ? 'alta' : (i.prioridade === 'Média' ? 'media' : 'baixa')}">
+                <div class="item-prob-topo"><b class="placa-tag">${escHtml(i.placa)}</b><span class="pri-tag">${i.prioridade}</span><span class="st-tag st-${stCls}">${i.status}</span>${i.atrasado ? '<span class="st-tag st-atrasado">Atrasado</span>' : ''}</div>
+                <div class="item-prob-titulo">${escHtml(i.titulo)}</div>
+                ${i.detalhe ? `<div class="item-prob-det">${escHtml(i.detalhe)}</div>` : ''}
+                ${pl && pl.plano_acao ? `<div class="item-prob-plano"><b>Plano:</b> ${escHtml(pl.plano_acao)}<br><small>${pl.responsavel ? 'Resp.: ' + escHtml(pl.responsavel) + ' · ' : ''}${pl.data_prevista ? 'Prazo: ' + fmtBR(pl.data_prevista) : 'Sem prazo'}${pl.data_conclusao ? ' · Concluído em ' + fmtBR(pl.data_conclusao) : ''}</small></div>` : ''}
+                <button type="button" class="btn-plano" onclick="editarPlanoAcao('${escHtml(i.id)}')"><i class="ph ph-clipboard-text"></i> ${pl ? 'Editar plano de ação' : 'Criar plano de ação'}</button>
+            </div>`; }).join('')}
+        </div>`).join('');
+    alvo.innerHTML = `
+      <div class="kpis">
+        <div class="kpi"><small>Abertos</small><b>${k.total}</b><span class="var neutro">${new Set(ab.map(i => i.placa)).size} veículos</span></div>
+        <div class="kpi"><small>Prioridade alta</small><b style="color:var(--sem-verm)">${k.alta}</b><span class="var neutro">resolver primeiro</span></div>
+        <div class="kpi"><small>Sem plano</small><b style="color:#b45309">${k.semPlano}</b><span class="var ${k.atrasados ? 'sobe-ruim' : 'neutro'}">${k.atrasados} atrasado(s)</span></div>
+      </div>
+      <div class="card card-pontos"><h3 class="card-titulo"><i class="ph ph-lightbulb"></i> Pontos de melhoria</h3><ul>${pontosDeMelhoria(lista).map(d => `<li>${escHtml(d)}</li>`).join('')}</ul></div>
+      <button class="btn-principal btn-imprimir" onclick="gerarPdfProblemasApp()"><i class="ph ph-file-pdf"></i> Gerar PDF para impressão</button>
+      <div class="filtro-grupos">${filtros.map(f => `<button type="button" class="${f[0] === filtroProblemas ? 'ativo' : ''}" onclick="filtrarProblemas('${f[0]}')">${f[1]}</button>`).join('')}</div>
+      <select class="input-campo" style="margin-bottom:14px;" onchange="filtrarPlacaProblemas(this.value)"><option value="">Todos os veículos</option>${placas.map(p => `<option value="${p}" ${p === filtroPlacaProb ? 'selected' : ''}>${p}</option>`).join('')}</select>
+      ${corpo || `<div class="card"><p class="lista-alertas-vazia"><i class="ph-fill ph-check-circle" style="color:var(--sem-verde); font-size:30px; display:block; margin:0 auto 6px;"></i>Nenhum problema nesta lista.</p></div>`}
+      <p class="nota-gerente">Os problemas vêm do último checklist de cada veículo e da ficha técnica (óleos, tacógrafo, graxa, extintor, pneus e carrinhos/cones/calços). Quando o problema é resolvido no checklist ou na ficha, ele sai sozinho daqui.</p>`;
+}
+
+async function editarPlanoAcao(id) {
+    let i = coletarProblemas().find(x => x.id === id); if (!i) return;
+    let pl = i.plano || {}; let sug = SUGESTAO_PROB[i.cat] || '';
+    let amanha = new Date(); amanha.setDate(amanha.getDate() + (i.prioridade === 'Alta' ? 2 : 7));
+    let r = await Swal.fire({
+        title: `${i.placa} · Plano de ação`, focusConfirm: false, showCancelButton: true, confirmButtonText: 'Salvar', cancelButtonText: 'Cancelar', confirmButtonColor: '#1a4d2e',
+        html: `<div style="text-align:left; font-size:13px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:10px; margin-bottom:6px;"><b>${escHtml(i.titulo)}</b>${i.detalhe ? `<br><span style="color:#6b7280">${escHtml(i.detalhe)}</span>` : ''}<br><span style="color:${i.prioridade === 'Alta' ? '#dc2626' : '#b45309'}; font-weight:700;">Prioridade ${i.prioridade}</span></div>
+            <label class="swal-campo-label">O que vai ser feito (plano de ação)</label>
+            <textarea id="sw-plano" class="swal2-textarea swal-campo" rows="4" placeholder="${escHtml(sug)}">${escHtml(pl.plano_acao || '')}</textarea>
+            <button type="button" class="btn-sugestao-km" onclick="document.getElementById('sw-plano').value = ${escHtml(JSON.stringify(sug))};">Usar sugestão</button>
+            <label class="swal-campo-label">Responsável</label><input id="sw-resp" class="swal2-input swal-campo" value="${escHtml(pl.responsavel || '')}" placeholder="Quem vai resolver">
+            <label class="swal-campo-label">Data de realização (prazo)</label><input id="sw-prazo" type="date" class="swal2-input swal-campo" value="${pl.data_prevista || isoData(amanha)}">
+            <label class="swal-campo-label">Status</label><select id="sw-status" class="swal2-select swal-campo" style="display:block;">${['Pendente', 'Em andamento', 'Concluído'].map(s => `<option ${((pl.status || 'Pendente') === s) ? 'selected' : ''}>${s}</option>`).join('')}</select>
+            ${['oleo', 'tacografo', 'graxa', 'extintor'].includes(i.cat) ? '<p style="font-size:11px; color:#6b7280; margin:8px 0 0;">Depois de resolver, atualize também a data/KM em Alertas da Frota: assim o problema sai sozinho.</p>' : ''}`,
+        preConfirm: () => {
+            let plano = document.getElementById('sw-plano').value.trim();
+            if (!plano) { Swal.showValidationMessage('Escreva o plano de ação (ou toque em "Usar sugestão")'); return false; }
+            return { plano_acao: plano, responsavel: document.getElementById('sw-resp').value.trim(), data_prevista: document.getElementById('sw-prazo').value, status: document.getElementById('sw-status').value };
+        }
+    });
+    if (!r.isConfirmed || !r.value) return;
+    let novo = Object.assign({ id: i.id, placa: i.placa, categoria: i.categoria, problema: i.titulo + (i.detalhe ? ' - ' + i.detalhe : ''), prioridade: i.prioridade }, r.value);
+    if (!(await adicionarNaFila(Object.assign({ acao: 'salvar_plano_acao', usuario: window.usuarioLogado }, novo)))) return;
+    window.planos = window.planos || {};
+    window.planos[i.id] = Object.assign({}, pl, novo, { atualizado_em: new Date().toISOString(), data_conclusao: novo.status === 'Concluído' ? (pl.data_conclusao || isoData(new Date())) : '' });
+    salvarCacheLocal(); renderizarProblemas(); renderizarTileProblemas();
+    mostrarToast("<i class='ph ph-check-circle'></i> Plano de ação salvo", "#059669");
+}
+
+async function gerarPdfProblemasApp() {
+    if (!navigator.onLine) { Swal.fire('Sem internet', 'Para gerar o PDF é preciso internet.', 'warning'); return; }
+    let lista = coletarProblemas(), vis = problemasFiltrados(lista);
+    if (!vis.length) { Swal.fire('Nada para imprimir', 'Não há problemas nesta lista.', 'info'); return; }
+    let janela = window.open('', '_blank');
+    if (janela) janela.document.write('<p style="font-family:sans-serif;padding:20px">Gerando o PDF dos problemas...</p>');
+    let nomesFiltro = { abertos: 'Problemas abertos', alta: 'Prioridade alta', semplano: 'Sem plano de ação', atrasados: 'Planos atrasados', concluidos: 'Concluídos', todos: 'Todos' };
+    let ab = lista.filter(i => i.aberto);
+    let fmtBR = d => d ? d.split('-').reverse().join('/') : '';
+    let dados = { acao: 'pdf_problemas', usuario: window.usuarioLogado, filtro: nomesFiltro[filtroProblemas] + (filtroPlacaProb ? ' · ' + filtroPlacaProb : ''),
+        resumo: { total: vis.length, alta: vis.filter(i => i.prioridade === 'Alta').length, veiculos: new Set(vis.map(i => i.placa)).size, semPlano: vis.filter(i => i.status === 'Sem plano').length, atrasados: vis.filter(i => i.atrasado).length },
+        pontos: pontosDeMelhoria(lista),
+        itens: vis.map(i => ({ placa: i.placa, categoria: i.categoria, titulo: i.titulo, detalhe: i.detalhe, prioridade: i.prioridade, plano: i.plano ? i.plano.plano_acao : '',
+                               responsavel: i.plano ? i.plano.responsavel : '', prazo: i.plano ? fmtBR(i.plano.data_prevista) : '', status: i.status })) };
+    Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading && Swal.showLoading() });
+    try {
+        let r = await chamarAPI(dados);
+        if (!r.sucesso) throw new Error(r.erro || 'Falha ao gerar');
+        Swal.close();
+        if (janela) janela.location.href = r.link_pdf;
+        else Swal.fire({ title: 'PDF pronto', html: `<a href="${r.link_pdf}" target="_blank" style="font-weight:700">Abrir o PDF para imprimir</a>`, icon: 'success' });
+    } catch (e) {
+        if (janela) janela.close();
+        Swal.fire('Não foi possível gerar', escHtml(String(e.message || e).indexOf('não encontrada') >= 0 ? 'O Apps Script ainda está na versão antiga: publique uma Nova versão.' : (e.message || 'Erro')), 'error');
+    }
+}
