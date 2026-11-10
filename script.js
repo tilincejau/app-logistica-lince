@@ -5,8 +5,8 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
 const APP_VERSAO = "2.1";
-const APP_BUILD = "v21";
-const SERVIDOR_MINIMO = "v17"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
+const APP_BUILD = "v22";
+const SERVIDOR_MINIMO = "v18"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
@@ -55,7 +55,7 @@ function salvarCacheLocal() {
             estoque_pecas: window.estoquePecas, motoristas: window.listaMotoristas, historico: window.historicoChecklist,
             gasto_mes_ant_geral: (window.resumoGerente || {}).gasto_mes_ant_geral, arla_mes_geral: (window.resumoGerente || {}).arla_mes_geral,
             media_frota_mes: (window.resumoGerente || {}).media_frota_mes, gerado_em: (window.resumoGerente || {}).gerado_em,
-            ultimos_checklists: window.ultimosChecklists || {}, planos: window.planos || {}
+            ultimos_checklists: window.ultimosChecklists || {}, planos: window.planos || {}, mensal: window.mensal || {}
         }));
     } catch (e) { console.warn("Cache local não salvo (sem espaço):", e); }
 }
@@ -299,6 +299,7 @@ function atualizarVariaveisGlobais(res) {
     mostrarVersoes();
     window.ultimosChecklists = res.ultimos_checklists || window.ultimosChecklists || {};
     window.planos = res.planos || window.planos || {};
+    window.mensal = res.mensal || window.mensal || {};
     window.resumoGerente = { gasto_mes_ant_geral: res.gasto_mes_ant_geral || 0, arla_mes_geral: res.arla_mes_geral || 0, media_frota_mes: res.media_frota_mes || 0, gerado_em: res.gerado_em || "" };
 
     registrarCategoriasExtras();
@@ -1319,58 +1320,121 @@ function abrirPainelGerente() {
 }
 function filtrarGrupoGerente(g) { filtroGrupoGerente = g; renderizarPainelGerente(); }
 
+let mesGerente = ''; // 'aaaa-mm' escolhido no filtro (vazio = mês atual)
+function mudarMesGerente(m) { mesGerente = m; renderizarPainelGerente(); }
+const NOMES_MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+function nomeMes(k) { let [a, m] = k.split('-'); return `${NOMES_MES[+m - 1]}/${a}`; }
+function mesAnteriorDe(k) { let [a, m] = k.split('-').map(Number); m--; if (!m) { m = 12; a--; } return `${a}-${String(m).padStart(2, '0')}`; }
+function chaveMesDe(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
+const fmtKmL = v => v ? v.toFixed(2).replace('.', ',') : '—';
+
 function renderizarPainelGerente() {
     let alvo = document.getElementById('conteudo-gerente'); if (!alvo) return;
-    let r = window.resumoGerente || {};
+    let r = window.resumoGerente || {}, M = window.mensal || {};
     let ger = r.gerado_em ? new Date(r.gerado_em) : null;
     document.getElementById('gerente-atualizado').textContent = ger && !isNaN(ger) ? `Dados de ${fmtData(ger)} às ${String(ger.getHours()).padStart(2, '0')}:${String(ger.getMinutes()).padStart(2, '0')}` : '';
-    let diaMes = new Date().getDate(), diasMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-    let projecao = window.gastoMesGeral ? Math.round(window.gastoMesGeral / diaMes * diasMes) : 0;
+    let atual = chaveMesDe(new Date());
+    let meses = [...new Set(Object.keys(M).concat([atual]))].sort().reverse();
+    let sel = mesGerente && meses.includes(mesGerente) ? mesGerente : atual, ant = mesAnteriorDe(sel), ehAtual = sel === atual;
+    let D = M[sel] || { diesel: 0, arla: 0, veiculos: {}, motoristas: {}, checklists: {} }, A = M[ant] || { diesel: 0, arla: 0, veiculos: {}, motoristas: {}, checklists: {} };
+    let somaKm = 0, somaLp = 0; Object.values(D.veiculos).forEach(v => { somaKm += v.km || 0; somaLp += v.lp || 0; });
+    let somaKmA = 0, somaLpA = 0; Object.values(A.veiculos).forEach(v => { somaKmA += v.km || 0; somaLpA += v.lp || 0; });
+    let mediaFrota = somaLp ? somaKm / somaLp : 0, mediaFrotaA = somaLpA ? somaKmA / somaLpA : 0;
+    let hoje = new Date(), diaMes = hoje.getDate(), diasMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
+    let projecao = ehAtual && D.diesel ? Math.round(D.diesel / diaMes * diasMes) : 0;
+    let diasTanque = ehAtual && D.diesel && window.estoqueDiesel > 0 ? Math.floor(window.estoqueDiesel / (D.diesel / diaMes)) : 0;
 
-    // Checklists da semana
     let ativos = [...new Set(TOCOS.concat(TRUCKS, CAVALOS, CARROS, EMPILHADEIRAS))].sort();
+    // Checklists da semana (só no mês atual)
     let ini = inicioDaSemana(); let feitos = new Set();
     (window.historicoChecklist || []).forEach(h => { if (dataDoHistorico(h) >= ini) feitos.add(String(h.placa).trim().toUpperCase()); });
     let pend = ativos.filter(p => !feitos.has(p)); let qtdFeitos = ativos.length - pend.length;
     let pct = ativos.length ? Math.round(qtdFeitos / ativos.length * 100) : 0;
+    // Checklists do mês escolhido
+    let chkMes = D.checklists || {}; let totChk = ativos.reduce((t, p) => t + (chkMes[p] || 0), 0);
+    let semChkMes = ativos.filter(p => !chkMes[p]);
+    let semanasMes = ehAtual ? Math.max(1, Math.ceil(diaMes / 7)) : Math.round(new Date(+sel.slice(0, 4), +sel.slice(5), 0).getDate() / 7);
+    let esperado = ativos.length * semanasMes, pctMes = esperado ? Math.min(100, Math.round(totChk / esperado * 100)) : 0;
 
-    // Consumo
+    // Consumo por veículo
     const grupos = { todos: 'Todos', caminhoes: 'Caminhões', cavalos: 'Cavalos', utilitarios: 'Utilitários' };
     const doGrupo = p => (TOCOS.includes(p) || TRUCKS.includes(p)) ? 'caminhoes' : (CAVALOS.includes(p) ? 'cavalos' : (CARROS.includes(p) ? 'utilitarios' : ''));
     let linhas = ativos.filter(p => doGrupo(p) && window.frota[p]).map(p => {
-        let v = window.frota[p], c = v.consumo || { mes: {}, ant: {} };
-        let mes = c.mes || {}, ant = c.ant || {};
-        let comparavel = (mes.n || 0) >= 3 && (ant.n || 0) >= 3; // só compara com pelo menos 3 abastecimentos em cada mês
-        let queda = comparavel && mes.media && ant.media ? (mes.media - ant.media) / ant.media : 0;
-        return { placa: p, grupo: doGrupo(p), tipo: v.tipo || '', media: mes.media || 0, mediaAnt: comparavel ? (ant.media || 0) : 0, km: mes.km || 0, litros: v.gasto_mes || 0, arla: v.arla_mes || 0, queda: queda };
-    }).filter(l => filtroGrupoGerente === 'todos' || l.grupo === filtroGrupoGerente)
+        let v = D.veiculos[p] || {}, va = A.veiculos[p] || {};
+        let media = v.lp ? v.km / v.lp : 0, mediaA = va.lp ? va.km / va.lp : 0;
+        let comparavel = (v.n || 0) >= 3 && (va.n || 0) >= 3;
+        let queda = comparavel && media && mediaA ? (media - mediaA) / mediaA : 0;
+        return { placa: p, grupo: doGrupo(p), tipo: (window.frota[p] || {}).tipo || '', media, mediaAnt: comparavel ? mediaA : 0, km: v.km || 0, litros: v.litros || 0, arla: v.arla || 0, queda };
+    }).filter(l => (filtroGrupoGerente === 'todos' || l.grupo === filtroGrupoGerente) && (l.litros || l.km))
       .sort((a, b) => ((a.queda <= -0.2) === (b.queda <= -0.2) ? 0 : (a.queda <= -0.2 ? -1 : 1)) || (b.litros - a.litros));
-
     let tabela = linhas.length ? `<table class="tabela-consumo"><thead><tr><th>Veículo</th><th class="num">km/L</th><th class="num">Litros</th><th class="num">KM</th></tr></thead><tbody>${linhas.map(l => `
         <tr class="${l.queda <= -0.2 ? 'alerta-consumo' : ''}"><td><b>${escHtml(l.placa)}</b><small>${escHtml(l.tipo)}</small></td>
-        <td class="num"><b>${l.media ? l.media.toFixed(2).replace('.', ',') : '—'}</b><small>${variacao(l.media, l.mediaAnt, false)}</small></td>
+        <td class="num"><b>${fmtKmL(l.media)}</b><small>${variacao(l.media, l.mediaAnt, false)}</small></td>
         <td class="num">${fmtKm(l.litros)}${l.arla ? `<small>+${fmtKm(l.arla)} Arla</small>` : ''}</td>
         <td class="num">${l.km ? fmtKm(l.km) : '—'}</td></tr>`).join('')}</tbody></table>` : '<p class="lista-alertas-vazia">Nenhum abastecimento neste mês.</p>';
 
+    // Motoristas (km/L com pelo menos 3 abastecimentos no mês)
+    // Motoristas: separados por tipo de veículo (cavalo faz ~2 km/L, caminhão ~4), seguindo o filtro Todos/Caminhões/Cavalos/Utilitários
+    const NOME_GRUPO = { caminhoes: 'Caminhões', cavalos: 'Cavalos', utilitarios: 'Utilitários' };
+    let gruposMot = filtroGrupoGerente === 'todos' ? ['caminhoes', 'cavalos', 'utilitarios'] : [filtroGrupoGerente];
+    let mots = Object.entries(D.motoristas || {}).map(([chave, m]) => { let [nome, g] = chave.split('|'); return { nome, grupo: g || 'caminhoes', media: m.lp ? m.km / m.lp : 0, km: m.km, litros: m.litros, n: m.n }; })
+        .filter(m => m.n >= 3 && m.media && gruposMot.includes(m.grupo));
+    let medGrupo = {}; gruposMot.forEach(g => { let l = mots.filter(m => m.grupo === g); medGrupo[g] = l.length ? l.reduce((t, m) => t + m.media, 0) / l.length : 0; });
+    mots.sort((a, b) => (gruposMot.indexOf(a.grupo) - gruposMot.indexOf(b.grupo)) || (b.media - a.media));
+    let tabMot = mots.length ? gruposMot.filter(g => mots.some(m => m.grupo === g)).map(g => { let l = mots.filter(m => m.grupo === g); return `<p class="grupo-imp" style="margin-top:10px;">${NOME_GRUPO[g]} · média ${fmtKmL(medGrupo[g])} km/L</p><table class="tabela-consumo"><thead><tr><th>Motorista</th><th class="num">km/L</th><th class="num">KM</th><th class="num">Litros</th></tr></thead><tbody>${l.map((m, i) => `
+        <tr class="${m.media < medGrupo[g] * 0.85 ? 'alerta-consumo' : ''}"><td><b>${i + 1}º ${escHtml(m.nome)}</b></td><td class="num"><b>${fmtKmL(m.media)}</b></td><td class="num">${fmtKm(m.km)}</td><td class="num">${fmtKm(m.litros)}</td></tr>`).join('')}</tbody></table>`; }).join('') : '<p class="lista-alertas-vazia">Sem dados suficientes neste mês (mínimo 3 abastecimentos por motorista).</p>';
+
+    // Planos de ação do mês
+    let planos = Object.values(window.planos || {});
+    let criados = planos.filter(p => p.criado_em && chaveMesDe(new Date(p.criado_em)) === sel).length;
+    let concl = planos.filter(p => p.status === 'Concluído' && String(p.data_conclusao || '').slice(0, 7) === sel);
+    let tempos = concl.filter(p => p.criado_em).map(p => Math.max(0, Math.round((new Date(p.data_conclusao + 'T12:00:00') - new Date(p.criado_em)) / 86400000)));
+    let tempoMedio = tempos.length ? Math.round(tempos.reduce((a, b) => a + b, 0) / tempos.length) : null;
+    let probs = coletarProblemas(), abertos = probs.filter(i => i.aberto);
+
     alvo.innerHTML = `
+      <div class="filtro-mes"><label class="info-label" style="margin:0;"><i class="ph ph-calendar-blank"></i> Mês:</label>
+        <select class="input-campo" style="margin:0;" onchange="mudarMesGerente(this.value)">${meses.map(m => `<option value="${m}" ${m === sel ? 'selected' : ''}>${nomeMes(m)}${m === atual ? ' (atual)' : ''}</option>`).join('')}</select></div>
       <div class="kpis">
-        <div class="kpi"><small>Diesel no mês</small><b>${fmtKm(window.gastoMesGeral || 0)} L</b>${variacao(window.gastoMesGeral, r.gasto_mes_ant_geral, true)}</div>
-        <div class="kpi"><small>Arla no mês</small><b>${fmtKm(r.arla_mes_geral || 0)} L</b><span class="var neutro">${projecao ? 'proj. diesel ' + fmtKm(projecao) + ' L' : '&nbsp;'}</span></div>
-        <div class="kpi"><small>Média frota</small><b>${r.media_frota_mes ? String(r.media_frota_mes.toFixed(2)).replace('.', ',') : '—'}</b><span class="var neutro">km/L no mês</span></div>
+        <div class="kpi"><small>Diesel</small><b>${fmtKm(D.diesel || 0)} L</b>${variacao(D.diesel, A.diesel, true)}</div>
+        <div class="kpi"><small>Arla</small><b>${fmtKm(D.arla || 0)} L</b>${variacao(D.arla, A.arla, true)}</div>
+        <div class="kpi"><small>Média frota</small><b>${fmtKmL(mediaFrota)}</b>${variacao(mediaFrota, mediaFrotaA, false)}</div>
       </div>
+      ${ehAtual ? `<div class="kpis">
+        <div class="kpi"><small>Tanque diesel</small><b>${fmtKm(window.estoqueDiesel || 0)} L</b><span class="var ${diasTanque && diasTanque < 7 ? 'sobe-ruim' : 'neutro'}">${diasTanque ? '≈ ' + diasTanque + ' dias' : '&nbsp;'}</span></div>
+        <div class="kpi"><small>Tanque Arla</small><b>${fmtKm(window.estoqueArla || 0)} L</b><span class="var neutro">&nbsp;</span></div>
+        <div class="kpi"><small>Projeção diesel</small><b>${projecao ? fmtKm(projecao) + ' L' : '—'}</b><span class="var neutro">fim do mês</span></div>
+      </div>` : ''}
       <div class="card">
+        <h3 class="card-titulo"><i class="ph ph-warning-octagon"></i> Problemas e planos de ação</h3>
+        <div class="mini-kpis"><div><b style="color:var(--sem-verm)">${abertos.length}</b><small>abertos agora</small></div><div><b style="color:#b45309">${abertos.filter(i => i.atrasado).length}</b><small>planos atrasados</small></div><div><b>${criados}</b><small>planos criados em ${NOMES_MES[+sel.slice(5) - 1]}</small></div><div><b style="color:var(--sem-verde)">${concl.length}</b><small>resolvidos em ${NOMES_MES[+sel.slice(5) - 1]}</small></div></div>
+        ${tempoMedio !== null ? `<p class="nota-gerente" style="margin-top:0;">Tempo médio para resolver: <b>${tempoMedio} dia${tempoMedio === 1 ? '' : 's'}</b></p>` : ''}
+        <button type="button" class="btn-principal" style="margin:10px 0 0;" onclick="abrirProblemas()"><i class="ph ph-warning-octagon"></i> Abrir Problemas Encontrados</button>
+      </div>
+      ${ehAtual ? `<div class="card">
         <h3 class="card-titulo"><i class="ph ph-check-square"></i> Checklists da semana</h3>
         <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:600;"><span>${qtdFeitos} de ${ativos.length} feitos</span><span style="color:${pct === 100 ? 'var(--sem-verde)' : 'var(--text-muted)'}">${pct}%</span></div>
         <div class="barra-prog"><span style="width:${pct}%"></span></div>
         ${pend.length ? `<p class="info-label" style="margin:0 0 8px;">Faltam (toque para fazer):</p><div class="chips-pend">${pend.map(p => `<button type="button" class="chip-pend" onclick="fazerChecklistDe('${escHtml(p)}')">${escHtml(p)}</button>`).join('')}</div>` : '<div class="chips-pend"><span class="chip-pend ok">✓ Todos os veículos fizeram o checklist</span></div>'}
         <button type="button" class="btn-principal btn-imprimir" style="margin:14px 0 0;" onclick="abrirModalImpressao()"><i class="ph ph-printer"></i> Imprimir Checklists</button>
         <p class="nota-gerente">A semana começa no domingo.</p>
+      </div>` : ''}
+      <div class="card">
+        <h3 class="card-titulo"><i class="ph ph-calendar-check"></i> Checklists em ${nomeMes(sel)}</h3>
+        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:600;"><span>${totChk} feitos (esperado ≈ ${esperado}: 1 por veículo por semana)</span><span>${pctMes}%</span></div>
+        <div class="barra-prog"><span style="width:${pctMes}%"></span></div>
+        ${semChkMes.length ? `<p class="info-label" style="margin:0 0 8px;">Sem nenhum checklist no mês:</p><div class="chips-pend">${semChkMes.map(p => `<span class="chip-pend">${escHtml(p)}</span>`).join('')}</div>` : '<div class="chips-pend"><span class="chip-pend ok">✓ Todos os veículos têm checklist no mês</span></div>'}
       </div>
       <div class="card">
-        <h3 class="card-titulo"><i class="ph ph-gas-pump"></i> Consumo por veículo (mês)</h3>
+        <h3 class="card-titulo"><i class="ph ph-gas-pump"></i> Consumo por veículo</h3>
         <div class="filtro-grupos">${Object.keys(grupos).map(g => `<button type="button" class="${g === filtroGrupoGerente ? 'ativo' : ''}" onclick="filtrarGrupoGerente('${g}')">${grupos[g]}</button>`).join('')}</div>
         ${tabela}
-        <p class="nota-gerente">km/L = km rodados entre um abastecimento e outro ÷ litros. Linhas em vermelho: média caiu 20% ou mais em relação ao mês anterior (só compara quando há 3+ abastecimentos em cada mês). Saltos acima de 3.000 km são ignorados. Abastecimentos não lançados ou tanque não completado distorcem a média.</p>
+        <p class="nota-gerente">Comparado com ${nomeMes(ant)}. km/L = km rodados entre um abastecimento e outro ÷ litros. Linhas em vermelho: média caiu 20% ou mais (só compara quando há 3+ abastecimentos em cada mês). Saltos acima de 3.000 km são ignorados.</p>
+      </div>
+      <div class="card">
+        <h3 class="card-titulo"><i class="ph ph-steering-wheel"></i> Consumo por motorista</h3>
+        ${tabMot}
+        <p class="nota-gerente">Ranking pela média km/L dos abastecimentos de cada motorista no mês. Separado por tipo de veículo. Em vermelho: 15% abaixo da média do grupo — vale uma conversa ou acompanhamento. Use os botões Todos/Caminhões/Cavalos do consumo para filtrar.</p>
       </div>
       <div class="card">
         <h3 class="card-titulo"><i class="ph ph-envelope-simple"></i> Aviso de vencimentos</h3>
