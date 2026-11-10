@@ -5,7 +5,7 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
 const APP_VERSAO = "2.1";
-const APP_BUILD = "v22";
+const APP_BUILD = "v23";
 const SERVIDOR_MINIMO = "v18"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
@@ -1708,7 +1708,7 @@ function coletarProblemas() {
         i.status = pl ? (pl.status || 'Pendente') : 'Sem plano';
         // problema do checklist que voltou a aparecer num checklist DEPOIS de concluído
         if (pl && pl.status === 'Concluído' && i.ts && pl.atualizado_em && i.ts > new Date(pl.atualizado_em).getTime()) i.status = 'Reaberto';
-        i.atrasado = !!(pl && pl.data_prevista && pl.data_prevista < hoje && i.status !== 'Concluído');
+        i.atrasado = !!(pl && pl.data_prevista && pl.data_prevista !== PRAZO_SEM_DEF && pl.data_prevista < hoje && i.status !== 'Concluído');
         i.aberto = i.status !== 'Concluído';
     });
     const peso = { Alta: 0, 'Média': 1, Baixa: 2 }, ordemCat = Object.keys(CAT_PROB);
@@ -1770,7 +1770,7 @@ function renderizarProblemas() {
     let filtros = [['abertos', `Abertos (${k.total})`], ['alta', `Alta (${k.alta})`], ['semplano', `Sem plano (${k.semPlano})`], ['atrasados', `Atrasados (${k.atrasados})`], ['concluidos', `Concluídos (${lista.length - ab.length})`], ['todos', `Todos (${lista.length})`]];
     let placas = [...new Set(lista.map(i => i.placa))].sort();
     let grupos = {}; vis.forEach(i => (grupos[i.cat] = grupos[i.cat] || []).push(i));
-    let fmtBR = d => d ? d.split('-').reverse().join('/') : '';
+    let fmtBR = d => d === PRAZO_SEM_DEF ? PRAZO_SEM_DEF : (d ? d.split('-').reverse().join('/') : '');
     let corpo = Object.keys(CAT_PROB).filter(c => grupos[c]).map(c => `
         <div class="card grupo-prob"><h3 class="card-titulo"><i class="ph ${ICONE_PROB[c]}"></i> ${CAT_PROB[c]} <small>(${grupos[c].length})</small></h3>
         ${grupos[c].map(i => {
@@ -1797,6 +1797,7 @@ function renderizarProblemas() {
       <p class="nota-gerente">Os problemas vêm do último checklist de cada veículo e da ficha técnica (óleos, tacógrafo, graxa, extintor, pneus e carrinhos/cones/calços). Quando o problema é resolvido no checklist ou na ficha, ele sai sozinho daqui.</p>`;
 }
 
+const PRAZO_SEM_DEF = 'Sem definição'; // ex.: motor quebrado aguardando peças (prazo indeterminado)
 async function editarPlanoAcao(id) {
     let i = coletarProblemas().find(x => x.id === id); if (!i) return;
     let pl = i.plano || {}; let sug = SUGESTAO_PROB[i.cat] || '';
@@ -1808,13 +1809,14 @@ async function editarPlanoAcao(id) {
             <textarea id="sw-plano" class="swal2-textarea swal-campo" rows="4" placeholder="${escHtml(sug)}">${escHtml(pl.plano_acao || '')}</textarea>
             <button type="button" class="btn-sugestao-km" onclick="document.getElementById('sw-plano').value = ${escHtml(JSON.stringify(sug))};">Usar sugestão</button>
             <label class="swal-campo-label">Responsável</label><input id="sw-resp" class="swal2-input swal-campo" value="${escHtml(pl.responsavel || RESPONSAVEL_PADRAO)}" placeholder="Quem vai resolver">
-            <label class="swal-campo-label">Data de realização (prazo)</label><input id="sw-prazo" type="date" class="swal2-input swal-campo" value="${pl.data_prevista || isoData(amanha)}">
+            <label class="swal-campo-label">Data de realização (prazo)</label><input id="sw-prazo" type="date" class="swal2-input swal-campo" value="${pl.data_prevista && pl.data_prevista !== PRAZO_SEM_DEF ? pl.data_prevista : isoData(amanha)}" ${pl.data_prevista === PRAZO_SEM_DEF ? 'disabled style="opacity:.4"' : ''}>
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin:6px 0 0; cursor:pointer;"><input id="sw-semdef" type="checkbox" ${pl.data_prevista === PRAZO_SEM_DEF ? 'checked' : ''} onchange="let d=document.getElementById('sw-prazo'); d.disabled=this.checked; d.style.opacity=this.checked?'.4':'1';"> <b>Sem definição</b> <span style="color:#6b7280">(ex.: aguardando peças)</span></label>
             <label class="swal-campo-label">Status</label><select id="sw-status" class="swal2-select swal-campo" style="display:block;">${['Pendente', 'Em andamento', 'Concluído'].map(s => `<option ${((pl.status || 'Pendente') === s) ? 'selected' : ''}>${s}</option>`).join('')}</select>
             ${['oleo', 'tacografo', 'graxa', 'extintor'].includes(i.cat) ? '<p style="font-size:11px; color:#6b7280; margin:8px 0 0;">Depois de resolver, atualize também a data/KM em Alertas da Frota: assim o problema sai sozinho.</p>' : ''}`,
         preConfirm: () => {
             let plano = document.getElementById('sw-plano').value.trim();
             if (!plano) { Swal.showValidationMessage('Escreva o plano de ação (ou toque em "Usar sugestão")'); return false; }
-            return { plano_acao: plano, responsavel: document.getElementById('sw-resp').value.trim(), data_prevista: document.getElementById('sw-prazo').value, status: document.getElementById('sw-status').value };
+            return { plano_acao: plano, responsavel: document.getElementById('sw-resp').value.trim(), data_prevista: document.getElementById('sw-semdef').checked ? PRAZO_SEM_DEF : document.getElementById('sw-prazo').value, status: document.getElementById('sw-status').value };
         }
     });
     if (!r.isConfirmed || !r.value) return;
@@ -1834,7 +1836,7 @@ async function gerarPdfProblemasApp() {
     if (janela) janela.document.write('<p style="font-family:sans-serif;padding:20px">Gerando o PDF dos problemas...</p>');
     let nomesFiltro = { abertos: 'Problemas abertos', alta: 'Prioridade alta', semplano: 'Sem plano de ação', atrasados: 'Planos atrasados', concluidos: 'Concluídos', todos: 'Todos' };
     let ab = lista.filter(i => i.aberto);
-    let fmtBR = d => d ? d.split('-').reverse().join('/') : '';
+    let fmtBR = d => d === PRAZO_SEM_DEF ? PRAZO_SEM_DEF : (d ? d.split('-').reverse().join('/') : '');
     let dados = { acao: 'pdf_problemas', usuario: window.usuarioLogado, filtro: nomesFiltro[filtroProblemas] + (filtroPlacaProb ? ' · ' + filtroPlacaProb : ''),
         resumo: { total: vis.length, alta: vis.filter(i => i.prioridade === 'Alta').length, veiculos: new Set(vis.map(i => i.placa)).size, semPlano: vis.filter(i => i.status === 'Sem plano').length, atrasados: vis.filter(i => i.atrasado).length },
         pontos: pontosDeMelhoria(lista),
