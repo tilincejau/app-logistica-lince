@@ -5,7 +5,7 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
 const APP_VERSAO = "2.1";
-const APP_BUILD = "v20";
+const APP_BUILD = "v21";
 const SERVIDOR_MINIMO = "v17"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
@@ -1575,6 +1575,7 @@ const SUGESTAO_PROB = {
     obs: 'Conversar com o motorista, avaliar o ponto relatado e definir a solução.'
 };
 let filtroProblemas = 'abertos'; let filtroPlacaProb = '';
+const RESPONSAVEL_PADRAO = 'Antonio Fernando Gimenez'; // quem resolve os problemas (já vem preenchido no plano de ação)
 
 function chkOk(v) {
     v = String(v == null ? '' : v).trim().toUpperCase();
@@ -1742,7 +1743,7 @@ async function editarPlanoAcao(id) {
             <label class="swal-campo-label">O que vai ser feito (plano de ação)</label>
             <textarea id="sw-plano" class="swal2-textarea swal-campo" rows="4" placeholder="${escHtml(sug)}">${escHtml(pl.plano_acao || '')}</textarea>
             <button type="button" class="btn-sugestao-km" onclick="document.getElementById('sw-plano').value = ${escHtml(JSON.stringify(sug))};">Usar sugestão</button>
-            <label class="swal-campo-label">Responsável</label><input id="sw-resp" class="swal2-input swal-campo" value="${escHtml(pl.responsavel || '')}" placeholder="Quem vai resolver">
+            <label class="swal-campo-label">Responsável</label><input id="sw-resp" class="swal2-input swal-campo" value="${escHtml(pl.responsavel || RESPONSAVEL_PADRAO)}" placeholder="Quem vai resolver">
             <label class="swal-campo-label">Data de realização (prazo)</label><input id="sw-prazo" type="date" class="swal2-input swal-campo" value="${pl.data_prevista || isoData(amanha)}">
             <label class="swal-campo-label">Status</label><select id="sw-status" class="swal2-select swal-campo" style="display:block;">${['Pendente', 'Em andamento', 'Concluído'].map(s => `<option ${((pl.status || 'Pendente') === s) ? 'selected' : ''}>${s}</option>`).join('')}</select>
             ${['oleo', 'tacografo', 'graxa', 'extintor'].includes(i.cat) ? '<p style="font-size:11px; color:#6b7280; margin:8px 0 0;">Depois de resolver, atualize também a data/KM em Alertas da Frota: assim o problema sai sozinho.</p>' : ''}`,
@@ -1774,7 +1775,7 @@ async function gerarPdfProblemasApp() {
         resumo: { total: vis.length, alta: vis.filter(i => i.prioridade === 'Alta').length, veiculos: new Set(vis.map(i => i.placa)).size, semPlano: vis.filter(i => i.status === 'Sem plano').length, atrasados: vis.filter(i => i.atrasado).length },
         pontos: pontosDeMelhoria(lista),
         itens: vis.map(i => ({ placa: i.placa, categoria: i.categoria, titulo: i.titulo, detalhe: i.detalhe, prioridade: i.prioridade, plano: i.plano ? i.plano.plano_acao : '',
-                               responsavel: i.plano ? i.plano.responsavel : '', prazo: i.plano ? fmtBR(i.plano.data_prevista) : '', status: i.status })) };
+                               responsavel: (i.plano && i.plano.responsavel) || RESPONSAVEL_PADRAO, prazo: i.plano ? fmtBR(i.plano.data_prevista) : '', status: i.status })) };
     Swal.fire({ title: 'Gerando PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading && Swal.showLoading() });
     try {
         let r = await chamarAPI(dados);
