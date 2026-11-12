@@ -5,7 +5,7 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
 const APP_VERSAO = "2.1";
-const APP_BUILD = "v23";
+const APP_BUILD = "v24";
 const SERVIDOR_MINIMO = "v18"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
@@ -1328,14 +1328,12 @@ function mesAnteriorDe(k) { let [a, m] = k.split('-').map(Number); m--; if (!m) 
 function chaveMesDe(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
 const fmtKmL = v => v ? v.toFixed(2).replace('.', ',') : '—';
 
-function renderizarPainelGerente() {
-    let alvo = document.getElementById('conteudo-gerente'); if (!alvo) return;
-    let r = window.resumoGerente || {}, M = window.mensal || {};
-    let ger = r.gerado_em ? new Date(r.gerado_em) : null;
-    document.getElementById('gerente-atualizado').textContent = ger && !isNaN(ger) ? `Dados de ${fmtData(ger)} às ${String(ger.getHours()).padStart(2, '0')}:${String(ger.getMinutes()).padStart(2, '0')}` : '';
+/* Números do Painel do Gerente para um mês (usado na tela e no relatório PDF de governança) */
+function calcPainel(selPedido, filtro) {
+    let M = window.mensal || {};
     let atual = chaveMesDe(new Date());
     let meses = [...new Set(Object.keys(M).concat([atual]))].sort().reverse();
-    let sel = mesGerente && meses.includes(mesGerente) ? mesGerente : atual, ant = mesAnteriorDe(sel), ehAtual = sel === atual;
+    let sel = selPedido && meses.includes(selPedido) ? selPedido : atual, ant = mesAnteriorDe(sel), ehAtual = sel === atual;
     let D = M[sel] || { diesel: 0, arla: 0, veiculos: {}, motoristas: {}, checklists: {} }, A = M[ant] || { diesel: 0, arla: 0, veiculos: {}, motoristas: {}, checklists: {} };
     let somaKm = 0, somaLp = 0; Object.values(D.veiculos).forEach(v => { somaKm += v.km || 0; somaLp += v.lp || 0; });
     let somaKmA = 0, somaLpA = 0; Object.values(A.veiculos).forEach(v => { somaKmA += v.km || 0; somaLpA += v.lp || 0; });
@@ -1365,25 +1363,16 @@ function renderizarPainelGerente() {
         let comparavel = (v.n || 0) >= 3 && (va.n || 0) >= 3;
         let queda = comparavel && media && mediaA ? (media - mediaA) / mediaA : 0;
         return { placa: p, grupo: doGrupo(p), tipo: (window.frota[p] || {}).tipo || '', media, mediaAnt: comparavel ? mediaA : 0, km: v.km || 0, litros: v.litros || 0, arla: v.arla || 0, queda };
-    }).filter(l => (filtroGrupoGerente === 'todos' || l.grupo === filtroGrupoGerente) && (l.litros || l.km))
+    }).filter(l => (filtro === 'todos' || l.grupo === filtro) && (l.litros || l.km))
       .sort((a, b) => ((a.queda <= -0.2) === (b.queda <= -0.2) ? 0 : (a.queda <= -0.2 ? -1 : 1)) || (b.litros - a.litros));
-    let tabela = linhas.length ? `<table class="tabela-consumo"><thead><tr><th>Veículo</th><th class="num">km/L</th><th class="num">Litros</th><th class="num">KM</th></tr></thead><tbody>${linhas.map(l => `
-        <tr class="${l.queda <= -0.2 ? 'alerta-consumo' : ''}"><td><b>${escHtml(l.placa)}</b><small>${escHtml(l.tipo)}</small></td>
-        <td class="num"><b>${fmtKmL(l.media)}</b><small>${variacao(l.media, l.mediaAnt, false)}</small></td>
-        <td class="num">${fmtKm(l.litros)}${l.arla ? `<small>+${fmtKm(l.arla)} Arla</small>` : ''}</td>
-        <td class="num">${l.km ? fmtKm(l.km) : '—'}</td></tr>`).join('')}</tbody></table>` : '<p class="lista-alertas-vazia">Nenhum abastecimento neste mês.</p>';
-
     // Motoristas (km/L com pelo menos 3 abastecimentos no mês)
     // Motoristas: separados por tipo de veículo (cavalo faz ~2 km/L, caminhão ~4), seguindo o filtro Todos/Caminhões/Cavalos/Utilitários
     const NOME_GRUPO = { caminhoes: 'Caminhões', cavalos: 'Cavalos', utilitarios: 'Utilitários' };
-    let gruposMot = filtroGrupoGerente === 'todos' ? ['caminhoes', 'cavalos', 'utilitarios'] : [filtroGrupoGerente];
+    let gruposMot = filtro === 'todos' ? ['caminhoes', 'cavalos', 'utilitarios'] : [filtro];
     let mots = Object.entries(D.motoristas || {}).map(([chave, m]) => { let [nome, g] = chave.split('|'); return { nome, grupo: g || 'caminhoes', media: m.lp ? m.km / m.lp : 0, km: m.km, litros: m.litros, n: m.n }; })
         .filter(m => m.n >= 3 && m.media && gruposMot.includes(m.grupo));
     let medGrupo = {}; gruposMot.forEach(g => { let l = mots.filter(m => m.grupo === g); medGrupo[g] = l.length ? l.reduce((t, m) => t + m.media, 0) / l.length : 0; });
     mots.sort((a, b) => (gruposMot.indexOf(a.grupo) - gruposMot.indexOf(b.grupo)) || (b.media - a.media));
-    let tabMot = mots.length ? gruposMot.filter(g => mots.some(m => m.grupo === g)).map(g => { let l = mots.filter(m => m.grupo === g); return `<p class="grupo-imp" style="margin-top:10px;">${NOME_GRUPO[g]} · média ${fmtKmL(medGrupo[g])} km/L</p><table class="tabela-consumo"><thead><tr><th>Motorista</th><th class="num">km/L</th><th class="num">KM</th><th class="num">Litros</th></tr></thead><tbody>${l.map((m, i) => `
-        <tr class="${m.media < medGrupo[g] * 0.85 ? 'alerta-consumo' : ''}"><td><b>${i + 1}º ${escHtml(m.nome)}</b></td><td class="num"><b>${fmtKmL(m.media)}</b></td><td class="num">${fmtKm(m.km)}</td><td class="num">${fmtKm(m.litros)}</td></tr>`).join('')}</tbody></table>`; }).join('') : '<p class="lista-alertas-vazia">Sem dados suficientes neste mês (mínimo 3 abastecimentos por motorista).</p>';
-
     // Planos de ação do mês
     let planos = Object.values(window.planos || {});
     let criados = planos.filter(p => p.criado_em && chaveMesDe(new Date(p.criado_em)) === sel).length;
@@ -1391,6 +1380,25 @@ function renderizarPainelGerente() {
     let tempos = concl.filter(p => p.criado_em).map(p => Math.max(0, Math.round((new Date(p.data_conclusao + 'T12:00:00') - new Date(p.criado_em)) / 86400000)));
     let tempoMedio = tempos.length ? Math.round(tempos.reduce((a, b) => a + b, 0) / tempos.length) : null;
     let probs = coletarProblemas(), abertos = probs.filter(i => i.aberto);
+    return { atual, meses, sel, ant, ehAtual, D, A, mediaFrota, mediaFrotaA, hoje, diaMes, diasMes, projecao, diasTanque, ativos, pend, qtdFeitos, pct, chkMes, totChk, semChkMes, semanasMes, esperado, pctMes, grupos, doGrupo, linhas, NOME_GRUPO, gruposMot, mots, medGrupo, planos, criados, concl, tempos, tempoMedio, probs, abertos };
+}
+
+function renderizarPainelGerente() {
+    let alvo = document.getElementById('conteudo-gerente'); if (!alvo) return;
+    let r = window.resumoGerente || {}, M = window.mensal || {};
+    let ger = r.gerado_em ? new Date(r.gerado_em) : null;
+    document.getElementById('gerente-atualizado').textContent = ger && !isNaN(ger) ? `Dados de ${fmtData(ger)} às ${String(ger.getHours()).padStart(2, '0')}:${String(ger.getMinutes()).padStart(2, '0')}` : '';
+    let P = calcPainel(mesGerente, filtroGrupoGerente);
+    let { atual, meses, sel, ant, ehAtual, D, A, mediaFrota, mediaFrotaA, hoje, diaMes, diasMes, projecao, diasTanque, ativos, pend, qtdFeitos, pct, chkMes, totChk, semChkMes, semanasMes, esperado, pctMes, grupos, doGrupo, linhas, NOME_GRUPO, gruposMot, mots, medGrupo, planos, criados, concl, tempos, tempoMedio, probs, abertos } = P;
+    let tabela = linhas.length ? `<table class="tabela-consumo"><thead><tr><th>Veículo</th><th class="num">km/L</th><th class="num">Litros</th><th class="num">KM</th></tr></thead><tbody>${linhas.map(l => `
+        <tr class="${l.queda <= -0.2 ? 'alerta-consumo' : ''}"><td><b>${escHtml(l.placa)}</b><small>${escHtml(l.tipo)}</small></td>
+        <td class="num"><b>${fmtKmL(l.media)}</b><small>${variacao(l.media, l.mediaAnt, false)}</small></td>
+        <td class="num">${fmtKm(l.litros)}${l.arla ? `<small>+${fmtKm(l.arla)} Arla</small>` : ''}</td>
+        <td class="num">${l.km ? fmtKm(l.km) : '—'}</td></tr>`).join('')}</tbody></table>` : '<p class="lista-alertas-vazia">Nenhum abastecimento neste mês.</p>';
+
+    let tabMot = mots.length ? gruposMot.filter(g => mots.some(m => m.grupo === g)).map(g => { let l = mots.filter(m => m.grupo === g); return `<p class="grupo-imp" style="margin-top:10px;">${NOME_GRUPO[g]} · média ${fmtKmL(medGrupo[g])} km/L</p><table class="tabela-consumo"><thead><tr><th>Motorista</th><th class="num">km/L</th><th class="num">KM</th><th class="num">Litros</th></tr></thead><tbody>${l.map((m, i) => `
+        <tr class="${m.media < medGrupo[g] * 0.85 ? 'alerta-consumo' : ''}"><td><b>${i + 1}º ${escHtml(m.nome)}</b></td><td class="num"><b>${fmtKmL(m.media)}</b></td><td class="num">${fmtKm(m.km)}</td><td class="num">${fmtKm(m.litros)}</td></tr>`).join('')}</tbody></table>`; }).join('') : '<p class="lista-alertas-vazia">Sem dados suficientes neste mês (mínimo 3 abastecimentos por motorista).</p>';
+
 
     alvo.innerHTML = `
       <div class="filtro-mes"><label class="info-label" style="margin:0;"><i class="ph ph-calendar-blank"></i> Mês:</label>
@@ -1437,10 +1445,96 @@ function renderizarPainelGerente() {
         <p class="nota-gerente">Ranking pela média km/L dos abastecimentos de cada motorista no mês. Separado por tipo de veículo. Em vermelho: 15% abaixo da média do grupo — vale uma conversa ou acompanhamento. Use os botões Todos/Caminhões/Cavalos do consumo para filtrar.</p>
       </div>
       <div class="card">
+        <h3 class="card-titulo"><i class="ph ph-file-pdf"></i> Relatório para a governança</h3>
+        <p style="font-size:13px; color:var(--text-muted); margin:0 0 12px;">Gera o PDF do painel de <b>${nomeMes(sel)}</b> (todos os grupos, com assinaturas) e salva na pasta da governança como <b>relatorio_${sel.replace('-', '_')}.pdf</b>.</p>
+        <button class="btn-principal" style="margin-bottom:0;" onclick="gerarPdfGerenteApp()"><i class="ph ph-file-pdf"></i> Gerar relatório PDF</button>
+      </div>
+      <div class="card">
         <h3 class="card-titulo"><i class="ph ph-envelope-simple"></i> Aviso de vencimentos</h3>
         <p style="font-size:13px; color:var(--text-muted); margin:0 0 12px;">O resumo de óleo, tacógrafo, extintor e graxa é enviado todo dia às 7h para quem está na aba <b>Avisos</b> da planilha.</p>
         <button class="btn-principal" id="btn-teste-aviso" style="margin-bottom:0;" onclick="enviarAvisoAgora()"><i class="ph ph-paper-plane-tilt"></i> Enviar aviso agora</button>
       </div>`;
+}
+
+/* Relatório PDF do Painel do Gerente (governança de logística) */
+function montarRelatorioGerente(selPedido) {
+    let P = calcPainel(selPedido, 'todos');
+    const vr = (at, an, maiorRuim) => { if (!at || !an) return { t: '—' }; let p = Math.round((at - an) / an * 100); if (!p) return { t: '=' }; let ruim = maiorRuim ? p > 0 : p < 0; return { t: (p > 0 ? '▲ ' : '▼ ') + Math.abs(p) + '%', cor: ruim ? '#dc2626' : '#16a34a' }; };
+    const mesN = NOMES_MES[+P.sel.slice(5) - 1], mesAntN = NOMES_MES[+P.ant.slice(5) - 1];
+    const abertos = P.abertos, atrasados = abertos.filter(i => i.atrasado);
+    let kpis = [
+        { r: 'Diesel', v: fmtKm(P.D.diesel || 0) + ' L', x: vr(P.D.diesel, P.A.diesel, true) },
+        { r: 'Arla', v: fmtKm(P.D.arla || 0) + ' L', x: vr(P.D.arla, P.A.arla, true) },
+        { r: 'Média da frota', v: fmtKmL(P.mediaFrota) + ' km/L', x: vr(P.mediaFrota, P.mediaFrotaA, false) },
+        { r: 'Checklists no mês', v: P.totChk + ' de ≈' + P.esperado, x: { t: P.pctMes + '%', cor: P.pctMes >= 90 ? '#16a34a' : (P.pctMes >= 70 ? '#d97706' : '#dc2626') } },
+        { r: 'Problemas abertos', v: String(abertos.length), x: { t: abertos.filter(i => i.prioridade === 'Alta').length + ' de prioridade alta', cor: '#dc2626' } },
+        { r: 'Planos atrasados', v: String(atrasados.length), x: { t: abertos.filter(i => i.status === 'Sem plano').length + ' sem plano', cor: '#d97706' } },
+        { r: 'Planos criados / resolvidos', v: P.criados + ' / ' + P.concl.length, x: { t: 'em ' + mesN } },
+        { r: 'Tempo médio p/ resolver', v: P.tempoMedio !== null ? P.tempoMedio + ' dia' + (P.tempoMedio === 1 ? '' : 's') : '—', x: { t: '' } }
+    ];
+    if (P.ehAtual) kpis.push({ r: 'Projeção diesel no mês', v: P.projecao ? fmtKm(P.projecao) + ' L' : '—', x: { t: P.diasTanque ? 'tanque ≈ ' + P.diasTanque + ' dias' : '' } });
+
+    // Destaques automáticos para a reunião
+    let dest = [];
+    let pDiesel = P.D.diesel && P.A.diesel ? Math.round((P.D.diesel - P.A.diesel) / P.A.diesel * 100) : 0;
+    if (pDiesel) dest.push('Diesel ' + (pDiesel > 0 ? 'subiu ' : 'caiu ') + Math.abs(pDiesel) + '% em relação a ' + mesAntN + (P.ehAtual ? ' (mês ainda em andamento)' : '') + '.');
+    let pMed = P.mediaFrota && P.mediaFrotaA ? Math.round((P.mediaFrota - P.mediaFrotaA) / P.mediaFrotaA * 100) : 0;
+    if (pMed) dest.push('Média da frota ' + (pMed > 0 ? 'melhorou ' : 'piorou ') + Math.abs(pMed) + '% (' + fmtKmL(P.mediaFrotaA) + ' → ' + fmtKmL(P.mediaFrota) + ' km/L).');
+    let quedas = P.linhas.filter(l => l.queda <= -0.2);
+    if (quedas.length) dest.push(quedas.length + ' veículo(s) com queda de 20% ou mais no km/L: ' + quedas.map(l => l.placa).join(', ') + '. Verificar vazamento, pneus, motorista ou desvio.');
+    let motBaixo = P.mots.filter(m => m.media < P.medGrupo[m.grupo] * 0.85);
+    if (motBaixo.length) dest.push(motBaixo.length + ' motorista(s) 15% abaixo da média do grupo: ' + motBaixo.map(m => m.nome).join(', ') + '.');
+    if (P.semChkMes.length) dest.push(P.semChkMes.length + ' veículo(s) sem nenhum checklist no mês: ' + P.semChkMes.join(', ') + '.');
+    if (atrasados.length) dest.push(atrasados.length + ' plano(s) de ação com prazo vencido: cobrar o responsável ou remarcar.');
+    if (!dest.length) dest.push('Nenhum ponto de atenção relevante no mês.');
+
+    let secoes = [];
+    const tipoDe = p => (window.frota[p] || {}).tipo || '';
+    ['caminhoes', 'cavalos', 'utilitarios'].forEach(g => {
+        let l = P.linhas.filter(x => x.grupo === g).sort((a, b) => b.litros - a.litros); if (!l.length) return;
+        let lt = l.reduce((t, x) => t + x.litros, 0), km = l.reduce((t, x) => t + x.km, 0);
+        secoes.push({ titulo: 'Consumo por veículo · ' + P.NOME_GRUPO[g], colunas: [{ t: 'Veículo', w: 12 }, { t: 'Tipo', w: 18 }, { t: 'km/L', w: 9, n: 1 }, { t: mesAntN.slice(0, 3) + '.', w: 9, n: 1 }, { t: 'Var.', w: 9, n: 1 }, { t: 'Diesel (L)', w: 13, n: 1 }, { t: 'Arla (L)', w: 11, n: 1 }, { t: 'KM', w: 19, n: 1 }],
+            linhas: l.map(x => ({ a: x.queda <= -0.2, c: [{ t: x.placa, b: 1 }, tipoDe(x.placa), { t: fmtKmL(x.media), b: 1 }, fmtKmL(x.mediaAnt), vr(x.media, x.mediaAnt, false), fmtKm(x.litros), x.arla ? fmtKm(x.arla) : '—', x.km ? fmtKm(x.km) : '—'] })),
+            nota: 'Total: ' + fmtKm(lt) + ' L de diesel · ' + fmtKm(km) + ' km. Em vermelho: km/L caiu 20% ou mais (só compara com 3+ abastecimentos em cada mês).' });
+    });
+    if (!P.linhas.length) secoes.push({ titulo: 'Consumo por veículo', colunas: [{ t: '', w: 100 }], linhas: [], vazio: 'Nenhum abastecimento neste mês.' });
+    P.gruposMot.forEach(g => {
+        let l = P.mots.filter(m => m.grupo === g); if (!l.length) return;
+        secoes.push({ titulo: 'Ranking de motoristas · ' + P.NOME_GRUPO[g] + ' (média ' + fmtKmL(P.medGrupo[g]) + ' km/L)', colunas: [{ t: 'Pos.', w: 7 }, { t: 'Motorista', w: 41 }, { t: 'km/L', w: 12, n: 1 }, { t: 'KM', w: 14, n: 1 }, { t: 'Litros', w: 14, n: 1 }, { t: 'Abast.', w: 12, n: 1 }],
+            linhas: l.map((m, i) => ({ a: m.media < P.medGrupo[g] * 0.85, c: [i + 1 + 'º', { t: m.nome, b: 1 }, { t: fmtKmL(m.media), b: 1 }, fmtKm(m.km), fmtKm(m.litros), String(m.n)] })),
+            nota: 'Mínimo de 3 abastecimentos no mês. Em vermelho: 15% abaixo da média do grupo.' });
+    });
+    secoes.push({ titulo: 'Checklists em ' + nomeMes(P.sel), colunas: [{ t: 'Indicador', w: 28 }, { t: 'Resultado', w: 72 }],
+        linhas: [{ c: ['Checklists feitos', P.totChk + ' de ≈' + P.esperado + ' esperados (1 por veículo por semana) · ' + P.pctMes + '%'] },
+                 { a: P.semChkMes.length > 0, c: ['Sem nenhum checklist (' + P.semChkMes.length + ')', P.semChkMes.length ? P.semChkMes.join(', ') : 'Todos os veículos têm checklist no mês'] }]
+            .concat(P.ehAtual ? [{ c: ['Semana atual', P.qtdFeitos + ' de ' + P.ativos.length + ' feitos (' + P.pct + '%)' + (P.pend.length ? ' · faltam: ' + P.pend.join(', ') : '')] }] : []) });
+    let porCat = {}; abertos.forEach(i => { let c = porCat[i.categoria] = porCat[i.categoria] || { n: 0, alta: 0, sem: 0, atr: 0, pl: new Set() }; c.n++; if (i.prioridade === 'Alta') c.alta++; if (i.status === 'Sem plano') c.sem++; if (i.atrasado) c.atr++; c.pl.add(i.placa); });
+    secoes.push({ titulo: 'Problemas abertos por categoria (situação em ' + fmtData(new Date()) + ')', colunas: [{ t: 'Categoria', w: 26 }, { t: 'Abertos', w: 10, n: 1 }, { t: 'Alta', w: 8, n: 1 }, { t: 'Sem plano', w: 11, n: 1 }, { t: 'Atrasados', w: 11, n: 1 }, { t: 'Veículos', w: 34 }],
+        linhas: Object.keys(porCat).map(k => ({ a: porCat[k].atr > 0, c: [{ t: k, b: 1 }, String(porCat[k].n), String(porCat[k].alta), String(porCat[k].sem), String(porCat[k].atr), [...porCat[k].pl].sort().join(', ')] })),
+        vazio: 'Nenhum problema em aberto.' });
+    const br = d => d ? String(d).slice(0, 10).split('-').reverse().join('/') : '';
+    secoes.push({ titulo: 'Planos de ação resolvidos em ' + nomeMes(P.sel) + ' (' + P.concl.length + ')', cor: '#16a34a', colunas: [{ t: 'Veículo', w: 11 }, { t: 'Problema', w: 33 }, { t: 'Ação realizada', w: 33 }, { t: 'Responsável', w: 13 }, { t: 'Concluído', w: 10 }],
+        linhas: P.concl.slice().sort((a, b) => String(a.data_conclusao).localeCompare(String(b.data_conclusao))).map(p => ({ c: [{ t: p.placa, b: 1 }, p.problema || '', p.plano_acao || '', p.responsavel || '', br(p.data_conclusao)] })),
+        vazio: 'Nenhum plano concluído neste mês.' });
+    return { acao: 'pdf_gerente', usuario: window.usuarioLogado, mes: P.sel, mes_nome: nomeMes(P.sel), mes_anterior: nomeMes(P.ant), parcial: P.ehAtual, kpis, destaques: dest, secoes };
+}
+
+async function gerarPdfGerenteApp() {
+    if (!navigator.onLine) { Swal.fire('Sem internet', 'Para gerar o PDF é preciso internet.', 'warning'); return; }
+    let dados = montarRelatorioGerente(mesGerente);
+    let janela = window.open('', '_blank');
+    if (janela) janela.document.write('<p style="font-family:sans-serif;padding:20px">Gerando o relatório do painel...</p>');
+    Swal.fire({ title: 'Gerando relatório...', allowOutsideClick: false, didOpen: () => Swal.showLoading && Swal.showLoading() });
+    try {
+        let r = await chamarAPI(dados);
+        if (!r.sucesso) throw new Error(r.erro || 'Falha ao gerar');
+        Swal.close();
+        if (janela) janela.location.href = r.link_pdf;
+        else Swal.fire({ title: 'Relatório pronto', html: `Salvo na pasta da governança como <b>${escHtml(r.nome || '')}</b>.<br><br><a href="${r.link_pdf}" target="_blank" style="font-weight:700">Abrir o PDF</a>`, icon: 'success' });
+    } catch (e) {
+        if (janela) janela.close();
+        Swal.fire('Não foi possível gerar', escHtml(String(e.message || e).indexOf('não encontrada') >= 0 ? 'O Apps Script ainda está na versão antiga: publique uma Nova versão.' : (e.message || 'Erro')), 'error');
+    }
 }
 
 function fazerChecklistDe(placa) { escolherModulo('Checklist'); selecionarPlaca(placa); }
