@@ -5,7 +5,7 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
 const APP_VERSAO = "2.1";
-const APP_BUILD = "v25";
+const APP_BUILD = "v26";
 const SERVIDOR_MINIMO = "v18"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
@@ -1445,12 +1445,7 @@ function renderizarPainelGerente() {
       </div>
       <div class="card">
         <h3 class="card-titulo"><i class="ph ph-file-pdf"></i> Relatório para a governança</h3>
-        <p style="font-size:13px; color:var(--text-muted); margin:0;"><i class="ph ph-clock"></i> Gerado <b>automaticamente todo dia 1º</b> com o mês que fechou (todos os grupos, com assinaturas) e salvo na pasta da governança como <b>relatorio_aaaa_mm.pdf</b>.</p>
-      </div>
-      <div class="card">
-        <h3 class="card-titulo"><i class="ph ph-envelope-simple"></i> Aviso de vencimentos</h3>
-        <p style="font-size:13px; color:var(--text-muted); margin:0 0 12px;">O resumo de óleo, tacógrafo, extintor e graxa é enviado todo dia às 7h para quem está na aba <b>Avisos</b> da planilha.</p>
-        <button class="btn-principal" id="btn-teste-aviso" style="margin-bottom:0;" onclick="enviarAvisoAgora()"><i class="ph ph-paper-plane-tilt"></i> Enviar aviso agora</button>
+        <p style="font-size:13px; color:var(--text-muted); margin:0;"><i class="ph ph-clock"></i> Gerado <b>automaticamente todo dia 1º</b> com o mês que fechou e salvo na pasta da governança em dois arquivos: <b>relatorio_aaaa_mm.pdf</b> (caminhões e UGF2G86) e <b>relatorio_aaaa_mm_demais_veiculos.pdf</b> (cavalos, utilitários, empilhadeiras e carretas).</p>
       </div>`;
 }
 
