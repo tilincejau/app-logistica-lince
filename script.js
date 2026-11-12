@@ -5,7 +5,7 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
 const APP_VERSAO = "2.1";
-const APP_BUILD = "v24";
+const APP_BUILD = "v25";
 const SERVIDOR_MINIMO = "v18"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
@@ -1424,7 +1424,6 @@ function renderizarPainelGerente() {
         <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:600;"><span>${qtdFeitos} de ${ativos.length} feitos</span><span style="color:${pct === 100 ? 'var(--sem-verde)' : 'var(--text-muted)'}">${pct}%</span></div>
         <div class="barra-prog"><span style="width:${pct}%"></span></div>
         ${pend.length ? `<p class="info-label" style="margin:0 0 8px;">Faltam (toque para fazer):</p><div class="chips-pend">${pend.map(p => `<button type="button" class="chip-pend" onclick="fazerChecklistDe('${escHtml(p)}')">${escHtml(p)}</button>`).join('')}</div>` : '<div class="chips-pend"><span class="chip-pend ok">✓ Todos os veículos fizeram o checklist</span></div>'}
-        <button type="button" class="btn-principal btn-imprimir" style="margin:14px 0 0;" onclick="abrirModalImpressao()"><i class="ph ph-printer"></i> Imprimir Checklists</button>
         <p class="nota-gerente">A semana começa no domingo.</p>
       </div>` : ''}
       <div class="card">
@@ -1446,8 +1445,7 @@ function renderizarPainelGerente() {
       </div>
       <div class="card">
         <h3 class="card-titulo"><i class="ph ph-file-pdf"></i> Relatório para a governança</h3>
-        <p style="font-size:13px; color:var(--text-muted); margin:0 0 12px;">Gera o PDF do painel de <b>${nomeMes(sel)}</b> (todos os grupos, com assinaturas) e salva na pasta da governança como <b>relatorio_${sel.replace('-', '_')}.pdf</b>.</p>
-        <button class="btn-principal" style="margin-bottom:0;" onclick="gerarPdfGerenteApp()"><i class="ph ph-file-pdf"></i> Gerar relatório PDF</button>
+        <p style="font-size:13px; color:var(--text-muted); margin:0;"><i class="ph ph-clock"></i> Gerado <b>automaticamente todo dia 1º</b> com o mês que fechou (todos os grupos, com assinaturas) e salvo na pasta da governança como <b>relatorio_aaaa_mm.pdf</b>.</p>
       </div>
       <div class="card">
         <h3 class="card-titulo"><i class="ph ph-envelope-simple"></i> Aviso de vencimentos</h3>
@@ -1884,7 +1882,7 @@ function renderizarProblemas() {
         <div class="kpi"><small>Sem plano</small><b style="color:#b45309">${k.semPlano}</b><span class="var ${k.atrasados ? 'sobe-ruim' : 'neutro'}">${k.atrasados} atrasado(s)</span></div>
       </div>
       <div class="card card-pontos"><h3 class="card-titulo"><i class="ph ph-lightbulb"></i> Pontos de melhoria</h3><ul>${pontosDeMelhoria(lista).map(d => `<li>${escHtml(d)}</li>`).join('')}</ul></div>
-      <button class="btn-principal btn-imprimir" onclick="gerarPdfProblemasApp()"><i class="ph ph-file-pdf"></i> Gerar PDF para impressão</button>
+      <p class="nota-gerente" style="margin:0 0 12px;"><i class="ph ph-clock"></i> O PDF dos problemas é gerado e impresso sozinho toda sexta por volta das 11:30.</p>
       <div class="filtro-grupos">${filtros.map(f => `<button type="button" class="${f[0] === filtroProblemas ? 'ativo' : ''}" onclick="filtrarProblemas('${f[0]}')">${f[1]}</button>`).join('')}</div>
       <select class="input-campo" style="margin-bottom:14px;" onchange="filtrarPlacaProblemas(this.value)"><option value="">Todos os veículos</option>${placas.map(p => `<option value="${p}" ${p === filtroPlacaProb ? 'selected' : ''}>${p}</option>`).join('')}</select>
       ${corpo || `<div class="card"><p class="lista-alertas-vazia"><i class="ph-fill ph-check-circle" style="color:var(--sem-verde); font-size:30px; display:block; margin:0 auto 6px;"></i>Nenhum problema nesta lista.</p></div>`}
