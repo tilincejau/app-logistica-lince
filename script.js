@@ -5,8 +5,8 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
 const APP_VERSAO = "2.1";
-const APP_BUILD = "v27";
-const SERVIDOR_MINIMO = "v34"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
+const APP_BUILD = "v28";
+const SERVIDOR_MINIMO = "v35"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
@@ -1304,29 +1304,30 @@ async function confirmarKm(placa, valorNovo) {
    ========================================================= */
 const LIMITE_DOC_DIAS = 30;
 const DOC_SUBS = { licenciamento: 'Licenciamento', ipva: 'IPVA' };
+// Vencimento pelo FINAL DA PLACA (calendário de SP) — mesmo do Apps Script
+const LIC_MES_GERAL = { 1: 7, 2: 7, 3: 8, 4: 8, 5: 9, 6: 9, 7: 10, 8: 10, 9: 11, 0: 12 };      // carros, utilitários, carretas
+const LIC_MES_CAMINHAO = { 1: 9, 2: 9, 3: 10, 4: 10, 5: 10, 6: 11, 7: 11, 8: 11, 9: 12, 0: 12 }; // caminhões e cavalos
+const IPVA_DIA_JAN = { 1: 12, 2: 13, 3: 14, 4: 15, 5: 16, 6: 19, 7: 20, 8: 21, 9: 22, 0: 23 };  // IPVA: janeiro (cota única / 1ª parcela)
 let filtroDocs = 'atencao', buscaDocs = '';
-function fmtReal(v) { return 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function finalPlaca(p) { let m = String(p || '').match(/(\d)[^\d]*$/); return m ? +m[1] : null; }
+function catDoc(p) { let d = (window.documentos || {})[p] || {}; return String(d.categoria || ((window.frota || {})[p] || {}).categoria || '').toUpperCase(); }
+function ehCaminhaoDoc(p) { let c = catDoc(p); return ['TOCO', 'CAMINHAO', 'CAVALO'].includes(c) || TOCOS.includes(p) || TRUCKS.includes(p) || CAVALOS.includes(p); }
+function vencimentoDoc(sub, placa, ano) {
+    let f = finalPlaca(placa); if (f === null || !ano) return null;
+    if (sub === 'licenciamento') return new Date(ano, (ehCaminhaoDoc(placa) ? LIC_MES_CAMINHAO : LIC_MES_GERAL)[f], 0); // último dia do mês
+    return new Date(ano, 0, IPVA_DIA_JAN[f]);
+}
 function statusDoc(placa, sub) {
-    let d = (window.documentos || {})[placa] || {};
+    let d = (window.documentos || {})[placa] || {}, ult = sub === 'licenciamento' ? d.lic_ano : d.ipva_ano;
     let base = { nomeDoc: DOC_SUBS[sub] };
-    const prazo = (venc, rot) => {
-        let n = diasAte(venc);
-        if (n < 0) return Object.assign(base, { nivel: 'vencido', ordem: n, texto: `Vencido há ${txtDias(-n)}`, textoProb: `vencido há ${txtDias(-n)}`, detalhe: `${rot} ${fmtData(venc)}`, dias: n });
-        if (n <= LIMITE_DOC_DIAS) return Object.assign(base, { nivel: 'alerta', ordem: n, texto: n === 0 ? 'Vence hoje' : `Faltam ${txtDias(n)}`, textoProb: n === 0 ? 'vence hoje' : `faltam ${txtDias(n)}`, detalhe: `${rot} ${fmtData(venc)}`, dias: n });
-        return Object.assign(base, { nivel: 'ok', ordem: n, texto: `Faltam ${txtDias(n)}`, detalhe: `${rot} ${fmtData(venc)}`, dias: n });
-    };
-    if (sub === 'licenciamento') {
-        let v = lerDataISO(d.lic_venc);
-        if (!v) return Object.assign(base, { nivel: 'sem', ordem: 0, texto: 'Sem data de vencimento', detalhe: '' });
-        if (d.lic_pago) return Object.assign(base, { nivel: 'ok', ordem: 99999, texto: `Pago em ${fmtData(lerDataISO(d.lic_pago))}`, detalhe: `Vencimento ${fmtData(v)}`, pago: true });
-        return prazo(v, 'Vencimento');
-    }
-    let parc = (d.ipva || []).filter(x => x.venc), abertas = parc.filter(x => !x.pago).sort((a, b) => a.venc.localeCompare(b.venc));
-    let tot = d.ipva_valor ? ' · total ' + fmtReal(d.ipva_valor) : '';
-    if (!parc.length) return Object.assign(base, { nivel: 'sem', ordem: 0, texto: 'Sem data de vencimento', detalhe: '' });
-    if (!abertas.length) return Object.assign(base, { nivel: 'ok', ordem: 99999, texto: parc.length > 1 ? `${parc.length} parcelas pagas` : 'Pago (cota única)', detalhe: tot.replace(' · ', ''), pago: true });
-    let x = abertas[0];
-    return prazo(lerDataISO(x.venc), (parc.length > 1 ? `Parcela ${x.n}/${parc.length} · ` : 'Cota única · ') + 'vencimento' ) && Object.assign(base, { detalhe: base.detalhe + tot });
+    if (!ult) return Object.assign(base, { nivel: 'sem', ordem: 0, texto: 'Sem o ano do último pagamento', detalhe: '' });
+    let prox = ult + 1, v = vencimentoDoc(sub, placa, prox);
+    if (!v) return Object.assign(base, { nivel: 'sem', ordem: 0, texto: 'Placa sem número final', detalhe: '' });
+    let n = diasAte(v), det = `Último pago: ${ult} · ${DOC_SUBS[sub]} ${prox} vence ${fmtData(v)} (final ${finalPlaca(placa)})`;
+    base.nomeDoc = `${DOC_SUBS[sub]} ${prox}`; base.proximo = prox;
+    if (n < 0) return Object.assign(base, { nivel: 'vencido', ordem: n, texto: `${prox}: vencido há ${txtDias(-n)}`, textoProb: `vencido há ${txtDias(-n)}`, detalhe: det, dias: n });
+    if (n <= LIMITE_DOC_DIAS) return Object.assign(base, { nivel: 'alerta', ordem: n, texto: n === 0 ? `${prox}: vence hoje` : `${prox}: faltam ${txtDias(n)}`, textoProb: n === 0 ? 'vence hoje' : `faltam ${txtDias(n)}`, detalhe: det, dias: n });
+    return Object.assign(base, { nivel: 'ok', ordem: n, texto: `${prox}: faltam ${txtDias(n)}`, detalhe: det, dias: n });
 }
 function placasDocs() { return Object.keys(window.documentos || {}).sort(); }
 function itensDocumentos() {
@@ -1341,63 +1342,53 @@ function buscarDocs(v) { buscaDocs = String(v || '').toUpperCase().replace(/[^A-
 function renderizarDocumentos() {
     let alvo = document.getElementById('conteudo-documentos'); if (!alvo) return;
     let placas = placasDocs();
-    if (!placas.length) { alvo.innerHTML = `<div class="card"><p class="lista-alertas-vazia">Nenhum veículo na aba <b>Documentos</b> da planilha ainda.<br><br>Ela é criada sozinha na próxima sincronização, já com as placas. Preencha as datas de vencimento lá na primeira vez (dd/mm/aaaa) e toque em Sincronizar.</p></div>`; return; }
-    const pior = p => { let s = Object.keys(DOC_SUBS).map(sub => statusDoc(p, sub)); return s.some(x => x.nivel === 'vencido') ? 'vencido' : s.some(x => x.nivel === 'alerta') ? 'alerta' : s.every(x => x.nivel === 'sem') ? 'sem' : 'ok'; };
+    if (!placas.length) { alvo.innerHTML = `<div class="card"><p class="lista-alertas-vazia">Nenhum veículo na aba <b>Documentos</b> da planilha ainda.<br><br>Ela é criada sozinha na próxima sincronização, já com as placas. Na primeira vez, preencha lá o <b>ano do último licenciamento</b> e o <b>ano do último IPVA pago</b> e toque em Sincronizar.</p></div>`; return; }
+    const pior = p => { let s = Object.keys(DOC_SUBS).map(sub => statusDoc(p, sub)); return s.some(x => x.nivel === 'vencido') ? 'vencido' : s.some(x => x.nivel === 'alerta') ? 'alerta' : s.some(x => x.nivel === 'sem') ? 'sem' : 'ok'; };
     let it = itensDocumentos(), c = { vencido: 0, alerta: 0, ok: 0, sem: 0 }; it.forEach(i => c[i.nivel]++);
-    const peso = { vencido: 0, alerta: 1, ok: 2, sem: 3 };
+    const peso = { vencido: 0, alerta: 1, sem: 2, ok: 3 };
     let lista = placas.map(p => ({ p, n: pior(p), ordem: Math.min(...Object.keys(DOC_SUBS).map(sub => { let s = statusDoc(p, sub); return s.nivel === 'sem' ? 99999 : s.ordem; })) }))
         .filter(x => filtroDocs === 'todos' || (filtroDocs === 'atencao' ? (x.n === 'vencido' || x.n === 'alerta') : x.n === filtroDocs))
         .sort((a, b) => (peso[a.n] - peso[b.n]) || (a.ordem - b.ordem) || a.p.localeCompare(b.p));
-    let filtros = [['atencao', `Atenção (${placas.filter(p => ['vencido', 'alerta'].includes(pior(p))).length})`], ['todos', `Todos (${placas.length})`], ['sem', 'Sem data']];
+    let filtros = [['atencao', `Atenção (${placas.filter(p => ['vencido', 'alerta'].includes(pior(p))).length})`], ['todos', `Todos (${placas.length})`], ['sem', `Sem ano (${placas.filter(p => pior(p) === 'sem').length})`]];
     alvo.innerHTML = `
       <div class="kpis">
         <div class="kpi"><small>Vencidos</small><b style="color:var(--sem-verm)">${c.vencido}</b><span class="var neutro">&nbsp;</span></div>
         <div class="kpi"><small>Vencem em 30 dias</small><b style="color:#b45309">${c.alerta}</b><span class="var neutro">&nbsp;</span></div>
-        <div class="kpi"><small>Em dia / pagos</small><b style="color:var(--sem-verde)">${c.ok}</b><span class="var neutro">${c.sem ? c.sem + ' sem data' : '&nbsp;'}</span></div>
+        <div class="kpi"><small>Em dia</small><b style="color:var(--sem-verde)">${c.ok}</b><span class="var neutro">${c.sem ? c.sem + ' sem ano' : '&nbsp;'}</span></div>
       </div>
       <div class="filtro-grupos">${filtros.map(f => `<button type="button" class="${f[0] === filtroDocs ? 'ativo' : ''}" onclick="filtrarDocs('${f[0]}')">${f[1]}</button>`).join('')}</div>
       <input type="search" class="input-campo" placeholder="Buscar placa..." value="${escHtml(buscaDocs)}" oninput="buscarDocs(this.value)" style="margin-bottom:12px;">
       <div id="lista-docs">${lista.length ? lista.map(x => htmlCardDoc(x.p)).join('') : `<div class="card"><p class="lista-alertas-vazia"><i class="ph-fill ph-check-circle" style="color:var(--sem-verde); font-size:28px; display:block; margin:0 auto 6px;"></i>Nenhum veículo nesta lista.</p></div>`}</div>
-      <p class="nota-gerente">Amarelo = vence em até ${LIMITE_DOC_DIAS} dias. Vencidos e a vencer entram também em Problemas Encontrados (vencido = prioridade Alta).</p>`;
+      <p class="nota-gerente">Vencimento pelo final da placa (calendário de SP). Licenciamento: carros, utilitários e carretas de julho (final 1-2) a dezembro (final 0); caminhões e cavalos de setembro (1-2) a dezembro (9-0). IPVA: janeiro, dia conforme o final. Amarelo = vence em até ${LIMITE_DOC_DIAS} dias; vencidos e a vencer entram em Problemas Encontrados.</p>`;
     if (buscaDocs) buscarDocs(buscaDocs);
 }
 function htmlCardDoc(p) {
-    let v = (window.frota || {})[p] || {}, d = window.documentos[p] || {};
+    let v = (window.frota || {})[p] || {};
     let linha = sub => { let s = statusDoc(p, sub); return `<div class="doc-linha ${s.nivel}"><span class="bolinha"></span><div><b>${DOC_SUBS[sub]}</b> <span class="txt-status">${s.texto}</span>${s.detalhe ? `<small>${escHtml(s.detalhe)}</small>` : ''}</div></div>`; };
-    let cat = d.categoria || v.categoria || '';
     return `<div class="card card-doc" data-placa="${escHtml(p)}">
-        <div class="card-doc-topo"><div><b class="card-doc-placa">${escHtml(p)}</b><small>${escHtml([v.tipo || cat, d.obs].filter(Boolean).join(' · '))}</small></div>
+        <div class="card-doc-topo"><div><b class="card-doc-placa">${escHtml(p)}</b><small>${escHtml(v.tipo || catDoc(p))} · final ${finalPlaca(p) ?? '?'}</small></div>
         <button type="button" class="btn-atualizar-alerta" onclick="editarDocumento('${escHtml(p)}')"><i class="ph ph-pencil-simple"></i>Atualizar</button></div>
         ${linha('licenciamento')}${linha('ipva')}</div>`;
 }
 
 async function editarDocumento(placa) {
-    let d = JSON.parse(JSON.stringify((window.documentos || {})[placa] || {}));
-    let parc = (d.ipva || []).filter(x => x.venc || x.pago); let nParc = Math.max(1, parc.length);
-    let hojeISO = isoData(new Date());
-    const linhaParc = k => { let x = parc.find(y => +y.n === k) || {}; return `<div class="doc-parc" id="sw-parc-${k}" style="${k > nParc ? 'display:none' : ''}">
-        <label class="swal-campo-label">${k === 1 ? 'Vencimento (cota única ou 1ª parcela)' : k + 'ª parcela · vencimento'}</label><input id="sw-pv-${k}" type="date" class="swal2-input swal-campo" value="${x.venc || ''}">
-        <label class="swal-campo-label">Paga em <button type="button" class="btn-sugestao-km" style="margin:0 0 0 6px; padding:2px 8px;" onclick="document.getElementById('sw-pp-${k}').value='${hojeISO}'">paguei hoje</button></label><input id="sw-pp-${k}" type="date" class="swal2-input swal-campo" value="${x.pago || ''}"></div>`; };
+    let d = Object.assign({}, (window.documentos || {})[placa] || {});
+    let anoAtual = new Date().getFullYear();
+    const campo = (id, rot, val) => { let prox = (val || anoAtual - 1) + 1; return `<label class="swal-campo-label">${rot}</label>
+        <input id="${id}" type="number" inputmode="numeric" min="2000" max="2100" class="swal2-input swal-campo" value="${val || ''}" placeholder="Ex: ${anoAtual}">
+        <button type="button" class="btn-sugestao-km" onclick="let e=document.getElementById('${id}'); e.value=(parseInt(e.value,10)||${anoAtual - 1})+1;">Paguei o próximo (+1 ano)</button>`; };
     let r = await Swal.fire({
         title: `${placa} · Licenciamento e IPVA`, showCancelButton: true, confirmButtonText: 'Salvar', cancelButtonText: 'Cancelar', confirmButtonColor: '#1a4d2e', focusConfirm: false,
         html: `<div style="text-align:left">
-          <p class="doc-titulo-sw"><i class="ph ph-identification-card"></i> Licenciamento</p>
-          <label class="swal-campo-label">Vencimento</label><input id="sw-lv" type="date" class="swal2-input swal-campo" value="${d.lic_venc || ''}">
-          <label class="swal-campo-label">Pago em <button type="button" class="btn-sugestao-km" style="margin:0 0 0 6px; padding:2px 8px;" onclick="document.getElementById('sw-lp').value='${hojeISO}'">paguei hoje</button></label><input id="sw-lp" type="date" class="swal2-input swal-campo" value="${d.lic_pago || ''}">
-          <p class="doc-titulo-sw" style="margin-top:14px;"><i class="ph ph-currency-circle-dollar"></i> IPVA</p>
-          <label class="swal-campo-label">Valor total (R$)</label><input id="sw-iv" type="number" step="0.01" inputmode="decimal" class="swal2-input swal-campo" value="${d.ipva_valor || ''}">
-          <label class="swal-campo-label">Forma de pagamento</label>
-          <select id="sw-np" class="swal2-select swal-campo" style="display:block;" onchange="for(let k=1;k<=5;k++){document.getElementById('sw-parc-'+k).style.display=k<=+this.value?'':'none';}">
-            ${[1, 2, 3, 4, 5].map(n => `<option value="${n}" ${n === nParc ? 'selected' : ''}>${n === 1 ? 'Cota única' : n + ' parcelas'}</option>`).join('')}</select>
-          ${[1, 2, 3, 4, 5].map(linhaParc).join('')}
-          <label class="swal-campo-label" style="margin-top:12px;">Observação</label><input id="sw-dobs" class="swal2-input swal-campo" value="${escHtml(d.obs || '')}">
-          <button type="button" class="btn-sugestao-km" style="margin-top:12px;" onclick="['sw-lv','sw-pv-1','sw-pv-2','sw-pv-3','sw-pv-4','sw-pv-5'].forEach(id=>{let e=document.getElementById(id); if(e.value){let [a,m,dd]=e.value.split('-'); e.value=(+a+1)+'-'+m+'-'+dd;}}); ['sw-lp','sw-pp-1','sw-pp-2','sw-pp-3','sw-pp-4','sw-pp-5'].forEach(id=>document.getElementById(id).value='');">Novo ano: datas +1 ano e limpar os pagos</button>
+          <p style="font-size:13px; color:#6b7280; margin:0 0 6px;">Informe só o <b>ano</b> do último pagamento. O vencimento vem pelo final da placa (<b>${finalPlaca(placa) ?? '?'}</b>).</p>
+          ${campo('sw-lic', 'Ano do último licenciamento', d.lic_ano)}
+          <div style="height:10px"></div>
+          ${campo('sw-ipva', 'Ano do último IPVA pago', d.ipva_ano)}
         </div>`,
         preConfirm: () => {
-            let n = +document.getElementById('sw-np').value, ipva = [];
-            for (let k = 1; k <= n; k++) { let ve = document.getElementById('sw-pv-' + k).value, pg = document.getElementById('sw-pp-' + k).value; if (ve || pg) ipva.push({ n: k, venc: ve, pago: pg }); }
-            if (ipva.some(x => x.pago && !x.venc)) { Swal.showValidationMessage('Informe o vencimento da parcela paga'); return false; }
-            return { lic_venc: document.getElementById('sw-lv').value, lic_pago: document.getElementById('sw-lp').value, ipva_valor: parseFloat(document.getElementById('sw-iv').value) || 0, ipva, obs: document.getElementById('sw-dobs').value.trim() };
+            let la = parseInt(document.getElementById('sw-lic').value, 10) || 0, ia = parseInt(document.getElementById('sw-ipva').value, 10) || 0;
+            if ((la && (la < 2000 || la > anoAtual + 1)) || (ia && (ia < 2000 || ia > anoAtual + 1))) { Swal.showValidationMessage('Ano inválido'); return false; }
+            return { lic_ano: la, ipva_ano: ia };
         }
     });
     if (!r.isConfirmed || !r.value) return false;
@@ -1602,7 +1593,7 @@ function renderizarPainelGerente() {
       <div class="card">
         <h3 class="card-titulo"><i class="ph ph-identification-card"></i> Licenciamento e IPVA</h3>
         ${(() => { let it = itensDocumentos(), c = { vencido: 0, alerta: 0, ok: 0, sem: 0 }; it.forEach(i => c[i.nivel]++); let at = it.filter(i => i.nivel === 'vencido' || i.nivel === 'alerta').slice(0, 6);
-          return `<div class="mini-kpis"><div><b style="color:var(--sem-verm)">${c.vencido}</b><small>vencidos</small></div><div><b style="color:#b45309">${c.alerta}</b><small>vencem em 30 dias</small></div><div><b style="color:var(--sem-verde)">${c.ok}</b><small>em dia / pagos</small></div><div><b>${c.sem}</b><small>sem data</small></div></div>
+          return `<div class="mini-kpis"><div><b style="color:var(--sem-verm)">${c.vencido}</b><small>vencidos</small></div><div><b style="color:#b45309">${c.alerta}</b><small>vencem em 30 dias</small></div><div><b style="color:var(--sem-verde)">${c.ok}</b><small>em dia</small></div><div><b>${c.sem}</b><small>sem ano</small></div></div>
           ${at.length ? at.map(i => `<div class="item-alerta ${i.nivel}" style="margin-top:8px;"><span class="bolinha"></span><div class="item-alerta-info"><b>${escHtml(i.placa)} <span class="tag-oleo">${i.subNome}</span></b><small class="txt-status">${i.texto}</small><small>${escHtml(i.detalhe || '')}</small></div></div>`).join('') : '<p class="nota-gerente" style="margin-top:8px;">Nada vencido nem vencendo nos próximos 30 dias.</p>'}`; })()}
         <button type="button" class="btn-principal" style="margin:12px 0 0;" onclick="abrirDocumentos()"><i class="ph ph-identification-card"></i> Abrir Licenciamento e IPVA</button>
       </div>`;
