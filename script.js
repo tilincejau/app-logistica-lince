@@ -5,8 +5,8 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
 const APP_VERSAO = "2.1";
-const APP_BUILD = "v26";
-const SERVIDOR_MINIMO = "v18"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
+const APP_BUILD = "v27";
+const SERVIDOR_MINIMO = "v34"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
@@ -19,6 +19,7 @@ let urlDocAtual = "";
 window.frota = {}; 
 window.estoqueDiesel = 0; window.estoqueArla = 0; window.gastoMesGeral = 0;
 window.histAbast = { diesel: [], arla: [], cheg_diesel: [], cheg_arla: [] };
+window.documentos = {};
 window.estoquePecas = []; window.usuarioLogado = ""; window.listaMotoristas = [];
 window.moduloAtual = ""; window.historicoChecklist = [];
 
@@ -55,7 +56,7 @@ function salvarCacheLocal() {
             estoque_pecas: window.estoquePecas, motoristas: window.listaMotoristas, historico: window.historicoChecklist,
             gasto_mes_ant_geral: (window.resumoGerente || {}).gasto_mes_ant_geral, arla_mes_geral: (window.resumoGerente || {}).arla_mes_geral,
             media_frota_mes: (window.resumoGerente || {}).media_frota_mes, gerado_em: (window.resumoGerente || {}).gerado_em,
-            ultimos_checklists: window.ultimosChecklists || {}, planos: window.planos || {}, mensal: window.mensal || {}
+            ultimos_checklists: window.ultimosChecklists || {}, planos: window.planos || {}, mensal: window.mensal || {}, documentos: window.documentos || {}
         }));
     } catch (e) { console.warn("Cache local não salvo (sem espaço):", e); }
 }
@@ -300,6 +301,7 @@ function atualizarVariaveisGlobais(res) {
     window.ultimosChecklists = res.ultimos_checklists || window.ultimosChecklists || {};
     window.planos = res.planos || window.planos || {};
     window.mensal = res.mensal || window.mensal || {};
+    window.documentos = res.documentos || window.documentos || {};
     window.resumoGerente = { gasto_mes_ant_geral: res.gasto_mes_ant_geral || 0, arla_mes_geral: res.arla_mes_geral || 0, media_frota_mes: res.media_frota_mes || 0, gerado_em: res.gerado_em || "" };
 
     registrarCategoriasExtras();
@@ -414,7 +416,7 @@ async function fazerLogin() {
 }
 
 function esconderTodasTelas() { 
-    document.getElementById('tela-login').style.display = 'none'; document.getElementById('tela-placas').style.display = 'none'; document.getElementById('tela-menu').style.display = 'none'; document.getElementById('tela-submenu-estoque').style.display = 'none'; document.getElementById('tela-interna').style.display = 'none'; document.getElementById('tela-gerente').style.display = 'none'; document.getElementById('tela-problemas').style.display = 'none'; 
+    document.getElementById('tela-login').style.display = 'none'; document.getElementById('tela-placas').style.display = 'none'; document.getElementById('tela-menu').style.display = 'none'; document.getElementById('tela-submenu-estoque').style.display = 'none'; document.getElementById('tela-interna').style.display = 'none'; document.getElementById('tela-gerente').style.display = 'none'; document.getElementById('tela-problemas').style.display = 'none'; let tDoc = document.getElementById('tela-documentos'); if (tDoc) tDoc.style.display = 'none'; 
 } 
 
 async function sairDaConta() { 
@@ -522,7 +524,7 @@ async function selecionarPlaca(placa, bypassTrava = false) {
         }); 
     } 
     let iL = document.getElementById('ficha-img-lat'); let pL = document.getElementById('ficha-pl-lat'); if (iL && pL) { document.getElementById('ficha-label-foto-1').innerText = window.isCarro ? "Frente" : "Lateral"; if (dados.foto_lateral && dados.foto_lateral !== "") { iL.src = forcarImagemDiretaDrive(dados.foto_lateral); iL.style.display = 'block'; pL.style.display = 'none'; } else { iL.style.display = 'none'; pL.style.display = 'flex'; } } let iT = document.getElementById('ficha-img-tras'); let pT = document.getElementById('ficha-pl-tras'); if (iT && pT) { document.getElementById('ficha-label-foto-2').innerText = window.isCarro ? "Verso/Traseira" : "Traseira"; if (dados.foto_traseira && dados.foto_traseira !== "") { iT.src = forcarImagemDiretaDrive(dados.foto_traseira); iT.style.display = 'block'; pT.style.display = 'none'; } else { iT.style.display = 'none'; pT.style.display = 'flex'; } } 
-    let aK = document.getElementById('aviso-ultimo-km'); if(aK) aK.innerText = dados.km_atual || 0; let aG = document.getElementById('abast-gasto-mes'); if(aG) aG.innerText = (dados.gasto_mes || 0) + " L"; 
+    renderizarConsumoMesFicha(placa); let aK = document.getElementById('aviso-ultimo-km'); if(aK) aK.innerText = dados.km_atual || 0; let aG = document.getElementById('abast-gasto-mes'); if(aG) aG.innerText = (dados.gasto_mes || 0) + " L"; 
     atualizarKMGeral(); calcularTacografo(); calcularGraxa(); calcularExtintor(); calcularAbastecimento();
     abrirPagina(window.moduloAtual); 
 }
@@ -1106,7 +1108,8 @@ const ALERTAS = {
     oleo:      { nome: 'Óleos',         icone: 'ph-drop',             aplica: p => !EMPILHADEIRAS.includes(p) }, // motor + câmbio + diferencial
     tacografo: { nome: 'Tacógrafo',     icone: 'ph-timer',            aplica: ehPesado },
     extintor:  { nome: 'Extintor',      icone: 'ph-fire-extinguisher', aplica: p => !EMPILHADEIRAS.includes(p) },
-    graxa:     { nome: 'Graxa',         icone: 'ph-wrench',           aplica: ehPesado }
+    graxa:     { nome: 'Graxa',         icone: 'ph-wrench',           aplica: ehPesado },
+    documentos:{ nome: 'Licenc. e IPVA', icone: 'ph-identification-card', aplica: () => true } // licenciamento + IPVA (aba Documentos)
 };
 let alertaAberto = null; let filtroAlertaAtual = 'atencao';
 // Os 3 óleos ficam juntos no mesmo semáforo "Óleos"
@@ -1167,7 +1170,7 @@ function placasDaFrota() {
 
 function itensDoAlerta(tipo) {
     const peso = { vencido: 0, alerta: 1, ok: 2, sem: 3 };
-    let lista = tipo === 'oleo'
+    let lista = tipo === 'documentos' ? itensDocumentos() : tipo === 'oleo'
         ? placasDaFrota().flatMap(p => Object.keys(OLEOS).filter(k => OLEOS[k].aplica(p)).map(k => Object.assign({ placa: p, sub: k }, calcularStatusAlerta('oleo', p, k))))
         : placasDaFrota().filter(p => ALERTAS[tipo].aplica(p)).map(p => Object.assign({ placa: p }, calcularStatusAlerta(tipo, p)));
     return lista
@@ -1223,11 +1226,12 @@ function renderizarListaAlertas() {
         let v = window.frota[i.placa] || {};
         let sub = [v.tipo, v.motorista].filter(x => x && String(x).trim()).map(escHtml).join(' · ');
         let rot = i.nivel === 'sem' ? 'Cadastrar' : 'Atualizar';
-        return `<div class="item-alerta ${i.nivel}"><span class="bolinha"></span><div class="item-alerta-info"><b>${escHtml(i.placa)}${i.sub ? ` <span class="tag-oleo">${OLEOS[i.sub].nome}</span>` : ''}</b><small class="txt-status">${i.texto}</small>${i.detalhe ? `<small>${i.detalhe}</small>` : ''}${sub ? `<small>${sub}</small>` : ''}</div><button type="button" class="btn-atualizar-alerta" onclick="editarItemAlerta('${alertaAberto}','${escHtml(i.placa)}','${i.sub || ''}')"><i class="ph ph-pencil-simple"></i>${rot}</button></div>`;
+        return `<div class="item-alerta ${i.nivel}"><span class="bolinha"></span><div class="item-alerta-info"><b>${escHtml(i.placa)}${i.sub ? ` <span class="tag-oleo">${i.subNome || OLEOS[i.sub].nome}</span>` : ''}</b><small class="txt-status">${i.texto}</small>${i.detalhe ? `<small>${i.detalhe}</small>` : ''}${sub ? `<small>${sub}</small>` : ''}</div><button type="button" class="btn-atualizar-alerta" onclick="editarItemAlerta('${alertaAberto}','${escHtml(i.placa)}','${i.sub || ''}')"><i class="ph ph-pencil-simple"></i>${rot}</button></div>`;
     }).join('');
 }
 
 async function editarItemAlerta(tipo, placa, sub) {
+    if (tipo === 'documentos') { await editarDocumento(placa); renderizarListaAlertas(); return; }
     let oleo = tipo === 'oleo' ? OLEOS[sub || 'motor'] : null;
     let v = window.frota[placa]; if (!v) return;
     let hojeISO = isoData(new Date());
@@ -1291,6 +1295,159 @@ async function confirmarKm(placa, valorNovo) {
     else return true;
     let r = await Swal.fire({ icon: 'warning', title: `Confira o ${rot}`, html: `${msg}<br><br>Último: <b>${fmtKm(ant)}</b><br>Digitado: <b style="color:#dc2626">${fmtKm(novo)}</b><br><br><small>Se o último estava errado, confirme para corrigir.</small>`, showCancelButton: true, confirmButtonText: 'Está certo', cancelButtonText: 'Corrigir', confirmButtonColor: '#1a4d2e', cancelButtonColor: '#6b7280', reverseButtons: true });
     return r.isConfirmed;
+}
+
+/* =========================================================
+   LICENCIAMENTO E IPVA
+   Dados da aba "Documentos" da planilha (1ª vez preenchida lá; depois tudo pelo app).
+   Semáforo: vermelho = vencido · amarelo = vence em até 30 dias · verde = em dia / pago
+   ========================================================= */
+const LIMITE_DOC_DIAS = 30;
+const DOC_SUBS = { licenciamento: 'Licenciamento', ipva: 'IPVA' };
+let filtroDocs = 'atencao', buscaDocs = '';
+function fmtReal(v) { return 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function statusDoc(placa, sub) {
+    let d = (window.documentos || {})[placa] || {};
+    let base = { nomeDoc: DOC_SUBS[sub] };
+    const prazo = (venc, rot) => {
+        let n = diasAte(venc);
+        if (n < 0) return Object.assign(base, { nivel: 'vencido', ordem: n, texto: `Vencido há ${txtDias(-n)}`, textoProb: `vencido há ${txtDias(-n)}`, detalhe: `${rot} ${fmtData(venc)}`, dias: n });
+        if (n <= LIMITE_DOC_DIAS) return Object.assign(base, { nivel: 'alerta', ordem: n, texto: n === 0 ? 'Vence hoje' : `Faltam ${txtDias(n)}`, textoProb: n === 0 ? 'vence hoje' : `faltam ${txtDias(n)}`, detalhe: `${rot} ${fmtData(venc)}`, dias: n });
+        return Object.assign(base, { nivel: 'ok', ordem: n, texto: `Faltam ${txtDias(n)}`, detalhe: `${rot} ${fmtData(venc)}`, dias: n });
+    };
+    if (sub === 'licenciamento') {
+        let v = lerDataISO(d.lic_venc);
+        if (!v) return Object.assign(base, { nivel: 'sem', ordem: 0, texto: 'Sem data de vencimento', detalhe: '' });
+        if (d.lic_pago) return Object.assign(base, { nivel: 'ok', ordem: 99999, texto: `Pago em ${fmtData(lerDataISO(d.lic_pago))}`, detalhe: `Vencimento ${fmtData(v)}`, pago: true });
+        return prazo(v, 'Vencimento');
+    }
+    let parc = (d.ipva || []).filter(x => x.venc), abertas = parc.filter(x => !x.pago).sort((a, b) => a.venc.localeCompare(b.venc));
+    let tot = d.ipva_valor ? ' · total ' + fmtReal(d.ipva_valor) : '';
+    if (!parc.length) return Object.assign(base, { nivel: 'sem', ordem: 0, texto: 'Sem data de vencimento', detalhe: '' });
+    if (!abertas.length) return Object.assign(base, { nivel: 'ok', ordem: 99999, texto: parc.length > 1 ? `${parc.length} parcelas pagas` : 'Pago (cota única)', detalhe: tot.replace(' · ', ''), pago: true });
+    let x = abertas[0];
+    return prazo(lerDataISO(x.venc), (parc.length > 1 ? `Parcela ${x.n}/${parc.length} · ` : 'Cota única · ') + 'vencimento' ) && Object.assign(base, { detalhe: base.detalhe + tot });
+}
+function placasDocs() { return Object.keys(window.documentos || {}).sort(); }
+function itensDocumentos() {
+    const peso = { vencido: 0, alerta: 1, ok: 2, sem: 3 };
+    return placasDocs().flatMap(p => Object.keys(DOC_SUBS).map(sub => Object.assign({ placa: p, sub, subNome: DOC_SUBS[sub] }, statusDoc(p, sub))))
+        .sort((a, b) => (peso[a.nivel] - peso[b.nivel]) || (a.ordem - b.ordem) || a.placa.localeCompare(b.placa));
+}
+
+function abrirDocumentos() { esconderTodasTelas(); document.getElementById('tela-documentos').style.display = 'flex'; renderizarDocumentos(); window.scrollTo(0, 0); }
+function filtrarDocs(f) { filtroDocs = f; renderizarDocumentos(); }
+function buscarDocs(v) { buscaDocs = String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); document.querySelectorAll('#lista-docs .card-doc').forEach(el => { el.style.display = !buscaDocs || el.dataset.placa.includes(buscaDocs) ? '' : 'none'; }); }
+function renderizarDocumentos() {
+    let alvo = document.getElementById('conteudo-documentos'); if (!alvo) return;
+    let placas = placasDocs();
+    if (!placas.length) { alvo.innerHTML = `<div class="card"><p class="lista-alertas-vazia">Nenhum veículo na aba <b>Documentos</b> da planilha ainda.<br><br>Ela é criada sozinha na próxima sincronização, já com as placas. Preencha as datas de vencimento lá na primeira vez (dd/mm/aaaa) e toque em Sincronizar.</p></div>`; return; }
+    const pior = p => { let s = Object.keys(DOC_SUBS).map(sub => statusDoc(p, sub)); return s.some(x => x.nivel === 'vencido') ? 'vencido' : s.some(x => x.nivel === 'alerta') ? 'alerta' : s.every(x => x.nivel === 'sem') ? 'sem' : 'ok'; };
+    let it = itensDocumentos(), c = { vencido: 0, alerta: 0, ok: 0, sem: 0 }; it.forEach(i => c[i.nivel]++);
+    const peso = { vencido: 0, alerta: 1, ok: 2, sem: 3 };
+    let lista = placas.map(p => ({ p, n: pior(p), ordem: Math.min(...Object.keys(DOC_SUBS).map(sub => { let s = statusDoc(p, sub); return s.nivel === 'sem' ? 99999 : s.ordem; })) }))
+        .filter(x => filtroDocs === 'todos' || (filtroDocs === 'atencao' ? (x.n === 'vencido' || x.n === 'alerta') : x.n === filtroDocs))
+        .sort((a, b) => (peso[a.n] - peso[b.n]) || (a.ordem - b.ordem) || a.p.localeCompare(b.p));
+    let filtros = [['atencao', `Atenção (${placas.filter(p => ['vencido', 'alerta'].includes(pior(p))).length})`], ['todos', `Todos (${placas.length})`], ['sem', 'Sem data']];
+    alvo.innerHTML = `
+      <div class="kpis">
+        <div class="kpi"><small>Vencidos</small><b style="color:var(--sem-verm)">${c.vencido}</b><span class="var neutro">&nbsp;</span></div>
+        <div class="kpi"><small>Vencem em 30 dias</small><b style="color:#b45309">${c.alerta}</b><span class="var neutro">&nbsp;</span></div>
+        <div class="kpi"><small>Em dia / pagos</small><b style="color:var(--sem-verde)">${c.ok}</b><span class="var neutro">${c.sem ? c.sem + ' sem data' : '&nbsp;'}</span></div>
+      </div>
+      <div class="filtro-grupos">${filtros.map(f => `<button type="button" class="${f[0] === filtroDocs ? 'ativo' : ''}" onclick="filtrarDocs('${f[0]}')">${f[1]}</button>`).join('')}</div>
+      <input type="search" class="input-campo" placeholder="Buscar placa..." value="${escHtml(buscaDocs)}" oninput="buscarDocs(this.value)" style="margin-bottom:12px;">
+      <div id="lista-docs">${lista.length ? lista.map(x => htmlCardDoc(x.p)).join('') : `<div class="card"><p class="lista-alertas-vazia"><i class="ph-fill ph-check-circle" style="color:var(--sem-verde); font-size:28px; display:block; margin:0 auto 6px;"></i>Nenhum veículo nesta lista.</p></div>`}</div>
+      <p class="nota-gerente">Amarelo = vence em até ${LIMITE_DOC_DIAS} dias. Vencidos e a vencer entram também em Problemas Encontrados (vencido = prioridade Alta).</p>`;
+    if (buscaDocs) buscarDocs(buscaDocs);
+}
+function htmlCardDoc(p) {
+    let v = (window.frota || {})[p] || {}, d = window.documentos[p] || {};
+    let linha = sub => { let s = statusDoc(p, sub); return `<div class="doc-linha ${s.nivel}"><span class="bolinha"></span><div><b>${DOC_SUBS[sub]}</b> <span class="txt-status">${s.texto}</span>${s.detalhe ? `<small>${escHtml(s.detalhe)}</small>` : ''}</div></div>`; };
+    let cat = d.categoria || v.categoria || '';
+    return `<div class="card card-doc" data-placa="${escHtml(p)}">
+        <div class="card-doc-topo"><div><b class="card-doc-placa">${escHtml(p)}</b><small>${escHtml([v.tipo || cat, d.obs].filter(Boolean).join(' · '))}</small></div>
+        <button type="button" class="btn-atualizar-alerta" onclick="editarDocumento('${escHtml(p)}')"><i class="ph ph-pencil-simple"></i>Atualizar</button></div>
+        ${linha('licenciamento')}${linha('ipva')}</div>`;
+}
+
+async function editarDocumento(placa) {
+    let d = JSON.parse(JSON.stringify((window.documentos || {})[placa] || {}));
+    let parc = (d.ipva || []).filter(x => x.venc || x.pago); let nParc = Math.max(1, parc.length);
+    let hojeISO = isoData(new Date());
+    const linhaParc = k => { let x = parc.find(y => +y.n === k) || {}; return `<div class="doc-parc" id="sw-parc-${k}" style="${k > nParc ? 'display:none' : ''}">
+        <label class="swal-campo-label">${k === 1 ? 'Vencimento (cota única ou 1ª parcela)' : k + 'ª parcela · vencimento'}</label><input id="sw-pv-${k}" type="date" class="swal2-input swal-campo" value="${x.venc || ''}">
+        <label class="swal-campo-label">Paga em <button type="button" class="btn-sugestao-km" style="margin:0 0 0 6px; padding:2px 8px;" onclick="document.getElementById('sw-pp-${k}').value='${hojeISO}'">paguei hoje</button></label><input id="sw-pp-${k}" type="date" class="swal2-input swal-campo" value="${x.pago || ''}"></div>`; };
+    let r = await Swal.fire({
+        title: `${placa} · Licenciamento e IPVA`, showCancelButton: true, confirmButtonText: 'Salvar', cancelButtonText: 'Cancelar', confirmButtonColor: '#1a4d2e', focusConfirm: false,
+        html: `<div style="text-align:left">
+          <p class="doc-titulo-sw"><i class="ph ph-identification-card"></i> Licenciamento</p>
+          <label class="swal-campo-label">Vencimento</label><input id="sw-lv" type="date" class="swal2-input swal-campo" value="${d.lic_venc || ''}">
+          <label class="swal-campo-label">Pago em <button type="button" class="btn-sugestao-km" style="margin:0 0 0 6px; padding:2px 8px;" onclick="document.getElementById('sw-lp').value='${hojeISO}'">paguei hoje</button></label><input id="sw-lp" type="date" class="swal2-input swal-campo" value="${d.lic_pago || ''}">
+          <p class="doc-titulo-sw" style="margin-top:14px;"><i class="ph ph-currency-circle-dollar"></i> IPVA</p>
+          <label class="swal-campo-label">Valor total (R$)</label><input id="sw-iv" type="number" step="0.01" inputmode="decimal" class="swal2-input swal-campo" value="${d.ipva_valor || ''}">
+          <label class="swal-campo-label">Forma de pagamento</label>
+          <select id="sw-np" class="swal2-select swal-campo" style="display:block;" onchange="for(let k=1;k<=5;k++){document.getElementById('sw-parc-'+k).style.display=k<=+this.value?'':'none';}">
+            ${[1, 2, 3, 4, 5].map(n => `<option value="${n}" ${n === nParc ? 'selected' : ''}>${n === 1 ? 'Cota única' : n + ' parcelas'}</option>`).join('')}</select>
+          ${[1, 2, 3, 4, 5].map(linhaParc).join('')}
+          <label class="swal-campo-label" style="margin-top:12px;">Observação</label><input id="sw-dobs" class="swal2-input swal-campo" value="${escHtml(d.obs || '')}">
+          <button type="button" class="btn-sugestao-km" style="margin-top:12px;" onclick="['sw-lv','sw-pv-1','sw-pv-2','sw-pv-3','sw-pv-4','sw-pv-5'].forEach(id=>{let e=document.getElementById(id); if(e.value){let [a,m,dd]=e.value.split('-'); e.value=(+a+1)+'-'+m+'-'+dd;}}); ['sw-lp','sw-pp-1','sw-pp-2','sw-pp-3','sw-pp-4','sw-pp-5'].forEach(id=>document.getElementById(id).value='');">Novo ano: datas +1 ano e limpar os pagos</button>
+        </div>`,
+        preConfirm: () => {
+            let n = +document.getElementById('sw-np').value, ipva = [];
+            for (let k = 1; k <= n; k++) { let ve = document.getElementById('sw-pv-' + k).value, pg = document.getElementById('sw-pp-' + k).value; if (ve || pg) ipva.push({ n: k, venc: ve, pago: pg }); }
+            if (ipva.some(x => x.pago && !x.venc)) { Swal.showValidationMessage('Informe o vencimento da parcela paga'); return false; }
+            return { lic_venc: document.getElementById('sw-lv').value, lic_pago: document.getElementById('sw-lp').value, ipva_valor: parseFloat(document.getElementById('sw-iv').value) || 0, ipva, obs: document.getElementById('sw-dobs').value.trim() };
+        }
+    });
+    if (!r.isConfirmed || !r.value) return false;
+    if (!(await adicionarNaFila(Object.assign({ acao: 'salvar_documento', usuario: window.usuarioLogado, placa, categoria: d.categoria || '' }, r.value)))) return false;
+    window.documentos = window.documentos || {};
+    window.documentos[placa] = Object.assign({ categoria: d.categoria || '' }, r.value);
+    salvarCacheLocal();
+    if (document.getElementById('tela-documentos').style.display === 'flex') renderizarDocumentos();
+    renderizarAlertas(); renderizarTileProblemas();
+    mostrarToast(`<i class='ph ph-check-circle'></i> Licenciamento/IPVA de ${placa} atualizado`, "#059669");
+    return true;
+}
+
+/* Consumo por mês na Ficha Técnica: média km/L do mês (soma dos km ÷ litros) e arla */
+function renderizarConsumoMesFicha(placa) {
+    let alvo = document.getElementById('ficha-consumo-mes'); if (!alvo) return;
+    let M = window.mensal || {}, meses = Object.keys(M).sort().reverse().filter(m => M[m].veiculos && M[m].veiculos[placa]).slice(0, 6);
+    let atual = chaveMesDe(new Date()); if (!meses.includes(atual)) meses.unshift(atual); meses = meses.slice(0, 6);
+    let carro = CARROS.includes(placa), emp = EMPILHADEIRAS.includes(placa);
+    let lin = meses.map(m => { let v = (M[m] && M[m].veiculos && M[m].veiculos[placa]) || {}; let md = v.lp ? v.km / v.lp : 0, pct = v.litros && v.arla ? v.arla / v.litros * 100 : 0; return { m, v, md, pct }; });
+    let a = lin[0];
+    const corPct = p => !p ? '' : (p < 2.5 || p > 7 ? 'color:#dc2626;font-weight:700' : 'color:#059669');
+    alvo.innerHTML = `
+      <div class="linha-info"><span class="info-label" style="margin:0;">Média de ${nomeMes(a.m)}:</span><b style="font-size:17px; color:var(--primary-color);">${a.md ? fmtKmL(a.md) + ' km/L' : '—'}</b></div>
+      ${carro || emp ? '' : `<div class="linha-info"><span class="info-label" style="margin:0;">Arla no mês:</span><b>${a.v.arla ? fmtKm(a.v.arla) + ' L' : '—'}${a.pct ? ` <span style="${corPct(a.pct)}">(${a.pct.toFixed(1).replace('.', ',')}% do diesel)</span>` : ''}</b></div>`}
+      <table class="tabela-consumo" style="margin-top:10px;"><thead><tr><th>Mês</th><th class="num">KM</th><th class="num">${carro ? 'Litros' : 'Diesel'}</th><th class="num">km/L</th>${carro || emp ? '' : '<th class="num">Arla</th><th class="num">% Arla</th>'}</tr></thead><tbody>
+      ${lin.map(x => `<tr><td><b>${NOMES_MES[+x.m.slice(5) - 1].slice(0, 3)}/${x.m.slice(2, 4)}</b></td><td class="num">${x.v.km ? fmtKm(x.v.km) : '—'}</td><td class="num">${x.v.litros ? fmtKm(x.v.litros) : '—'}</td><td class="num"><b>${fmtKmL(x.md)}</b></td>${carro || emp ? '' : `<td class="num">${x.v.arla ? fmtKm(x.v.arla) : '—'}</td><td class="num" style="${corPct(x.pct)}">${x.pct ? x.pct.toFixed(1).replace('.', ',') + '%' : '—'}</td>`}</tr>`).join('')}
+      </tbody></table>
+      <p class="nota-gerente">Média do mês = km rodados no mês ÷ litros (e não só o último abastecimento).${carro || emp ? '' : ' Arla: o normal é de 3% a 6% do diesel; fora disso (em vermelho) vale verificar dosagem, vazamento ou lançamento errado.'}</p>`;
+}
+
+/* Painel: entrega x puxada */
+const PLACA_FORA_ENTREGA = ['UGF2G86'];
+function operacaoDe(p) {
+    if (CAVALOS.includes(p) || (window.CARRETAS || []).includes(p)) return 'puxada';
+    if (EMPILHADEIRAS.includes(p) || PLACA_FORA_ENTREGA.includes(p)) return '';
+    if (TOCOS.includes(p) || TRUCKS.includes(p) || CARROS.includes(p)) return 'entrega';
+    return '';
+}
+function somaOperacao(X, op) {
+    let r = { litros: 0, arla: 0, km: 0, lp: 0 };
+    Object.entries((X && X.veiculos) || {}).forEach(([p, v]) => { if (operacaoDe(p) !== op) return; r.litros += v.litros || 0; r.arla += v.arla || 0; r.km += v.km || 0; r.lp += v.lp || 0; });
+    r.media = r.lp ? r.km / r.lp : 0; r.pct = r.litros && r.arla ? r.arla / r.litros * 100 : 0;
+    return r;
+}
+let buscaPlacaGerente = '';
+function filtrarPlacaGerente(v) {
+    buscaPlacaGerente = String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    let n = 0; document.querySelectorAll('#tabela-consumo-gerente tbody tr').forEach(tr => { let ok = !buscaPlacaGerente || tr.dataset.placa.includes(buscaPlacaGerente); tr.style.display = ok ? '' : 'none'; if (ok) n++; });
+    let av = document.getElementById('busca-placa-vazio'); if (av) av.style.display = n ? 'none' : 'block';
 }
 
 /* =========================================================
@@ -1390,8 +1547,8 @@ function renderizarPainelGerente() {
     document.getElementById('gerente-atualizado').textContent = ger && !isNaN(ger) ? `Dados de ${fmtData(ger)} às ${String(ger.getHours()).padStart(2, '0')}:${String(ger.getMinutes()).padStart(2, '0')}` : '';
     let P = calcPainel(mesGerente, filtroGrupoGerente);
     let { atual, meses, sel, ant, ehAtual, D, A, mediaFrota, mediaFrotaA, hoje, diaMes, diasMes, projecao, diasTanque, ativos, pend, qtdFeitos, pct, chkMes, totChk, semChkMes, semanasMes, esperado, pctMes, grupos, doGrupo, linhas, NOME_GRUPO, gruposMot, mots, medGrupo, planos, criados, concl, tempos, tempoMedio, probs, abertos } = P;
-    let tabela = linhas.length ? `<table class="tabela-consumo"><thead><tr><th>Veículo</th><th class="num">km/L</th><th class="num">Litros</th><th class="num">KM</th></tr></thead><tbody>${linhas.map(l => `
-        <tr class="${l.queda <= -0.2 ? 'alerta-consumo' : ''}"><td><b>${escHtml(l.placa)}</b><small>${escHtml(l.tipo)}</small></td>
+    let tabela = linhas.length ? `<table class="tabela-consumo" id="tabela-consumo-gerente"><thead><tr><th>Veículo</th><th class="num">km/L</th><th class="num">Litros</th><th class="num">KM</th></tr></thead><tbody>${linhas.map(l => `
+        <tr data-placa="${escHtml(l.placa)}" class="${l.queda <= -0.2 ? 'alerta-consumo' : ''}"><td><b>${escHtml(l.placa)}</b><small>${escHtml(l.tipo)}</small></td>
         <td class="num"><b>${fmtKmL(l.media)}</b><small>${variacao(l.media, l.mediaAnt, false)}</small></td>
         <td class="num">${fmtKm(l.litros)}${l.arla ? `<small>+${fmtKm(l.arla)} Arla</small>` : ''}</td>
         <td class="num">${l.km ? fmtKm(l.km) : '—'}</td></tr>`).join('')}</tbody></table>` : '<p class="lista-alertas-vazia">Nenhum abastecimento neste mês.</p>';
@@ -1403,11 +1560,13 @@ function renderizarPainelGerente() {
     alvo.innerHTML = `
       <div class="filtro-mes"><label class="info-label" style="margin:0;"><i class="ph ph-calendar-blank"></i> Mês:</label>
         <select class="input-campo" style="margin:0;" onchange="mudarMesGerente(this.value)">${meses.map(m => `<option value="${m}" ${m === sel ? 'selected' : ''}>${nomeMes(m)}${m === atual ? ' (atual)' : ''}</option>`).join('')}</select></div>
-      <div class="kpis">
-        <div class="kpi"><small>Diesel</small><b>${fmtKm(D.diesel || 0)} L</b>${variacao(D.diesel, A.diesel, true)}</div>
-        <div class="kpi"><small>Arla</small><b>${fmtKm(D.arla || 0)} L</b>${variacao(D.arla, A.arla, true)}</div>
-        <div class="kpi"><small>Média frota</small><b>${fmtKmL(mediaFrota)}</b>${variacao(mediaFrota, mediaFrotaA, false)}</div>
-      </div>
+      ${['entrega', 'puxada'].map(op => { let o = somaOperacao(D, op), oa = somaOperacao(A, op); return `<div class="bloco-op">
+        <div class="bloco-op-nome"><i class="ph ${op === 'entrega' ? 'ph-truck' : 'ph-path'}"></i> ${op === 'entrega' ? 'Entrega' : 'Puxada'} <small>${op === 'entrega' ? 'caminhões e utilitários (sem UGF2G86 e empilhadeiras)' : '3 cavalos + 3 carretas'}</small></div>
+        <div class="kpis">
+          <div class="kpi"><small>Diesel</small><b>${fmtKm(o.litros)} L</b>${variacao(o.litros, oa.litros, true)}</div>
+          <div class="kpi"><small>Arla</small><b>${fmtKm(o.arla)} L</b>${o.pct ? `<span class="var neutro">${o.pct.toFixed(1).replace('.', ',')}% do diesel</span>` : variacao(o.arla, oa.arla, true)}</div>
+          <div class="kpi"><small>Média</small><b>${fmtKmL(o.media)}</b>${variacao(o.media, oa.media, false)}</div>
+        </div></div>`; }).join('')}
       ${ehAtual ? `<div class="kpis">
         <div class="kpi"><small>Tanque diesel</small><b>${fmtKm(window.estoqueDiesel || 0)} L</b><span class="var ${diasTanque && diasTanque < 7 ? 'sobe-ruim' : 'neutro'}">${diasTanque ? '≈ ' + diasTanque + ' dias' : '&nbsp;'}</span></div>
         <div class="kpi"><small>Tanque Arla</small><b>${fmtKm(window.estoqueArla || 0)} L</b><span class="var neutro">&nbsp;</span></div>
@@ -1435,18 +1594,19 @@ function renderizarPainelGerente() {
       <div class="card">
         <h3 class="card-titulo"><i class="ph ph-gas-pump"></i> Consumo por veículo</h3>
         <div class="filtro-grupos">${Object.keys(grupos).map(g => `<button type="button" class="${g === filtroGrupoGerente ? 'ativo' : ''}" onclick="filtrarGrupoGerente('${g}')">${grupos[g]}</button>`).join('')}</div>
+        <input type="search" class="input-campo" placeholder="Buscar placa..." value="${escHtml(buscaPlacaGerente)}" oninput="filtrarPlacaGerente(this.value)" style="margin:0 0 10px;">
         ${tabela}
+        <p class="lista-alertas-vazia" id="busca-placa-vazio" style="display:none;">Nenhuma placa encontrada.</p>
         <p class="nota-gerente">Comparado com ${nomeMes(ant)}. km/L = km rodados entre um abastecimento e outro ÷ litros. Linhas em vermelho: média caiu 20% ou mais (só compara quando há 3+ abastecimentos em cada mês). Saltos acima de 3.000 km são ignorados.</p>
       </div>
       <div class="card">
-        <h3 class="card-titulo"><i class="ph ph-steering-wheel"></i> Consumo por motorista</h3>
-        ${tabMot}
-        <p class="nota-gerente">Ranking pela média km/L dos abastecimentos de cada motorista no mês. Separado por tipo de veículo. Em vermelho: 15% abaixo da média do grupo — vale uma conversa ou acompanhamento. Use os botões Todos/Caminhões/Cavalos do consumo para filtrar.</p>
-      </div>
-      <div class="card">
-        <h3 class="card-titulo"><i class="ph ph-file-pdf"></i> Relatório para a governança</h3>
-        <p style="font-size:13px; color:var(--text-muted); margin:0;"><i class="ph ph-clock"></i> Gerado <b>automaticamente todo dia 1º</b> com o mês que fechou e salvo na pasta da governança em dois arquivos: <b>relatorio_aaaa_mm.pdf</b> (caminhões e UGF2G86) e <b>relatorio_aaaa_mm_demais_veiculos.pdf</b> (cavalos, utilitários, empilhadeiras e carretas).</p>
+        <h3 class="card-titulo"><i class="ph ph-identification-card"></i> Licenciamento e IPVA</h3>
+        ${(() => { let it = itensDocumentos(), c = { vencido: 0, alerta: 0, ok: 0, sem: 0 }; it.forEach(i => c[i.nivel]++); let at = it.filter(i => i.nivel === 'vencido' || i.nivel === 'alerta').slice(0, 6);
+          return `<div class="mini-kpis"><div><b style="color:var(--sem-verm)">${c.vencido}</b><small>vencidos</small></div><div><b style="color:#b45309">${c.alerta}</b><small>vencem em 30 dias</small></div><div><b style="color:var(--sem-verde)">${c.ok}</b><small>em dia / pagos</small></div><div><b>${c.sem}</b><small>sem data</small></div></div>
+          ${at.length ? at.map(i => `<div class="item-alerta ${i.nivel}" style="margin-top:8px;"><span class="bolinha"></span><div class="item-alerta-info"><b>${escHtml(i.placa)} <span class="tag-oleo">${i.subNome}</span></b><small class="txt-status">${i.texto}</small><small>${escHtml(i.detalhe || '')}</small></div></div>`).join('') : '<p class="nota-gerente" style="margin-top:8px;">Nada vencido nem vencendo nos próximos 30 dias.</p>'}`; })()}
+        <button type="button" class="btn-principal" style="margin:12px 0 0;" onclick="abrirDocumentos()"><i class="ph ph-identification-card"></i> Abrir Licenciamento e IPVA</button>
       </div>`;
+    if (buscaPlacaGerente) filtrarPlacaGerente(buscaPlacaGerente);
 }
 
 /* Relatório PDF do Painel do Gerente (governança de logística) */
@@ -1710,9 +1870,9 @@ function fmtMm(v) { let n = typeof v === 'number' ? v : parseFloat(String(v).rep
    ========================================================= */
 const EQUIP_PADRAO = [['qtd_carrinhos', 2, 'carrinho', 'carrinhos'], ['qtd_cones', 3, 'cone', 'cones'], ['qtd_calcos', 2, 'calço', 'calços']];
 const CAT_PROB = { equip: 'Carrinhos, cones e calços', oleo: 'Trocas de óleo', tacografo: 'Tacógrafo', graxa: 'Engraxada', mecanica: 'Mecânica',
-                   eletrica: 'Elétrica, cabine e pneus (geral)', faltantes: 'Itens faltantes', extintor: 'Extintores', pneus: 'Pneus no limite', obs: 'Observações e paradas' };
+                   eletrica: 'Elétrica, cabine e pneus (geral)', faltantes: 'Itens faltantes', extintor: 'Extintores', pneus: 'Pneus no limite', documentos: 'Licenciamento e IPVA', obs: 'Observações e paradas' };
 const ICONE_PROB = { equip: 'ph-traffic-cone', oleo: 'ph-drop', tacografo: 'ph-timer', graxa: 'ph-wrench', mecanica: 'ph-engine', eletrica: 'ph-lightning',
-                     faltantes: 'ph-list-checks', extintor: 'ph-fire-extinguisher', pneus: 'ph-tire', obs: 'ph-chat-text' };
+                     faltantes: 'ph-list-checks', extintor: 'ph-fire-extinguisher', pneus: 'ph-tire', documentos: 'ph-identification-card', obs: 'ph-chat-text' };
 const SUGESTAO_PROB = {
     equip: 'Repor os itens que faltam (padrão: 2 carrinhos, 3 cones e 2 calços) e conferir na saída do veículo.',
     oleo: 'Agendar a troca com a oficina e, depois de trocar, atualizar o KM da próxima troca no app.',
@@ -1723,6 +1883,7 @@ const SUGESTAO_PROB = {
     faltantes: 'Repor os itens faltantes antes da próxima viagem e conferir no próximo checklist.',
     extintor: 'Recarregar ou trocar o extintor e atualizar a validade no app.',
     pneus: 'Programar troca/rodízio dos pneus no limite e verificar estoque de pneus.',
+    documentos: 'Emitir a guia e pagar antes do vencimento; depois marcar como pago em Licenciamento e IPVA.',
     obs: 'Conversar com o motorista, avaliar o ponto relatado e definir a solução.'
 };
 let filtroProblemas = 'abertos'; let filtroPlacaProb = '';
@@ -1788,6 +1949,11 @@ function coletarProblemas() {
         let ruins = Object.entries(v.pneus || {}).filter(([pos, pn]) => { let mm = lerMm(pn.milimetros); return /LIMITE/i.test(pn.estado || '') || (mm > 0 && mm < 5); });
         if (ruins.length) add(p, 'pneus', 'pneus', `${ruins.length} pneu${ruins.length > 1 ? 's' : ''} no limite`, ruins.map(([pos, pn]) => `${pos.toUpperCase()} (${pn.milimetros && pn.milimetros !== '---' ? fmtMm(pn.milimetros) + ' mm' : pn.estado})`).join(', '), 'Alta');
     });
+    // 6) Licenciamento e IPVA (vencido = Alta, vence em até 30 dias = Média)
+    placasDocs().forEach(p => Object.keys(DOC_SUBS).forEach(sub => {
+        let st = statusDoc(p, sub);
+        if (st.nivel === 'vencido' || st.nivel === 'alerta') add(p, 'documentos', 'doc_' + sub, `${st.nomeDoc}: ${st.textoProb}`, st.detalhe, st.nivel === 'vencido' ? 'Alta' : 'Média');
+    }));
     // Junta com os planos salvos
     let hoje = isoData(new Date());
     lista.forEach(i => {
@@ -1899,7 +2065,7 @@ async function editarPlanoAcao(id) {
             <label class="swal-campo-label">Data de realização (prazo)</label><input id="sw-prazo" type="date" class="swal2-input swal-campo" value="${pl.data_prevista && pl.data_prevista !== PRAZO_SEM_DEF ? pl.data_prevista : isoData(amanha)}" ${pl.data_prevista === PRAZO_SEM_DEF ? 'disabled style="opacity:.4"' : ''}>
             <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin:6px 0 0; cursor:pointer;"><input id="sw-semdef" type="checkbox" ${pl.data_prevista === PRAZO_SEM_DEF ? 'checked' : ''} onchange="let d=document.getElementById('sw-prazo'); d.disabled=this.checked; d.style.opacity=this.checked?'.4':'1';"> <b>Sem definição</b> <span style="color:#6b7280">(ex.: aguardando peças)</span></label>
             <label class="swal-campo-label">Status</label><select id="sw-status" class="swal2-select swal-campo" style="display:block;">${['Pendente', 'Em andamento', 'Concluído'].map(s => `<option ${((pl.status || 'Pendente') === s) ? 'selected' : ''}>${s}</option>`).join('')}</select>
-            ${['oleo', 'tacografo', 'graxa', 'extintor'].includes(i.cat) ? '<p style="font-size:11px; color:#6b7280; margin:8px 0 0;">Depois de resolver, atualize também a data/KM em Alertas da Frota: assim o problema sai sozinho.</p>' : ''}`,
+            ${i.cat === 'documentos' ? '<p style="font-size:11px; color:#6b7280; margin:8px 0 0;">Depois de pagar, marque como pago em Licenciamento e IPVA: assim o problema sai sozinho.</p>' : ''}${['oleo', 'tacografo', 'graxa', 'extintor'].includes(i.cat) ? '<p style="font-size:11px; color:#6b7280; margin:8px 0 0;">Depois de resolver, atualize também a data/KM em Alertas da Frota: assim o problema sai sozinho.</p>' : ''}`,
         preConfirm: () => {
             let plano = document.getElementById('sw-plano').value.trim();
             if (!plano) { Swal.showValidationMessage('Escreva o plano de ação (ou toque em "Usar sugestão")'); return false; }
