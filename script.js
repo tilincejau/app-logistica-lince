@@ -5,7 +5,7 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
 const APP_VERSAO = "2.1";
-const APP_BUILD = "v30";
+const APP_BUILD = "v31";
 const SERVIDOR_MINIMO = "v36"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
@@ -1461,7 +1461,7 @@ function htmlCardSeguro(a, s) {
           ${ln('Telefone', tel)}
           ${ln('Franquia', a.franquia !== '' && a.franquia != null ? fmtReal(a.franquia) : '—')}
           ${ln('Valor pago', a.valor !== '' && a.valor != null ? fmtReal(a.valor) : '—')}
-          ${a.placas ? ln('Placas no mesmo valor', escHtml(a.placas)) : ''}
+          ${a.placas ? ln('Placas inclusas no valor', escHtml(a.placas)) : ''}
         </div>
         ${a.obs ? `<p class="seg-obs">${escHtml(a.obs)}</p>` : ''}
         ${a.coberturas ? `<details class="seg-det"><summary>Coberturas</summary><div>${escHtml(a.coberturas).replace(/\n/g, '<br>')}</div></details>` : ''}
@@ -1494,7 +1494,7 @@ async function editarApolice(id, renovar) {
           ${campo('sw-sfim', 'Vigência: fim', v.fim, 'date')}
           ${campo('sw-sfra', 'Franquia (R$)', v.franquia, 'number', 'step="0.01" inputmode="decimal"')}
           ${campo('sw-sval', 'Valor pago do seguro (R$)', v.valor, 'number', 'step="0.01" inputmode="decimal"')}
-          ${campo('sw-spla', 'Placas incluídas no mesmo valor (opcional)', v.placas, 'text', 'placeholder="Ex: FYY7G32, GHE3E06"')}
+          ${campo('sw-spla', 'Placas inclusas no valor (opcional)', v.placas, 'text', 'placeholder="Ex: FYY7G32, GHE3E06"')}
           <label class="swal-campo-label">Coberturas (opcional)</label><textarea id="sw-scob" class="swal2-textarea swal-campo" rows="3">${escHtml(v.coberturas || '')}</textarea>
           ${campo('sw-sobs', 'Observação', v.obs)}
         </div>`,
