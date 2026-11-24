@@ -5,8 +5,8 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbxHi49LtwY3FI5s0H9c7C-HebuQvUg7-CeHLuxiX35phkjagenPW9jlxm81qAM5YDyQ/exec";
 const APP_VERSAO = "2.1";
-const APP_BUILD = "v29";
-const SERVIDOR_MINIMO = "v35"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
+const APP_BUILD = "v30";
+const SERVIDOR_MINIMO = "v36"; // versão mínima do Apps Script que este app precisa // aparece no rodapé do menu // Versão atualizada para forçar a limpeza da cache nos celulares
 
 const CAVALOS = ['FEF7C02', 'GHE3E06', 'FYY7G32']; 
 const CARROS = ['CLW4E92', 'UGF2G86', 'FGX2A32'];
@@ -20,6 +20,7 @@ window.frota = {};
 window.estoqueDiesel = 0; window.estoqueArla = 0; window.gastoMesGeral = 0;
 window.histAbast = { diesel: [], arla: [], cheg_diesel: [], cheg_arla: [] };
 window.documentos = {};
+window.apolices = [];
 window.estoquePecas = []; window.usuarioLogado = ""; window.listaMotoristas = [];
 window.moduloAtual = ""; window.historicoChecklist = [];
 
@@ -56,7 +57,7 @@ function salvarCacheLocal() {
             estoque_pecas: window.estoquePecas, motoristas: window.listaMotoristas, historico: window.historicoChecklist,
             gasto_mes_ant_geral: (window.resumoGerente || {}).gasto_mes_ant_geral, arla_mes_geral: (window.resumoGerente || {}).arla_mes_geral,
             media_frota_mes: (window.resumoGerente || {}).media_frota_mes, gerado_em: (window.resumoGerente || {}).gerado_em,
-            ultimos_checklists: window.ultimosChecklists || {}, planos: window.planos || {}, mensal: window.mensal || {}, documentos: window.documentos || {}
+            ultimos_checklists: window.ultimosChecklists || {}, planos: window.planos || {}, mensal: window.mensal || {}, documentos: window.documentos || {}, apolices: window.apolices || []
         }));
     } catch (e) { console.warn("Cache local não salvo (sem espaço):", e); }
 }
@@ -302,6 +303,7 @@ function atualizarVariaveisGlobais(res) {
     window.planos = res.planos || window.planos || {};
     window.mensal = res.mensal || window.mensal || {};
     window.documentos = res.documentos || window.documentos || {};
+    window.apolices = res.apolices || window.apolices || [];
     window.resumoGerente = { gasto_mes_ant_geral: res.gasto_mes_ant_geral || 0, arla_mes_geral: res.arla_mes_geral || 0, media_frota_mes: res.media_frota_mes || 0, gerado_em: res.gerado_em || "" };
 
     registrarCategoriasExtras();
@@ -416,7 +418,7 @@ async function fazerLogin() {
 }
 
 function esconderTodasTelas() { 
-    document.getElementById('tela-login').style.display = 'none'; document.getElementById('tela-placas').style.display = 'none'; document.getElementById('tela-menu').style.display = 'none'; document.getElementById('tela-submenu-estoque').style.display = 'none'; document.getElementById('tela-interna').style.display = 'none'; document.getElementById('tela-gerente').style.display = 'none'; document.getElementById('tela-problemas').style.display = 'none'; let tDoc = document.getElementById('tela-documentos'); if (tDoc) tDoc.style.display = 'none'; 
+    document.getElementById('tela-login').style.display = 'none'; document.getElementById('tela-placas').style.display = 'none'; document.getElementById('tela-menu').style.display = 'none'; document.getElementById('tela-submenu-estoque').style.display = 'none'; document.getElementById('tela-interna').style.display = 'none'; document.getElementById('tela-gerente').style.display = 'none'; document.getElementById('tela-problemas').style.display = 'none'; let tDoc = document.getElementById('tela-documentos'); if (tDoc) tDoc.style.display = 'none'; let tSeg = document.getElementById('tela-seguros'); if (tSeg) tSeg.style.display = 'none'; 
 } 
 
 async function sairDaConta() { 
@@ -1109,7 +1111,8 @@ const ALERTAS = {
     tacografo: { nome: 'Tacógrafo',     icone: 'ph-timer',            aplica: ehPesado },
     extintor:  { nome: 'Extintor',      icone: 'ph-fire-extinguisher', aplica: p => !EMPILHADEIRAS.includes(p) },
     graxa:     { nome: 'Graxa',         icone: 'ph-wrench',           aplica: ehPesado },
-    documentos:{ nome: 'Licenc. e IPVA', icone: 'ph-identification-card', aplica: () => true } // licenciamento + IPVA (aba Documentos)
+    documentos:{ nome: 'Licenc. e IPVA', icone: 'ph-identification-card', aplica: () => true }, // licenciamento + IPVA (aba Documentos)
+    seguros:   { nome: 'Seguros',       icone: 'ph-shield-check',     aplica: () => true }  // apólices (aba Apolices)
 };
 let alertaAberto = null; let filtroAlertaAtual = 'atencao';
 // Os 3 óleos ficam juntos no mesmo semáforo "Óleos"
@@ -1170,7 +1173,7 @@ function placasDaFrota() {
 
 function itensDoAlerta(tipo) {
     const peso = { vencido: 0, alerta: 1, ok: 2, sem: 3 };
-    let lista = tipo === 'documentos' ? itensDocumentos() : tipo === 'oleo'
+    let lista = tipo === 'seguros' ? itensSeguros() : tipo === 'documentos' ? itensDocumentos() : tipo === 'oleo'
         ? placasDaFrota().flatMap(p => Object.keys(OLEOS).filter(k => OLEOS[k].aplica(p)).map(k => Object.assign({ placa: p, sub: k }, calcularStatusAlerta('oleo', p, k))))
         : placasDaFrota().filter(p => ALERTAS[tipo].aplica(p)).map(p => Object.assign({ placa: p }, calcularStatusAlerta(tipo, p)));
     return lista
@@ -1225,13 +1228,14 @@ function renderizarListaAlertas() {
     lista.innerHTML = vis.map(i => {
         let v = window.frota[i.placa] || {};
         let sub = [v.tipo, v.motorista].filter(x => x && String(x).trim()).map(escHtml).join(' · ');
-        let rot = i.nivel === 'sem' ? 'Cadastrar' : 'Atualizar';
+        let rot = alertaAberto === 'seguros' ? 'Renovar' : (i.nivel === 'sem' ? 'Cadastrar' : 'Atualizar');
         return `<div class="item-alerta ${i.nivel}"><span class="bolinha"></span><div class="item-alerta-info"><b>${escHtml(i.placa)}${i.sub ? ` <span class="tag-oleo">${i.subNome || OLEOS[i.sub].nome}</span>` : ''}</b><small class="txt-status">${i.texto}</small>${i.detalhe ? `<small>${i.detalhe}</small>` : ''}${sub ? `<small>${sub}</small>` : ''}</div><button type="button" class="btn-atualizar-alerta" onclick="editarItemAlerta('${alertaAberto}','${escHtml(i.placa)}','${i.sub || ''}')"><i class="ph ph-pencil-simple"></i>${rot}</button></div>`;
     }).join('');
 }
 
 async function editarItemAlerta(tipo, placa, sub) {
     if (tipo === 'documentos') { await editarDocumento(placa); renderizarListaAlertas(); return; }
+    if (tipo === 'seguros') { await renovarApolice(sub); renderizarListaAlertas(); return; }
     let oleo = tipo === 'oleo' ? OLEOS[sub || 'motor'] : null;
     let v = window.frota[placa]; if (!v) return;
     let hojeISO = isoData(new Date());
@@ -1399,6 +1403,120 @@ async function editarDocumento(placa) {
     if (document.getElementById('tela-documentos').style.display === 'flex') renderizarDocumentos();
     renderizarAlertas(); renderizarTileProblemas();
     mostrarToast(`<i class='ph ph-check-circle'></i> Licenciamento/IPVA de ${placa} atualizado`, "#059669");
+    return true;
+}
+
+/* =========================================================
+   SEGUROS (apólices) — aba "Apolices" da planilha
+   Renovar = linha nova (a antiga fica no histórico). Semáforo pela data final da vigência.
+   ========================================================= */
+const LIMITE_SEGURO_DIAS = 30;
+function fmtReal(v) { return 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+let buscaSeg = '';
+function novoIdApolice() { return (crypto.randomUUID ? crypto.randomUUID() : 'ap-' + Date.now() + '-' + Math.random().toString(36).slice(2)); }
+function nomeItemSeguro(a) { return a.item === 'CARGA' ? 'Seguro de cargas' : a.item; }
+function apolicesAtuais() {
+    let m = {}; (window.apolices || []).forEach(a => { let b = m[a.item]; if (!b || a.fim > b.fim || (a.fim === b.fim && String(a.criado_em) > String(b.criado_em))) m[a.item] = a; });
+    return Object.values(m);
+}
+function statusApolice(a) {
+    let f = lerDataISO(a.fim);
+    if (!f) return { nivel: 'sem', ordem: 0, texto: 'Sem data final da vigência', detalhe: a.seguradora || '' };
+    let n = diasAte(f), det = `${a.seguradora || 'Seguradora?'} · vigência até ${fmtData(f)}`;
+    if (n < 0) return { nivel: 'vencido', ordem: n, texto: `Vencido há ${txtDias(-n)}`, textoProb: `vencido há ${txtDias(-n)}`, detalhe: det, dias: n };
+    if (n <= LIMITE_SEGURO_DIAS) return { nivel: 'alerta', ordem: n, texto: n === 0 ? 'Vence hoje' : `Faltam ${txtDias(n)}`, textoProb: n === 0 ? 'vence hoje' : `faltam ${txtDias(n)}`, detalhe: det, dias: n };
+    return { nivel: 'ok', ordem: n, texto: `Faltam ${txtDias(n)}`, detalhe: det, dias: n };
+}
+function itensSeguros() {
+    const peso = { vencido: 0, alerta: 1, ok: 2, sem: 3 };
+    return apolicesAtuais().map(a => Object.assign({ placa: nomeItemSeguro(a), sub: a.id, subNome: a.seguradora || 'Seguro' }, statusApolice(a)))
+        .sort((x, y) => (peso[x.nivel] - peso[y.nivel]) || (x.ordem - y.ordem) || x.placa.localeCompare(y.placa));
+}
+function abrirSeguros() { esconderTodasTelas(); document.getElementById('tela-seguros').style.display = 'flex'; renderizarSeguros(); window.scrollTo(0, 0); }
+function buscarSeg(v) { buscaSeg = String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); document.querySelectorAll('#lista-seg .card-doc').forEach(el => { el.style.display = !buscaSeg || el.dataset.busca.includes(buscaSeg) ? '' : 'none'; }); }
+function renderizarSeguros() {
+    let alvo = document.getElementById('conteudo-seguros'); if (!alvo) return;
+    let it = itensSeguros(), c = { vencido: 0, alerta: 0, ok: 0, sem: 0 }; it.forEach(i => c[i.nivel]++);
+    let atuais = apolicesAtuais(); const byId = id => atuais.find(a => a.id === id);
+    alvo.innerHTML = `
+      <div class="kpis">
+        <div class="kpi"><small>Vencidos</small><b style="color:var(--sem-verm)">${c.vencido}</b><span class="var neutro">&nbsp;</span></div>
+        <div class="kpi"><small>Vencem em 30 dias</small><b style="color:#b45309">${c.alerta}</b><span class="var neutro">&nbsp;</span></div>
+        <div class="kpi"><small>Em dia</small><b style="color:var(--sem-verde)">${c.ok}</b><span class="var neutro">&nbsp;</span></div>
+      </div>
+      <button type="button" class="btn-principal" style="margin:0 0 12px;" onclick="editarApolice(null)"><i class="ph ph-plus-circle"></i> Nova apólice</button>
+      <input type="search" class="input-campo" placeholder="Buscar placa ou seguradora..." value="${escHtml(buscaSeg)}" oninput="buscarSeg(this.value)" style="margin-bottom:12px;">
+      <div id="lista-seg">${it.length ? it.map(i => htmlCardSeguro(byId(i.sub), i)).join('') : '<div class="card"><p class="lista-alertas-vazia">Nenhuma apólice cadastrada.</p></div>'}</div>
+      <p class="nota-gerente">Amarelo = vence em até ${LIMITE_SEGURO_DIAS} dias. "Renovar" cria uma apólice nova e guarda a anterior no histórico (aba Apolices da planilha). Vencidos e a vencer entram também em Problemas Encontrados.</p>`;
+    if (buscaSeg) buscarSeg(buscaSeg);
+}
+function htmlCardSeguro(a, s) {
+    let hist = (window.apolices || []).filter(x => x.item === a.item && x.id !== a.id).sort((x, y) => String(y.fim).localeCompare(String(x.fim)));
+    let ln = (r, v) => v ? `<div class="seg-linha"><span>${r}</span><b>${v}</b></div>` : '';
+    let tel = a.telefone ? `<a href="tel:${escHtml(a.telefone.replace(/[^\d+]/g, ''))}" style="color:var(--primary-color); font-weight:700;"><i class="ph ph-phone"></i> ${escHtml(a.telefone)}</a>` : '<span style="color:#b45309">não cadastrado</span>';
+    return `<div class="card card-doc" data-busca="${escHtml((a.item + (a.seguradora || '') + (a.placas || '')).toUpperCase().replace(/[^A-Z0-9]/g, ''))}">
+        <div class="card-doc-topo"><div><b class="card-doc-placa">${escHtml(nomeItemSeguro(a))}</b><small>${escHtml(a.seguradora || '')}${a.numero ? ' · apólice ' + escHtml(a.numero) : ''}</small></div></div>
+        <div class="doc-linha ${s.nivel}"><span class="bolinha"></span><div><b>Vigência</b> <span class="txt-status">${s.texto}</span><small>${a.inicio ? fmtData(lerDataISO(a.inicio)) : '?'} até ${a.fim ? fmtData(lerDataISO(a.fim)) : '?'}</small></div></div>
+        <div class="seg-dados">
+          ${ln('Telefone', tel)}
+          ${ln('Franquia', a.franquia !== '' && a.franquia != null ? fmtReal(a.franquia) : '—')}
+          ${ln('Valor pago', a.valor !== '' && a.valor != null ? fmtReal(a.valor) : '—')}
+          ${a.placas ? ln('Placas no mesmo valor', escHtml(a.placas)) : ''}
+        </div>
+        ${a.obs ? `<p class="seg-obs">${escHtml(a.obs)}</p>` : ''}
+        ${a.coberturas ? `<details class="seg-det"><summary>Coberturas</summary><div>${escHtml(a.coberturas).replace(/\n/g, '<br>')}</div></details>` : ''}
+        ${hist.length ? `<details class="seg-det"><summary>Histórico (${hist.length})</summary><div>${hist.map(h => `${escHtml(h.seguradora || '')} · ${h.inicio ? fmtData(lerDataISO(h.inicio)) : '?'} a ${h.fim ? fmtData(lerDataISO(h.fim)) : '?'}${h.valor !== '' && h.valor != null ? ' · ' + fmtReal(h.valor) : ''}`).join('<br>')}</div></details>` : ''}
+        <div class="seg-botoes"><button type="button" class="btn-atualizar-alerta" onclick="editarApolice('${a.id}')"><i class="ph ph-pencil-simple"></i>Corrigir</button>
+        <button type="button" class="btn-atualizar-alerta" style="background:#1a4d2e; color:#fff;" onclick="renovarApolice('${a.id}')"><i class="ph ph-arrows-clockwise"></i>Renovar</button></div>
+      </div>`;
+}
+function renovarApolice(id) { return editarApolice(id, true); }
+async function editarApolice(id, renovar) {
+    let base = id ? Object.assign({}, (window.apolices || []).find(a => a.id === id) || {}) : { tipo: 'VEICULO' };
+    let v = Object.assign({}, base);
+    if (renovar) { // nova linha: começa onde a anterior terminou, +1 ano
+        let f = lerDataISO(base.fim) || new Date(); let fim = new Date(f); fim.setFullYear(fim.getFullYear() + 1);
+        v = Object.assign({}, base, { id: null, inicio: isoData(f), fim: isoData(fim), numero: '', franquia: '', valor: '' });
+    }
+    const campo = (idc, rot, val, tipo, extra) => `<label class="swal-campo-label">${rot}</label><input id="${idc}" type="${tipo || 'text'}" class="swal2-input swal-campo" value="${escHtml(val == null ? '' : val)}" ${extra || ''}>`;
+    let r = await Swal.fire({
+        title: renovar ? `Renovar · ${nomeItemSeguro(base)}` : (id ? `Corrigir · ${nomeItemSeguro(base)}` : 'Nova apólice'),
+        showCancelButton: true, confirmButtonText: 'Salvar', cancelButtonText: 'Cancelar', confirmButtonColor: '#1a4d2e', focusConfirm: false,
+        html: `<div style="text-align:left">
+          ${renovar ? '<p style="font-size:12px; color:#6b7280; margin:0 0 6px;">A apólice atual vai para o histórico. Confira as datas e preencha os valores novos.</p>' : ''}
+          <label class="swal-campo-label">Tipo</label><select id="sw-stipo" class="swal2-select swal-campo" style="display:block;" ${id ? 'disabled' : ''} onchange="let p=document.getElementById('sw-sitem'); if(this.value==='CARGA'){p.value='CARGA';p.readOnly=true;}else{if(p.value==='CARGA')p.value='';p.readOnly=false;}">
+            <option value="VEICULO" ${v.tipo !== 'CARGA' ? 'selected' : ''}>Veículo (placa)</option><option value="CARGA" ${v.tipo === 'CARGA' ? 'selected' : ''}>Seguro de cargas</option></select>
+          ${campo('sw-sitem', 'Placa', v.item || '', 'text', (id ? 'readonly' : '') + ' style="text-transform:uppercase"')}
+          ${campo('sw-sseg', 'Seguradora', v.seguradora)}
+          ${campo('sw-stel', 'Telefone da seguradora / assistência', v.telefone, 'tel', 'placeholder="Ex: 0800 000 0000"')}
+          ${campo('sw-snum', 'Nº da apólice (opcional)', v.numero)}
+          ${campo('sw-sini', 'Vigência: início', v.inicio, 'date')}
+          ${campo('sw-sfim', 'Vigência: fim', v.fim, 'date')}
+          ${campo('sw-sfra', 'Franquia (R$)', v.franquia, 'number', 'step="0.01" inputmode="decimal"')}
+          ${campo('sw-sval', 'Valor pago do seguro (R$)', v.valor, 'number', 'step="0.01" inputmode="decimal"')}
+          ${campo('sw-spla', 'Placas incluídas no mesmo valor (opcional)', v.placas, 'text', 'placeholder="Ex: FYY7G32, GHE3E06"')}
+          <label class="swal-campo-label">Coberturas (opcional)</label><textarea id="sw-scob" class="swal2-textarea swal-campo" rows="3">${escHtml(v.coberturas || '')}</textarea>
+          ${campo('sw-sobs', 'Observação', v.obs)}
+        </div>`,
+        preConfirm: () => {
+            let g = idc => document.getElementById(idc).value.trim();
+            let tipo = g('sw-stipo'), item = (tipo === 'CARGA' ? 'CARGA' : g('sw-sitem')).toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (!item) { Swal.showValidationMessage('Informe a placa'); return false; }
+            if (!g('sw-sseg')) { Swal.showValidationMessage('Informe a seguradora'); return false; }
+            if (!g('sw-sfim')) { Swal.showValidationMessage('Informe o fim da vigência'); return false; }
+            if (g('sw-sini') && g('sw-sini') > g('sw-sfim')) { Swal.showValidationMessage('O fim da vigência precisa ser depois do início'); return false; }
+            let num = x => x === '' ? '' : (parseFloat(x) || 0);
+            return { tipo, item, seguradora: g('sw-sseg'), telefone: g('sw-stel'), numero: g('sw-snum'), inicio: g('sw-sini'), fim: g('sw-sfim'), franquia: num(g('sw-sfra')), valor: num(g('sw-sval')), placas: g('sw-spla'), coberturas: document.getElementById('sw-scob').value.trim(), obs: g('sw-sobs') };
+        }
+    });
+    if (!r.isConfirmed || !r.value) return false;
+    let novo = Object.assign({ id: (id && !renovar) ? id : novoIdApolice() }, r.value);
+    if (!(await adicionarNaFila(Object.assign({ acao: 'salvar_apolice', usuario: window.usuarioLogado }, novo)))) return false;
+    window.apolices = (window.apolices || []).filter(a => a.id !== novo.id).concat([Object.assign({ criado_em: new Date().toISOString() }, novo)]);
+    salvarCacheLocal();
+    if (document.getElementById('tela-seguros').style.display === 'flex') renderizarSeguros();
+    renderizarAlertas(); renderizarTileProblemas();
+    mostrarToast(`<i class='ph ph-check-circle'></i> Seguro ${renovar ? 'renovado' : 'salvo'}: ${nomeItemSeguro(novo)}`, "#059669");
     return true;
 }
 
@@ -1861,9 +1979,9 @@ function fmtMm(v) { let n = typeof v === 'number' ? v : parseFloat(String(v).rep
    ========================================================= */
 const EQUIP_PADRAO = [['qtd_carrinhos', 2, 'carrinho', 'carrinhos'], ['qtd_cones', 3, 'cone', 'cones'], ['qtd_calcos', 2, 'calço', 'calços']];
 const CAT_PROB = { equip: 'Carrinhos, cones e calços', oleo: 'Trocas de óleo', tacografo: 'Tacógrafo', graxa: 'Engraxada', mecanica: 'Mecânica',
-                   eletrica: 'Elétrica, cabine e pneus (geral)', faltantes: 'Itens faltantes', extintor: 'Extintores', pneus: 'Pneus no limite', documentos: 'Licenciamento e IPVA', obs: 'Observações e paradas' };
+                   eletrica: 'Elétrica, cabine e pneus (geral)', faltantes: 'Itens faltantes', extintor: 'Extintores', pneus: 'Pneus no limite', documentos: 'Licenciamento e IPVA', seguro: 'Seguros', obs: 'Observações e paradas' };
 const ICONE_PROB = { equip: 'ph-traffic-cone', oleo: 'ph-drop', tacografo: 'ph-timer', graxa: 'ph-wrench', mecanica: 'ph-engine', eletrica: 'ph-lightning',
-                     faltantes: 'ph-list-checks', extintor: 'ph-fire-extinguisher', pneus: 'ph-tire', documentos: 'ph-identification-card', obs: 'ph-chat-text' };
+                     faltantes: 'ph-list-checks', extintor: 'ph-fire-extinguisher', pneus: 'ph-tire', documentos: 'ph-identification-card', seguro: 'ph-shield-check', obs: 'ph-chat-text' };
 const SUGESTAO_PROB = {
     equip: 'Repor os itens que faltam (padrão: 2 carrinhos, 3 cones e 2 calços) e conferir na saída do veículo.',
     oleo: 'Agendar a troca com a oficina e, depois de trocar, atualizar o KM da próxima troca no app.',
@@ -1875,6 +1993,7 @@ const SUGESTAO_PROB = {
     extintor: 'Recarregar ou trocar o extintor e atualizar a validade no app.',
     pneus: 'Programar troca/rodízio dos pneus no limite e verificar estoque de pneus.',
     documentos: 'Emitir a guia e pagar antes do vencimento; depois marcar como pago em Licenciamento e IPVA.',
+    seguro: 'Pedir cotação/renovação ao corretor antes do fim da vigência e cadastrar a nova apólice em Seguros (Renovar).',
     obs: 'Conversar com o motorista, avaliar o ponto relatado e definir a solução.'
 };
 let filtroProblemas = 'abertos'; let filtroPlacaProb = '';
@@ -1945,6 +2064,11 @@ function coletarProblemas() {
         let st = statusDoc(p, sub);
         if (st.nivel === 'vencido' || st.nivel === 'alerta') add(p, 'documentos', 'doc_' + sub, `${st.nomeDoc}: ${st.textoProb}`, st.detalhe, st.nivel === 'vencido' ? 'Alta' : 'Média');
     }));
+    // 7) Seguros (vencido = Alta, vence em até 30 dias = Média)
+    apolicesAtuais().forEach(a => {
+        let st = statusApolice(a);
+        if (st.nivel === 'vencido' || st.nivel === 'alerta') add(a.item, 'seguro', 'seguro', `${a.item === 'CARGA' ? 'Seguro de cargas' : 'Seguro'}: ${st.textoProb}`, st.detalhe + (a.telefone ? ' · tel. ' + a.telefone : ''), st.nivel === 'vencido' ? 'Alta' : 'Média');
+    });
     // Junta com os planos salvos
     let hoje = isoData(new Date());
     lista.forEach(i => {
@@ -2056,7 +2180,7 @@ async function editarPlanoAcao(id) {
             <label class="swal-campo-label">Data de realização (prazo)</label><input id="sw-prazo" type="date" class="swal2-input swal-campo" value="${pl.data_prevista && pl.data_prevista !== PRAZO_SEM_DEF ? pl.data_prevista : isoData(amanha)}" ${pl.data_prevista === PRAZO_SEM_DEF ? 'disabled style="opacity:.4"' : ''}>
             <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin:6px 0 0; cursor:pointer;"><input id="sw-semdef" type="checkbox" ${pl.data_prevista === PRAZO_SEM_DEF ? 'checked' : ''} onchange="let d=document.getElementById('sw-prazo'); d.disabled=this.checked; d.style.opacity=this.checked?'.4':'1';"> <b>Sem definição</b> <span style="color:#6b7280">(ex.: aguardando peças)</span></label>
             <label class="swal-campo-label">Status</label><select id="sw-status" class="swal2-select swal-campo" style="display:block;">${['Pendente', 'Em andamento', 'Concluído'].map(s => `<option ${((pl.status || 'Pendente') === s) ? 'selected' : ''}>${s}</option>`).join('')}</select>
-            ${i.cat === 'documentos' ? '<p style="font-size:11px; color:#6b7280; margin:8px 0 0;">Depois de pagar, marque como pago em Licenciamento e IPVA: assim o problema sai sozinho.</p>' : ''}${['oleo', 'tacografo', 'graxa', 'extintor'].includes(i.cat) ? '<p style="font-size:11px; color:#6b7280; margin:8px 0 0;">Depois de resolver, atualize também a data/KM em Alertas da Frota: assim o problema sai sozinho.</p>' : ''}`,
+            ${i.cat === 'seguro' ? '<p style="font-size:11px; color:#6b7280; margin:8px 0 0;">Depois de renovar, cadastre a nova apólice em Seguros (Renovar): assim o problema sai sozinho.</p>' : ''}${i.cat === 'documentos' ? '<p style="font-size:11px; color:#6b7280; margin:8px 0 0;">Depois de pagar, marque como pago em Licenciamento e IPVA: assim o problema sai sozinho.</p>' : ''}${['oleo', 'tacografo', 'graxa', 'extintor'].includes(i.cat) ? '<p style="font-size:11px; color:#6b7280; margin:8px 0 0;">Depois de resolver, atualize também a data/KM em Alertas da Frota: assim o problema sai sozinho.</p>' : ''}`,
         preConfirm: () => {
             let plano = document.getElementById('sw-plano').value.trim();
             if (!plano) { Swal.showValidationMessage('Escreva o plano de ação (ou toque em "Usar sugestão")'); return false; }
